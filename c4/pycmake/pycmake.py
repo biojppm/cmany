@@ -106,12 +106,12 @@ class BuildItem:
         return self.preload
 
 #------------------------------------------------------------------------------
-class Mode(BuildItem):
-    """Specifies a build mode, ie, one of Release, Debug, etc"""
+class BuildType(BuildItem):
+    """Specifies a build type, ie, one of Release, Debug, etc"""
 
     @staticmethod
     def default():
-        return Mode("Release")
+        return BuildType("Release")
 
 #------------------------------------------------------------------------------
 class System(BuildItem):
@@ -177,6 +177,8 @@ class Compiler(BuildItem):
     def __init__(self, path):
         path = os.path.abspath(which(path))
         name = os.path.basename(path)
+        in_path = path
+        in_name = name
         #print("cmp: found compiler:", name, path)
         out = run_and_capture_output([path, '--version'], noecho=True).strip("\n")
         firstline = out.split("\n")[0]
@@ -210,7 +212,9 @@ class Compiler(BuildItem):
         self.version_full = firstline
         self.options = CompileOptions()
         super().__init__(name)
-        if self.shortname == "icc":
+        if in_name.endswith("c++"):
+            self.c_compiler = re.sub(r'c\+\+', r'cc', self.path)
+        elif self.shortname == "icc":
             self.c_compiler = re.sub(r'icpc', r'icc', self.path)
         elif self.shortname == "gcc":
             self.c_compiler = re.sub(r'g\+\+', r'gcc', self.path)
@@ -334,10 +338,10 @@ class Build:
     pfile = "pycmake_preload.cmake"
 
     def __init__(self, proj_root, build_root, install_root,
-                 sys, arch, mode, compiler, variant=None):
+                 sys, arch, buildtype, compiler, variant=None):
         self.system = sys
         self.architecture = arch
-        self.mode = mode
+        self.buildtype = buildtype
         self.compiler = compiler
         self.variant = variant
         self.crosscompile = (sys != System.current())
@@ -355,7 +359,7 @@ class Build:
 
     def _cat(self, sep):
         s = "{1}{0}{2}{0}{3}{0}{4}"
-        s = s.format(sep, self.system, self.architecture, self.compiler, self.mode)
+        s = s.format(sep, self.system, self.architecture, self.compiler, self.buildtype)
         if self.variant:
             s += "{0}{1}".format(sep, self.variant)
         return s
@@ -377,7 +381,7 @@ class Build:
         s("CMAKE_CXX_COMPILER", self.compiler.path)
         s("CMAKE_C_COMPILER", self.compiler.c_compiler)
         s("CMAKE_INSTALL_PREFIX", self.installdir)
-        s("CMAKE_BUILD_TYPE", self.mode)
+        s("CMAKE_BUILD_TYPE", self.buildtype)
 
         if len(lines) > 0:
             l1 = "# Do not edit. Will be overwritten."
@@ -428,6 +432,13 @@ endfunction(_pycmakedbg)
             cmd = ['make', 'install']
             run(cmd)
 
+    def clean(self):
+        self.create_dir()
+        with cwd_back(self.builddir):
+            cmd = ['make', 'clean']
+            run(cmd)
+            os.remove("pycmake_build.done")
+
 #------------------------------------------------------------------------------
 class ProjectConfig:
 
@@ -438,8 +449,8 @@ class ProjectConfig:
     def default_architectures():
         return ctor(Architecture, ["x86", "x64", "arm"])
     @staticmethod
-    def default_modes():
-        return ctor(Mode, ["Debug", "Release"])
+    def default_buildtypes():
+        return ctor(BuildType, ["Debug", "Release"])
     @staticmethod
     def default_compilers():
         return ctor(Compiler, ["clang++", "g++", "icpc"])
@@ -447,7 +458,8 @@ class ProjectConfig:
 
     def __init__(self, **kwargs):
         projdir = kwargs.get('proj_dir', os.getcwd())
-        if projdir == ".": projdir = os.getcwd()
+        if projdir == ".":
+            projdir = os.getcwd()
         self.rootdir = projdir
         self.cmakelists = chkf(self.rootdir, "CMakeLists.txt")
         self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
@@ -465,7 +477,7 @@ class ProjectConfig:
             return l
         self.systems = _get('systems', System)
         self.architectures = _get('architectures', Architecture)
-        self.modes = _get('modes', Mode)
+        self.buildtypes = _get('build_types', BuildType)
         self.compilers = _get('compilers', Compiler)
         self.variants = _get('variants', None)
 
@@ -483,29 +495,29 @@ class ProjectConfig:
             return d
         self.system_builds = _cbm(self.systems)
         self.architecture_builds = _cbm(self.architectures)
-        self.mode_builds = _cbm(self.modes)
+        self.buildtype_builds = _cbm(self.buildtypes)
         self.compiler_builds = _cbm(self.compilers)
         self.variant_builds = _cbm(self.variants)
         for s in self.systems:
             for a in self.architectures:
-                for m in self.modes:
-                    for c in self.compilers:
+                for c in self.compilers:
+                    for m in self.buildtypes:
                         for v in self.variants:
                             self.add_build_if_valid(s, a, m, c, v)
 
     def parse_file(self, configfile):
         raise Exception("not implemented")
 
-    def add_build_if_valid(self, sys, arch, mode, compiler, variant):
-        if not self.is_valid(sys, arch, mode, compiler, variant):
+    def add_build_if_valid(self, sys, arch, buildtype, compiler, variant):
+        if not self.is_valid(sys, arch, buildtype, compiler, variant):
             return False
         b = Build(self.rootdir, self.builddir, self.installdir,
-                  sys, arch, mode, compiler, variant)
+                  sys, arch, buildtype, compiler, variant)
         self.builds.append(b)
         #print(self.system_builds)
         self.system_builds[sys].append(b)
         self.architecture_builds[arch].append(b)
-        self.mode_builds[mode].append(b)
+        self.buildtype_builds[buildtype].append(b)
         self.compiler_builds[compiler].append(b)
         self.variant_builds[variant].append(b)
         return True
@@ -528,18 +540,26 @@ class ProjectConfig:
             return lo
         out = _h(out, "sys", "system")
         out = _h(out, "arch", "architecture")
-        out = _h(out, "mode", "mode")
+        out = _h(out, "buildtype", "buildtype")
         out = _h(out, "compiler", "compiler")
         out = _h(out, "variant", "variant")
         return out
 
-    def show_builds(self, **kwargs):
+    def select_and_show(self, **kwargs):
         builds = self.select(**kwargs)
-        for b in builds:
-            print(b)
+        if len(builds) > 0:
+            print("selected builds:")
+            for b in builds:
+                print(b)
+        else:
+            print("no builds selected")
+        return builds
+
+    def show_builds(self, **kwargs):
+        self.select_and_show(**kwargs)
 
     def create_tree(self, **restrict_to):
-        builds = self.select(**restrict_to)
+        builds = self.select_and_show(**restrict_to)
         for b in builds:
             d = b.create_dir()
             b.create_preload_file()
@@ -548,66 +568,86 @@ class ProjectConfig:
     def configure(self, **restrict_to):
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
-        builds = self.select(**restrict_to)
-        for b in builds:
-            b.configure()
+        self._execute(Build.configure, "Configuring", **restrict_to)
 
     def build(self, **restrict_to):
-        builds = self.select(**restrict_to)
-        for b in builds:
-            b.build()
+        self._execute(Build.build, "Building", **restrict_to)
+
+    def clean(self, **restrict_to):
+        self._execute(Build.clean, "Cleaning", **restrict_to)
 
     def install(self, **restrict_to):
-        builds = self.select(**restrict_to)
+        self._execute(Build.install, "Installing", **restrict_to)
+
+    def _execute(self, fn, msg, **restrict_to):
+        builds = self.select_and_show(**restrict_to)
+        if len(builds) == 0:
+            return
+        print("")
+        print("===============================================")
+        print(msg, ": start")
         for b in builds:
-            b.install()
+            print("-----------------------------------------------")
+            print(msg, ":", b)
+            print("-----------------------------------------------")
+            fn(b)
+        print("-----------------------------------------------")
+        print(msg, ": finished")
+        print("===============================================")
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 def handle_args(in_args):
-    from argparse import ArgumentParser
+    from argparse import ArgumentParser,RawDescriptionHelpFormatter as HelpFormatter
 
     defname = "pycmake.json"
 
-    parser = ArgumentParser(description='Handle several cmake build trees of a single project')
+    parser = ArgumentParser(description='Handle several cmake build trees of a single project',
+                            usage="""%(prog)s [-c,--configure] [-b,--build] [options...] [proj-dir]""",
+                            epilog="""
+-----------------------------
+Some examples:
+
+# configure and build a CMakeLists.txt project located on the current dir
+$ %(prog)s .
+
+# same as above
+$ %(prog)s
+
+# same as above
+$ %(prog)s -b
+""",
+                            formatter_class=HelpFormatter)
+
+    parser.add_argument("proj-dir", nargs="?", default=".",
+                        help="the dir where CMakeLists.txt is located. When none is given, defaults to the current dir.")
 
     cmds = parser.add_argument_group(title="Available commands")
-    cmds.add_argument("-f", "--configure", action="store_true", default=False,
-                    help="")
+    cmds.add_argument("-c", "--configure", action="store_true", default=False,
+                      help="only configure the selected builds")
     cmds.add_argument("-b", "--build", action="store_true", default=False,
-                    help="")
+                      help="build the selected builds, configuring before if necessary")
     cmds.add_argument("-i", "--install", action="store_true", default=False,
-                    help="")
+                      help="install the selected builds, configuring and building before if necessary")
+    cmds.add_argument("--clean", action="store_true", default=False,
+                      help="clean the selected builds")
     cmds.add_argument("--create-tree", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-builds", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-systems", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-architectures", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-modes", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-compilers", action="store_true", default=False,
-                    help="")
-    cmds.add_argument("--show-variants", action="store_true", default=False,
-                    help="")
+                      help="just create the build tree and the cmake preload scripts")
 
-    clo = parser.add_argument_group(title="Configs")
+    clo = parser.add_argument_group(title="Build selections")
     clo.add_argument("-s", "--systems", metavar="os1,os2,...",
                      help="restrict actions to the given operating systems")
     clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
                      help="restrict actions to the given processor architectures")
-    clo.add_argument("-m", "--modes", metavar="mode1,mode2,...",
-                     help="restrict actions to the given compilation modes")
-    clo.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
+    clo.add_argument("-p", "--compilers", metavar="compiler1,compiler2,...",
                      help="restrict actions to the given compilers")
+    clo.add_argument("-t", "--build-types", metavar="type1,type2,...",
+                     help="restrict actions to the given build types (eg Release or Debug)")
     clo.add_argument("-v", "--variants", metavar="variant1,variant2,...",
                      help="restrict actions to the given variants")
 
-    parser.add_argument("proj_dir", nargs="?", default=".")
     parser.add_argument("--build-dir", default="./build",
                         help="set the build root (defaults to ./build)")
     parser.add_argument("--install-dir", default="./install",
@@ -615,10 +655,24 @@ def handle_args(in_args):
     parser.add_argument("--num-processors", default="./install",
                         help="build with the given number of processors")
 
+    cli = parser.add_argument_group(title='Commands that show info')
+    cli.add_argument("--show-builds", action="store_true", default=False,
+                    help="")
+    cli.add_argument("--show-systems", action="store_true", default=False,
+                    help="")
+    cli.add_argument("--show-architectures", action="store_true", default=False,
+                    help="")
+    cli.add_argument("--show-build-types", action="store_true", default=False,
+                    help="")
+    cli.add_argument("--show-compilers", action="store_true", default=False,
+                    help="")
+    cli.add_argument("--show-variants", action="store_true", default=False,
+                    help="")
+
     ns = parser.parse_args(in_args[1:])
     #print(ns)
     # fix comma-separated lists
-    for i in ('systems','architectures','modes','compilers','variants'):
+    for i in ('systems','architectures','build_types','compilers','variants'):
         a = getattr(ns, i)
         if a is not None:
             a = a.split(",")
@@ -629,44 +683,55 @@ def handle_args(in_args):
 #------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    #print(sys.argv)
-    args = handle_args(sys.argv)
-    print(args)
+
+    try:
+        #print(sys.argv)
+        args = handle_args(sys.argv)
+        #print(args)
     
-    proj = ProjectConfig(**vars(args))
+        proj = ProjectConfig(**vars(args))
 
-    if args.show_systems:
-        for b in proj.systems:
-            print(b)
+        if args.show_systems:
+            for b in proj.systems:
+                print(b)
 
-    if args.show_architectures:
-        for b in proj.architectures:
-            print(b)
+        if args.show_architectures:
+            for b in proj.architectures:
+                print(b)
 
-    if args.show_modes:
-        for b in proj.modes:
-            print(b)
+        if args.show_build_types:
+            for b in proj.build_types:
+                print(b)
 
-    if args.show_compilers:
-        for b in proj.compilers:
-            print(b)
+        if args.show_compilers:
+            for b in proj.compilers:
+                print(b)
 
-    if args.show_variants:
-        for b in proj.variants:
-            print(b)
+        if args.show_variants:
+            for b in proj.variants:
+                print(b)
 
-    if args.show_builds:
-        proj.show_builds()
+        if args.show_builds:
+            proj.show_builds()
 
-    if args.create_tree:
-        proj.create_tree()
+        if args.create_tree:
+            proj.create_tree()
 
-    if args.configure:
-        proj.configure()
+        if args.configure:
+            proj.configure()
 
-    if args.build:
-        proj.build()
+        if args.build:
+            proj.build()
 
-    if args.install:
-        proj.install()
+        if args.install:
+            proj.install()
+
+        if args.clean:
+            proj.clean()
+
+    except Exception as e:
+        print("Error:", str(e))
+        sys.exit(1)
+
+    sys.exit(0)
 
