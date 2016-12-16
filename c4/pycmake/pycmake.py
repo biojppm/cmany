@@ -1,0 +1,672 @@
+
+import os
+import subprocess
+import sys
+import re
+from datetime import datetime as datetime
+from collections import OrderedDict as odict
+
+def which(cmd):
+    if os.path.exists(cmd):
+        return cmd
+    for path in os.environ["PATH"].split(os.pathsep):
+        j = os.path.join(path, cmd)
+        if os.path.exists(j):
+                return j
+    return None      
+
+def find_executable(name):
+    for suf in ["",".exe"]:
+        n = name + suf
+        w = which(n)
+        if w is not None:
+            return w
+    return None
+
+def get_executable(name):
+    w = find_executable(name)
+    if w is None:
+        raise Exception("could not find executable named " + name)
+    return w
+
+def choose_executable(purpose, *candidates):
+    for c in candidates:
+        if c is None:
+            continue
+        f = which(c)
+        print("chooexe: ", c, f)
+        if f is not None:
+            return f
+    err = "could not find executable for {}. Tried the following: {}"
+    raise Exception(err.format(purpose, *var(candidates)))
+
+def chkf(*args):
+    "join the args as a path and check whether that path exists"
+    f = os.path.join(*args)
+    if not os.path.exists(f):
+        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())
+    return f
+
+def run(arglist, noecho=False):
+    if not noecho: print("running command:", " ".join(arglist))
+    subprocess.check_call(arglist)
+
+def run_and_capture_output(arglist, output_as_bytes_string=False, noecho=False):
+    if not noecho: print("running command:", " ".join(arglist))
+    out = subprocess.check_output(arglist)
+    if not output_as_bytes_string:
+        out = str(out, 'utf-8')
+    return out
+
+def ctor(class_, args):
+    if not isinstance(args, list):
+        args = [ args ]
+    l = []
+    for i in args:
+        l.append(class_(i))
+    return l
+
+#------------------------------------------------------------------------------
+class cwd_back:
+    """temporarily change into a directory inside a with block"""
+
+    def __init__(self, dir):
+        self.dir = dir
+
+    def __enter__(self):
+        self.old = os.getcwd()
+        if self.old == self.dir:
+            return
+        print("Entering directory", self.dir, "(was in {})".format(self.old))
+        chkf(self.dir)
+        os.chdir(self.dir)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.old == self.dir:
+            return
+        print("Returning to directory", self.old, "(currently in {})".format(self.dir))
+        chkf(self.old)
+        os.chdir(self.old)
+
+#------------------------------------------------------------------------------
+class BuildItem:
+
+    def __init__(self, name):
+        self.name = name
+        self.preload = None
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+    def preload(self):
+        "return the name of a script to populate the cmake cache, via -C"
+        return self.preload
+
+#------------------------------------------------------------------------------
+class Mode(BuildItem):
+    """Specifies a build mode, ie, one of Release, Debug, etc"""
+
+    @staticmethod
+    def default():
+        return Mode("Release")
+
+#------------------------------------------------------------------------------
+class System(BuildItem):
+    """Specifies an operating system"""
+
+    @staticmethod
+    def default():
+        "return the current operating system"
+        return System.current()
+
+    @staticmethod
+    def current():
+        if not hasattr(System, "_current"):
+            if sys.platform == "linux" or sys.platform == "linux2":
+                System._current = System("linux")
+            elif sys.platform == "darwin":
+                System._current = System("mac")
+            elif sys.platform == "win32":
+                System._current = System("windows")
+            else:
+                raise Exception("unknown system")
+        return System._current
+
+#------------------------------------------------------------------------------
+class Architecture(BuildItem):
+    """Specifies a processor architecture"""
+
+    @staticmethod
+    def default():
+        "return the architecture of the current machine"
+        return Architecture.current()
+
+    @staticmethod
+    def current():
+        # http://stackoverflow.com/a/12578715/5875572
+        import platform
+        machine = platform.machine()
+        if machine.endswith('64'):
+            return Architecture('x64')
+        elif machine.endswith('86'):
+            return Architecture('x32')
+        raise Exception("unknown architecture")
+
+#------------------------------------------------------------------------------
+class CompileOptions:
+
+    def __init__(self, name=""):
+        self.name = name
+        self.cmake_flags = []
+        self.cflags = []
+        self.lflags = []
+        self.macros = []
+
+#------------------------------------------------------------------------------
+class Compiler(BuildItem):
+    """Specifies a compiler"""
+
+    @staticmethod
+    def default():
+        cpp = choose_executable("C++ compiler", os.environ.get('CXX'), 'c++', 'g++', 'clang++', 'icpc')
+        return Compiler(cpp)
+
+    def __init__(self, path):
+        path = os.path.abspath(which(path))
+        name = os.path.basename(path)
+        #print("cmp: found compiler:", name, path)
+        out = run_and_capture_output([path, '--version'], noecho=True).strip("\n")
+        firstline = out.split("\n")[0]
+        splits = firstline.split(" ")
+        name = splits[0].lower()
+        #print("cmp: version:", name, "---", firstline, "---")
+        vregex = r'(\d+\.\d+)\.\d+'
+        if name.startswith("g++") or name.startswith("gcc"):
+            name = "gcc"
+            version = run_and_capture_output([path, '-dumpversion'], noecho=True).strip("\n")
+            version = re.sub(vregex, r'\1', version)
+            #print("gcc version:", version, "---")
+        elif name.startswith("clang"):
+            name = "clang"
+            version = re.sub(r'clang version ' + vregex + '.*', r'\1', firstline)
+            #print("clang version:", version, "---")
+        elif name.startswith("icpc"):
+            name = "icc"
+            version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', firstline)
+            #print("icc version:", version, "---")
+        else:
+            version = run_and_capture_output([path, '--dumpversion'], noecho=True).strip("\n")
+            version = re.sub(vregex, r'\1', version)
+        #
+        self.shortname = name
+        self.gcclike = self.shortname in ('gcc', 'clang', 'icc')
+        self.is_msvc = self.shortname.startswith('msvc')
+        name += version
+        self.path = path
+        self.version = version
+        self.version_full = firstline
+        self.options = CompileOptions()
+        super().__init__(name)
+        if self.shortname == "icc":
+            self.c_compiler = re.sub(r'icpc', r'icc', self.path)
+        elif self.shortname == "gcc":
+            self.c_compiler = re.sub(r'g\+\+', r'gcc', self.path)
+        elif self.shortname == "clang":
+            self.c_compiler = re.sub(r'clang\+\+', r'clang', self.path)
+        else:
+            self.c_compiler = self.path
+
+    def wall(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-Wall')
+        else:
+            raise Exception("not implemented")
+
+    def pedantic(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-Wpedantic')
+        else:
+            raise Exception("not implemented")
+
+    def g3(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-g3')
+        else:
+            raise Exception("not implemented")
+
+    def cpp11(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-std=c++11')
+        else:
+            raise Exception("not implemented")
+
+    def cpp14(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-std=c++14')
+        else:
+            raise Exception("not implemented")
+
+    def cpp1z(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-std=c++1z')
+        else:
+            raise Exception("not implemented")
+
+    def no_strict_aliasing(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-fno-strict-aliasing')
+        else:
+            raise Exception("not implemented")
+
+    def strict_aliasing(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-fstrict-aliasing')
+        else:
+            raise Exception("not implemented")
+
+    def no_rtti(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-fno-rtti')
+        else:
+            raise Exception("not implemented")
+
+    def no_exceptions(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-fno-exceptions', '-fno-unwind-tables')
+        else:
+            raise Exception("not implemented")
+
+    def no_stdlib(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-nostdlib')
+        else:
+            raise Exception("not implemented")
+
+    def pthread(self, yes=True):
+        if self.gcclike:
+            if yes: self._f('-pthread')
+        else:
+            raise Exception("not implemented")
+
+    def _m(self, *macros):
+        for m in macros:
+            self.options.macros.append(m)
+        
+    def _l(self, *linkerflags):
+        for f in flags:
+            self.options.lflags.append(f)
+
+    def _m(self, *macros):
+        for m in macros:
+            self.options.macros.append(m)
+
+    options_map = {
+        "wall":wall,
+        "pedantic":pedantic,
+        "g3":g3,
+        "cpp11":cpp11,
+        "cpp14":cpp14,
+        "cpp1z":cpp1z,
+        "no_strict_aliasing":no_strict_aliasing,
+        "strict_aliasing":strict_aliasing,
+        "no_rtti":no_rtti,
+        "no_exceptions":no_exceptions,
+        "no_stdlib":no_stdlib,
+        "pthread":pthread,
+    }
+
+#------------------------------------------------------------------------------
+class Variant(BuildItem):
+    """for variations in compile options"""
+
+    def __init__(self, name):
+        super().__init__(name)
+        self.options = CompileOptions()
+
+
+#------------------------------------------------------------------------------
+class Build:
+    """Holds a build's settings"""
+
+    pfile = "pycmake_preload.cmake"
+
+    def __init__(self, proj_root, build_root, install_root,
+                 sys, arch, mode, compiler, variant=None):
+        self.system = sys
+        self.architecture = arch
+        self.mode = mode
+        self.compiler = compiler
+        self.variant = variant
+        self.crosscompile = (sys != System.current())
+        self.toolchain = None
+        self.dir = self._cat("-")
+        self.projdir = chkf(proj_root)
+        self.buildroot = os.path.abspath(build_root)
+        self.builddir = os.path.abspath(os.path.join(build_root, self.dir))
+        self.preload_file = os.path.join(self.builddir, Build.pfile)
+        self.installroot = os.path.abspath(install_root)
+        self.installdir = os.path.join(self.installroot, self.dir)
+
+    def __repr__(self):
+        return self._cat("-")
+
+    def _cat(self, sep):
+        s = "{1}{0}{2}{0}{3}{0}{4}"
+        s = s.format(sep, self.system, self.architecture, self.compiler, self.mode)
+        if self.variant:
+            s += "{0}{1}".format(sep, self.variant)
+        return s
+
+    def create_dir(self):
+        if not os.path.exists(self.builddir):
+            os.makedirs(self.builddir)
+
+    def create_preload_file(self):
+        self.create_dir()
+        lines = []
+        def a(s): lines.append(s)
+        def s(var, value):
+            # http://stackoverflow.com/questions/17597673/cmake-preload-script-for-cache
+            lines.append('set({} {} CACHE PATH "")'.format(var, value))
+            lines.append('_pycmakedbg({})'.format(var))
+            lines.append('')
+
+        s("CMAKE_CXX_COMPILER", self.compiler.path)
+        s("CMAKE_C_COMPILER", self.compiler.c_compiler)
+        s("CMAKE_INSTALL_PREFIX", self.installdir)
+        s("CMAKE_BUILD_TYPE", self.mode)
+
+        if len(lines) > 0:
+            l1 = "# Do not edit. Will be overwritten."
+            l2 = "# Generated by pycmake on " + datetime.now().strftime("%Y/%m/%d %H:%m")
+            lines.insert(0, l1)
+            lines.insert(1, l2)
+            lines.insert(2, "")
+            lines.insert(3, 'message(STATUS "pycmake:preload----------------------")')
+            lines.insert(4, """function(_pycmakedbg var)
+message(STATUS "pycmake: ${var}=${${var}}")
+endfunction(_pycmakedbg)
+""")
+            a('message(STATUS "pycmake:preload----------------------")')
+            a("")
+            a(l1)
+            a(l2)
+        with open(self.preload_file, "w") as f:
+            f.writelines([l+"\n" for l in lines])
+        return self.preload_file
+
+    def configure(self):
+        self.create_dir()
+        if not os.path.exists(self.preload_file):
+            self.create_preload_file()
+        with cwd_back(self.builddir):
+            cmd = ['cmake', '-C', os.path.basename(self.preload_file),
+                   #'-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
+                   self.projdir]
+            run(cmd)
+            with open("pycmake_configure.done", "w") as f:
+                f.write(" ".join(cmd) + "\n")
+
+    def build(self):
+        self.create_dir()
+        with cwd_back(self.builddir):
+            if not os.path.exists("pycmake_configure.done"):
+                self.configure()
+            cmd = ['make', '-j4']
+            run(cmd)
+            with open("pycmake_build.done", "w") as f:
+                f.write(" ".join(cmd) + "\n")
+
+    def install(self):
+        self.create_dir()
+        with cwd_back(self.builddir):
+            if not os.path.exists("pycmake_build.done"):
+                self.build()
+            cmd = ['make', 'install']
+            run(cmd)
+
+#------------------------------------------------------------------------------
+class ProjectConfig:
+
+    @staticmethod
+    def default_systems():
+        return ctor(System, ["linux", "windows", "android", "ios", "ps4", "xboxone"])
+    @staticmethod
+    def default_architectures():
+        return ctor(Architecture, ["x86", "x64", "arm"])
+    @staticmethod
+    def default_modes():
+        return ctor(Mode, ["Debug", "Release"])
+    @staticmethod
+    def default_compilers():
+        return ctor(Compiler, ["clang++", "g++", "icpc"])
+    # no default variants
+
+    def __init__(self, **kwargs):
+        projdir = kwargs.get('proj_dir', os.getcwd())
+        if projdir == ".": projdir = os.getcwd()
+        self.rootdir = projdir
+        self.cmakelists = chkf(self.rootdir, "CMakeLists.txt")
+        self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
+        self.installdir = kwargs.get('install_dir', os.path.join(os.getcwd(), "install"))
+
+        def _get(name, class_):
+            g = kwargs.get(name)
+            if g is None:
+                g = [class_.default()] if class_ is not None else [None]
+                return g
+            l = []
+            for i in g:
+                l.append(class_(i))
+            #print(name, ".....", g)
+            return l
+        self.systems = _get('systems', System)
+        self.architectures = _get('architectures', Architecture)
+        self.modes = _get('modes', Mode)
+        self.compilers = _get('compilers', Compiler)
+        self.variants = _get('variants', None)
+
+        configfile = os.path.join(projdir, "pycmake.json")
+        self.configfile = None
+        if os.path.exists(configfile):
+            self.parse_file(configfile)
+            self.configfile = configfile
+
+        self.builds = []
+        def _cbm(li):
+            d = odict()
+            for i in li:
+                d[i] = []
+            return d
+        self.system_builds = _cbm(self.systems)
+        self.architecture_builds = _cbm(self.architectures)
+        self.mode_builds = _cbm(self.modes)
+        self.compiler_builds = _cbm(self.compilers)
+        self.variant_builds = _cbm(self.variants)
+        for s in self.systems:
+            for a in self.architectures:
+                for m in self.modes:
+                    for c in self.compilers:
+                        for v in self.variants:
+                            self.add_build_if_valid(s, a, m, c, v)
+
+    def parse_file(self, configfile):
+        raise Exception("not implemented")
+
+    def add_build_if_valid(self, sys, arch, mode, compiler, variant):
+        if not self.is_valid(sys, arch, mode, compiler, variant):
+            return False
+        b = Build(self.rootdir, self.builddir, self.installdir,
+                  sys, arch, mode, compiler, variant)
+        self.builds.append(b)
+        #print(self.system_builds)
+        self.system_builds[sys].append(b)
+        self.architecture_builds[arch].append(b)
+        self.mode_builds[mode].append(b)
+        self.compiler_builds[compiler].append(b)
+        self.variant_builds[variant].append(b)
+        return True
+
+    def is_valid(self, sys, arch, mode, compiler, variant):
+        # TODO
+        return True
+
+    def select(self, **kwargs):
+        out = [ b for b in self.builds ]
+        def _h(li, kw, attr):
+            g = kwargs.get(kw)
+            if g is None:
+                return li
+            else:
+                lo = []
+                for b in li:
+                    if str(getattr(b, attr)) == g:
+                        lo.append(b)
+            return lo
+        out = _h(out, "sys", "system")
+        out = _h(out, "arch", "architecture")
+        out = _h(out, "mode", "mode")
+        out = _h(out, "compiler", "compiler")
+        out = _h(out, "variant", "variant")
+        return out
+
+    def show_builds(self, **kwargs):
+        builds = self.select(**kwargs)
+        for b in builds:
+            print(b)
+
+    def create_tree(self, **restrict_to):
+        builds = self.select(**restrict_to)
+        for b in builds:
+            d = b.create_dir()
+            b.create_preload_file()
+            #print(b, ":", d)
+
+    def configure(self, **restrict_to):
+        if not os.path.exists(self.builddir):
+            os.makedirs(self.builddir)
+        builds = self.select(**restrict_to)
+        for b in builds:
+            b.configure()
+
+    def build(self, **restrict_to):
+        builds = self.select(**restrict_to)
+        for b in builds:
+            b.build()
+
+    def install(self, **restrict_to):
+        builds = self.select(**restrict_to)
+        for b in builds:
+            b.install()
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+def handle_args(in_args):
+    from argparse import ArgumentParser
+
+    defname = "pycmake.json"
+
+    parser = ArgumentParser(description='Handle several cmake build trees of a single project')
+
+    cmds = parser.add_argument_group(title="Available commands")
+    cmds.add_argument("-f", "--configure", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("-b", "--build", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("-i", "--install", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--create-tree", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-builds", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-systems", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-architectures", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-modes", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-compilers", action="store_true", default=False,
+                    help="")
+    cmds.add_argument("--show-variants", action="store_true", default=False,
+                    help="")
+
+    clo = parser.add_argument_group(title="Configs")
+    clo.add_argument("-s", "--systems", metavar="os1,os2,...",
+                     help="restrict actions to the given operating systems")
+    clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
+                     help="restrict actions to the given processor architectures")
+    clo.add_argument("-m", "--modes", metavar="mode1,mode2,...",
+                     help="restrict actions to the given compilation modes")
+    clo.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
+                     help="restrict actions to the given compilers")
+    clo.add_argument("-v", "--variants", metavar="variant1,variant2,...",
+                     help="restrict actions to the given variants")
+
+    parser.add_argument("proj_dir", nargs="?", default=".")
+    parser.add_argument("--build-dir", default="./build",
+                        help="set the build root (defaults to ./build)")
+    parser.add_argument("--install-dir", default="./install",
+                        help="set the install root (defaults to ./install)")
+    parser.add_argument("--num-processors", default="./install",
+                        help="build with the given number of processors")
+
+    ns = parser.parse_args(in_args[1:])
+    #print(ns)
+    # fix comma-separated lists
+    for i in ('systems','architectures','modes','compilers','variants'):
+        a = getattr(ns, i)
+        if a is not None:
+            a = a.split(",")
+            setattr(ns, i, a)
+
+    return ns
+
+#------------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    #print(sys.argv)
+    args = handle_args(sys.argv)
+    print(args)
+    
+    proj = ProjectConfig(**vars(args))
+
+    if args.show_systems:
+        for b in proj.systems:
+            print(b)
+
+    if args.show_architectures:
+        for b in proj.architectures:
+            print(b)
+
+    if args.show_modes:
+        for b in proj.modes:
+            print(b)
+
+    if args.show_compilers:
+        for b in proj.compilers:
+            print(b)
+
+    if args.show_variants:
+        for b in proj.variants:
+            print(b)
+
+    if args.show_builds:
+        proj.show_builds()
+
+    if args.create_tree:
+        proj.create_tree()
+
+    if args.configure:
+        proj.configure()
+
+    if args.build:
+        proj.build()
+
+    if args.install:
+        proj.install()
+
