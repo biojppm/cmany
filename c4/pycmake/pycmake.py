@@ -53,19 +53,28 @@ def run(arglist, noecho=False):
     if not noecho: print("running command:", " ".join(arglist))
     subprocess.check_call(arglist)
 
-def run_and_capture_output(arglist, output_as_bytes_string=False, noecho=False):
+def run_and_capture_output(arglist, as_bytes_string=False, noecho=False):
     if not noecho: print("running command:", " ".join(arglist))
     out = subprocess.check_output(arglist)
-    if not output_as_bytes_string:
+    if not as_bytes_string:
         out = str(out, 'utf-8')
     return out
 
-def ctor(class_, args):
+def cmember(obj, name, function):
+    """add and cache an object member which is the result of a given lambda"""
+    if hasattr(obj, name):
+        val = getattr(obj, name)
+    else:
+        val = function()
+        setattr(obj, name, val)
+    return val
+
+def ctor(cls, args):
     if not isinstance(args, list):
         args = [ args ]
     l = []
     for i in args:
-        l.append(class_(i))
+        l.append(cls(i))
     return l
 
 #------------------------------------------------------------------------------
@@ -89,6 +98,57 @@ class cwd_back:
         print("Returning to directory", self.old, "(currently in {})".format(self.dir))
         chkf(self.old)
         os.chdir(self.old)
+
+#------------------------------------------------------------------------------
+
+class CMakeSystemInformation:
+    """encapsulates the results returned from `cmake --system-information`.
+    Use this for selecting default values for compiler, generator, etc."""
+
+    @staticmethod
+    def system_name():
+        return cmember(__class__, '_system_name',
+                       lambda: __class__._getvar('CMAKE_SYSTEM_NAME').lower())
+
+    @staticmethod
+    def architecture():
+        return cmember(__class__, '_architecture',
+                       lambda: __class__._getvar('CMAKE_SYSTEM_PROCESSOR').lower())
+
+    @staticmethod
+    def cxx_compiler():
+       return cmember(__class__, '_cxx_compiler',
+                      lambda: __class__._getvar('CMAKE_CXX_COMPILER'))
+
+    @staticmethod
+    def c_compiler():
+        return cmember(__class__, '_c_compiler',
+                      lambda: __class__._getvar('CMAKE_C_COMPILER'))
+
+    @staticmethod
+    def generator():
+        return cmember(__class__, '_generator',
+                      lambda: __class__._getvar('CMAKE_GENERATOR'))
+
+    @staticmethod
+    def info():
+        return cmember(__class__, '_info',
+                      lambda: run_and_capture_output(['cmake', '--system-information'],
+                                                     noecho=True).split("\n"))
+
+    @staticmethod
+    def _getvar(var_name):
+        regex = r'^' + var_name + ' "(.*)"'
+        for l in __class__.info():
+            if l.startswith(var_name):
+                #print("found...:::", l)
+                if re.match(regex, l):
+                    s = re.sub(regex, r'\1', l)
+                    #print("match...:::", l, s)
+                    return s
+        err = "could not find variable {} in the output of cmake --system-information"
+        raise Exception(err.format(var_name))
+        return result
 
 #------------------------------------------------------------------------------
 class BuildItem:
@@ -122,21 +182,25 @@ class System(BuildItem):
     @staticmethod
     def default():
         "return the current operating system"
-        return System.current()
+        return System(__class__.default_str())
 
     @staticmethod
-    def current():
-        if not hasattr(System, "_current"):
-            if sys.platform == "linux" or sys.platform == "linux2":
-                System._current = System("linux")
-            elif sys.platform == "darwin":
-                System._current = System("mac")
-            elif sys.platform == "win32":
-                System._current = System("windows")
-            else:
-                raise Exception("unknown system")
-        return System._current
-
+    def default_str():
+        s = CMakeSystemInformation.system_name()
+        if s == "mac os x" or s == "Darwin":
+            s = "mac"
+        return s
+        #if not hasattr(System, "_current"):
+        #    if sys.platform == "linux" or sys.platform == "linux2":
+        #        System._current = System("linux")
+        #    elif sys.platform == "darwin":
+        #        System._current = System("mac")
+        #    elif sys.platform == "win32":
+        #        System._current = System("windows")
+        #    else:
+        #        raise Exception("unknown system")
+        #return System._current
+        
 #------------------------------------------------------------------------------
 class Architecture(BuildItem):
     """Specifies a processor architecture"""
@@ -144,19 +208,23 @@ class Architecture(BuildItem):
     @staticmethod
     def default():
         "return the architecture of the current machine"
-        return Architecture.current()
+        return Architecture(__class__.default_str())
 
     @staticmethod
-    def current():
-        # http://stackoverflow.com/a/12578715/5875572
-        import platform
-        machine = platform.machine()
-        if machine.endswith('64'):
-            return Architecture('x64')
-        elif machine.endswith('86'):
-            return Architecture('x32')
-        raise Exception("unknown architecture")
-
+    def default_str():
+        s = CMakeSystemInformation.architecture()
+        if s == "x86_64" or s == "amd64":
+            s = "x64"
+        return s
+        ## http://stackoverflow.com/a/12578715/5875572
+        #import platform
+        #machine = platform.machine()
+        #if machine.endswith('64'):
+        #    return Architecture('x64')
+        #elif machine.endswith('86'):
+        #    return Architecture('x32')
+        #raise Exception("unknown architecture")
+        
 #------------------------------------------------------------------------------
 class CompileOptions:
 
@@ -173,8 +241,13 @@ class Compiler(BuildItem):
 
     @staticmethod
     def default():
-        cpp = choose_executable("C++ compiler", os.environ.get('CXX'), 'c++', 'g++', 'clang++', 'icpc')
-        return Compiler(cpp)
+        return Compiler(__class__.default_str())
+
+    @staticmethod
+    def default_str():
+        #cpp = choose_executable("C++ compiler", os.environ.get('CXX'), 'c++', 'g++', 'clang++', 'icpc')
+        cpp = CMakeSystemInformation.cxx_compiler()
+        return cpp
 
     def __init__(self, path):
         p = which(path)
@@ -373,6 +446,15 @@ class Generator(BuildItem):
     Xcode
     """
 
+    @staticmethod
+    def default():
+        return Generator(__class__.current(), cpu_count())
+
+    @staticmethod
+    def default_str():
+        s = CMakeSystemInformation.generator()
+        return s
+
     def __init__(self, name, num_jobs):
         super().__init__(name)
         self.num_jobs = num_jobs
@@ -412,8 +494,8 @@ class Build:
         self.buildtype = buildtype
         self.compiler = compiler
         self.variant = variant
-        self.crosscompile = (sys != System.current())
-        self.toolchain = None
+        #self.crosscompile = (sys != System.current())
+        #self.toolchain = None
         self.dir = self._cat("-")
         self.projdir = chkf(proj_root)
         self.buildroot = os.path.abspath(build_root)
@@ -688,7 +770,8 @@ def handle_args(in_args):
     # to update the examples in a Markdown file, pipe the help through
     # sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
     parser = ArgumentParser(description='Handle several cmake build trees of a single project',
-                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install] [options...] [proj-dir]""",
+                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install]
+                            [more commands...] [options...] [proj-dir]""",
                             epilog="""
 -----------------------------
 Some examples:
@@ -739,41 +822,54 @@ $ %(prog)s -p clang++,g++,icpc -t Debug,Release,MinSizeRel
                       help="just create the build tree and the cmake preload scripts")
 
     clo = parser.add_argument_group(title="Selecting the builds")
-    clo.add_argument("-s", "--systems", metavar="os1,os2,...",
-                     help="(WIP) restrict actions to the given operating systems. This feature requires os-specific toolchains and is currently a WIP.")
-    clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                     help="(WIP) restrict actions to the given processor architectures")
+    clo.add_argument("-t", "--build-types", metavar="type1,type2,...", default="Release",
+                     help="""restrict actions to the given build types.
+                     Defaults to \"%(default)s\".""")
     clo.add_argument("-p", "--compilers", metavar="compiler1,compiler2,...",
-                     help="restrict actions to the given compilers")
-    clo.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                     help="restrict actions to the given build types (eg Release or Debug)")
+                     default=str(Compiler.default_str()),
+                     help="""restrict actions to the given compilers.
+                     Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
+    clo.add_argument("-s", "--systems", metavar="os1,os2,...", default=str(System.default_str()),
+                     help="""(WIP) restrict actions to the given operating systems.
+                     Defaults to the current system, \"%(default)s\".
+                     This feature requires os-specific toolchains and is currently a
+                     work-in-progress.""")
+    clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
+                     default=str(Architecture.default_str()),
+                     help="""(WIP) restrict actions to the given processor architectures.
+                     Defaults to CMake's default architecture, \"%(default)s\" on this system.
+                     This feature requires os-specific toolchains and is currently a
+                     work-in-progress.""")
     clo.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                     help="(WIP) restrict actions to the given variants")
+                     help="""(WIP) restrict actions to the given variants.
+                     This feature is currently a work-in-progress.""")
 
     parser.add_argument("--build-dir", default="./build",
                         help="set the build root (defaults to ./build)")
     parser.add_argument("--install-dir", default="./install",
                         help="set the install root (defaults to ./install)")
-    parser.add_argument("-G", "--generator", default="",
-                        help="set the cmake generator")
+    parser.add_argument("-G", "--generator", default=str(Generator.default_str()),
+                        help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
     parser.add_argument("-j", "--jobs", default=str(cpu_count()),
                         help="""build with the given number of parallel jobs
                         (defaults to %(default)s on this machine).
                         This may not work with every generator.""")
 
     cli = parser.add_argument_group(title='Commands that show info')
+    cli.add_argument("--show-args", action="store_true", default=False,
+                     help="")
     cli.add_argument("--show-builds", action="store_true", default=False,
-                    help="")
+                     help="")
     cli.add_argument("--show-systems", action="store_true", default=False,
-                    help="")
+                     help="")
     cli.add_argument("--show-architectures", action="store_true", default=False,
-                    help="")
+                     help="")
     cli.add_argument("--show-build-types", action="store_true", default=False,
-                    help="")
+                     help="")
     cli.add_argument("--show-compilers", action="store_true", default=False,
-                    help="")
+                     help="")
     cli.add_argument("--show-variants", action="store_true", default=False,
-                    help="")
+                     help="")
 
     ns = parser.parse_args(in_args[1:])
     #print(ns)
@@ -795,6 +891,10 @@ if __name__ == "__main__":
     #print(args)
 
     proj = ProjectConfig(**vars(args))
+
+    if args.show_args:
+        from pprint import pprint
+        pprint(args)
 
     if args.show_systems:
         for b in proj.systems:

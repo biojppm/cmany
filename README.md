@@ -69,7 +69,9 @@ Licensed under the BSD License.
 ## Usage
 
 ```
-usage: pycmake.py [-c,--configure] [-b,--build] [-i,--install] [options...] [proj-dir]
+usage: pycmake.py [-c,--configure] [-b,--build] [-i,--install]
+                  [more commands...] [options...]
+                  [proj-dir]
 
 Handle several cmake build trees of a single project
 
@@ -86,7 +88,8 @@ optional arguments:
   --install-dir INSTALL_DIR
                         set the install root (defaults to ./install)
   -G GENERATOR, --generator GENERATOR
-                        set the cmake generator
+                        set the cmake generator (on this machine, defaults to
+                        "Unix Makefiles")
   -j JOBS, --jobs JOBS  build with the given number of parallel jobs (defaults
                         to 4 on this machine). This may not work with every
                         generator.
@@ -102,26 +105,35 @@ Available commands:
                         scripts
 
 Selecting the builds:
+  -t type1,type2,..., --build-types type1,type2,...
+                        restrict actions to the given build types. Defaults to
+                        "Release".
+  -p compiler1,compiler2,..., --compilers compiler1,compiler2,...
+                        restrict actions to the given compilers. Defaults to
+                        CMake's default compiler, "/home/jppm/bin/c++" on this
+                        system.
   -s os1,os2,..., --systems os1,os2,...
                         (WIP) restrict actions to the given operating systems.
-                        This feature requires os-specific toolchains and is
-                        currently a WIP.
+                        Defaults to the current system, "linux". This feature
+                        requires os-specific toolchains and is currently a
+                        work-in-progress.
   -a arch1,arch2,..., --architectures arch1,arch2,...
                         (WIP) restrict actions to the given processor
-                        architectures
-  -p compiler1,compiler2,..., --compilers compiler1,compiler2,...
-                        restrict actions to the given compilers
-  -t type1,type2,..., --build-types type1,type2,...
-                        restrict actions to the given build types (eg Release
-                        or Debug)
+                        architectures. Defaults to CMake's default
+                        architecture, "x64" on this system. This feature
+                        requires os-specific toolchains and is currently a
+                        work-in-progress.
   -v variant1,variant2,..., --variants variant1,variant2,...
-                        (WIP) restrict actions to the given variants
+                        (WIP) restrict actions to the given variants. This
+                        feature is currently a work-in-progress.
 
 Commands that show info:
+  --show-args
   --show-builds
   --show-systems
   --show-architectures
   --show-build-types
   --show-compilers
   --show-variants
+
 ```
