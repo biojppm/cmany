@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 import os
 import subprocess
@@ -5,6 +6,7 @@ import sys
 import re
 from datetime import datetime as datetime
 from collections import OrderedDict as odict
+from multiprocessing import cpu_count as cpu_count
 
 def which(cmd):
     if os.path.exists(cmd):
@@ -175,7 +177,12 @@ class Compiler(BuildItem):
         return Compiler(cpp)
 
     def __init__(self, path):
-        path = os.path.abspath(which(path))
+        p = which(path)
+        if p is None:
+            raise Exception("compiler not found: " + path)
+        if p != path:
+            print("compiler: selected {} for {}".format(p, path))
+        path = os.path.abspath(p)
         name = os.path.basename(path)
         in_path = path
         in_name = name
@@ -330,6 +337,66 @@ class Variant(BuildItem):
         super().__init__(name)
         self.options = CompileOptions()
 
+#------------------------------------------------------------------------------
+class Generator(BuildItem):
+    """
+    generators: https://cmake.org/cmake/help/v3.7/manual/cmake-generators.7.html
+
+    Unix Makefiles
+    Ninja
+    Watcom WMake
+    CodeBlocks - Ninja
+    CodeBlocks - Unix Makefiles
+    CodeLite - Ninja
+    CodeLite - Unix Makefiles
+    Eclipse CDT4 - Ninja
+    Eclipse CDT4 - Unix Makefiles
+    KDevelop3
+    KDevelop3 - Unix Makefiles
+    Kate - Ninja
+    Kate - Unix Makefiles
+    Sublime Text 2 - Ninja
+    Sublime Text 2 - Unix Makefiles
+
+    Visual Studio 6
+    Visual Studio 7
+    Visual Studio 7 .NET 2003
+    Visual Studio 8 2005
+    Visual Studio 9 2008
+    Visual Studio 10 2010
+    Visual Studio 11 2012
+    Visual Studio 12 2013
+    Visual Studio 14 2015
+    Visual Studio 15 2017
+
+    Green Hills MULTI
+    Xcode
+    """
+
+    def __init__(self, name, num_jobs):
+        super().__init__(name)
+        self.num_jobs = num_jobs
+        self.is_msvc = name.startswith("Visual Studio")
+        self.is_makefile = name.endswith("Makefiles")
+        self.is_ninja = name.endswith("Ninja")
+
+    def compile_flags(self):
+        if self.is_msvc:
+            return ['/MP', self.num_jobs]
+        else:
+            return []
+
+    def configure_args(self):
+        if name != "":
+            return ['-G', name]
+        else:
+            return []
+
+    def cmd(self, targets):
+        if self.is_makefile:
+            return ['make', '-j', str(self.num_jobs)] + targets
+        else:
+            return ['cmake', '--build', '.', '--'] + targets
 
 #------------------------------------------------------------------------------
 class Build:
@@ -338,7 +405,8 @@ class Build:
     pfile = "pycmake_preload.cmake"
 
     def __init__(self, proj_root, build_root, install_root,
-                 sys, arch, buildtype, compiler, variant=None):
+                 sys, arch, buildtype, compiler, variant,
+                 generator):
         self.system = sys
         self.architecture = arch
         self.buildtype = buildtype
@@ -353,6 +421,7 @@ class Build:
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.installroot = os.path.abspath(install_root)
         self.installdir = os.path.join(self.installroot, self.dir)
+        self.generator = generator
 
     def __repr__(self):
         return self._cat("-")
@@ -368,6 +437,10 @@ class Build:
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
 
+    def _gather_flags(self):
+        flags = self.generator.compile_flags()
+        return flags
+
     def create_preload_file(self):
         self.create_dir()
         lines = []
@@ -382,6 +455,9 @@ class Build:
         s("CMAKE_C_COMPILER", self.compiler.c_compiler)
         s("CMAKE_INSTALL_PREFIX", self.installdir)
         s("CMAKE_BUILD_TYPE", self.buildtype)
+        flags = self._gather_flags()
+        if flags:
+            s('CMAKE_CXX_FLAGS', "\n".join(flags))
 
         if len(lines) > 0:
             l1 = "# Do not edit. Will be overwritten."
@@ -407,19 +483,20 @@ endfunction(_pycmakedbg)
         if not os.path.exists(self.preload_file):
             self.create_preload_file()
         with cwd_back(self.builddir):
-            cmd = ['cmake', '-C', os.path.basename(self.preload_file),
-                   #'-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
-                   self.projdir]
+            cmd = (['cmake', '-C', os.path.basename(self.preload_file),]
+                   + self.generator.configure_args() +
+                   [#'-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
+                   self.projdir])
             run(cmd)
             with open("pycmake_configure.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
 
-    def build(self):
+    def build(self, targets = []):
         self.create_dir()
         with cwd_back(self.builddir):
             if not os.path.exists("pycmake_configure.done"):
                 self.configure()
-            cmd = ['make', '-j4']
+            cmd = self.generator.cmd(targets)
             run(cmd)
             with open("pycmake_build.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
@@ -429,13 +506,13 @@ endfunction(_pycmakedbg)
         with cwd_back(self.builddir):
             if not os.path.exists("pycmake_build.done"):
                 self.build()
-            cmd = ['make', 'install']
+            cmd = self.generator.cmd(['install'])
             run(cmd)
 
     def clean(self):
         self.create_dir()
         with cwd_back(self.builddir):
-            cmd = ['make', 'clean']
+            cmd = self.generator.cmd(['clean'])
             run(cmd)
             os.remove("pycmake_build.done")
 
@@ -464,6 +541,8 @@ class ProjectConfig:
         self.cmakelists = chkf(self.rootdir, "CMakeLists.txt")
         self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
         self.installdir = kwargs.get('install_dir', os.path.join(os.getcwd(), "install"))
+
+        self.generator = Generator(kwargs.get('generator'), kwargs.get('jobs'))
 
         def _get(name, class_):
             g = kwargs.get(name)
@@ -512,7 +591,8 @@ class ProjectConfig:
         if not self.is_valid(sys, arch, buildtype, compiler, variant):
             return False
         b = Build(self.rootdir, self.builddir, self.installdir,
-                  sys, arch, buildtype, compiler, variant)
+                  sys, arch, buildtype, compiler, variant,
+                  self.generator)
         self.builds.append(b)
         #print(self.system_builds)
         self.system_builds[sys].append(b)
@@ -602,27 +682,49 @@ class ProjectConfig:
 def handle_args(in_args):
     from argparse import ArgumentParser,RawDescriptionHelpFormatter as HelpFormatter
 
-    defname = "pycmake.json"
+    def argwip(h):
+        return argparse.SUPPRESS
 
+    # to update the examples in a Markdown file, pipe the help through
+    # sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
     parser = ArgumentParser(description='Handle several cmake build trees of a single project',
-                            usage="""%(prog)s [-c,--configure] [-b,--build] [options...] [proj-dir]""",
+                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install] [options...] [proj-dir]""",
                             epilog="""
 -----------------------------
 Some examples:
 
-# configure and build a CMakeLists.txt project located on the current dir
-$ %(prog)s .
+# Configure and build a CMakeLists.txt project located on the dir above.
+# The build trees will be placed under a folder "build" located on the
+# current dir. Likewise, installation will be set to a sister dir
+# named "install". A c++ compiler will be selected from the path, and the
+# CMAKE_BUILD_TYPE will be set to Release.
+$ %(prog)s -b ..
 
-# same as above
-$ %(prog)s
+# Same as above, but now look for CMakeLists.txt on the current dir.
+$ %(prog)s -b .
 
-# same as above
+# Same as above.
 $ %(prog)s -b
+
+# Same as above, and additionally install.
+$ %(prog)s -i
+
+# Build both Debug and Release build types (resulting in 2 build trees).
+$ %(prog)s -t Debug,Release
+
+# Build using both clang++ and g++ (2 build trees).
+$ %(prog)s -p clang++,g++
+
+# Build using both clang++,g++ and in Debug,Release modes (4 build trees).
+$ %(prog)s -p clang++,g++ -t Debug,Release
+
+# Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees).
+$ %(prog)s -p clang++,g++,icpc -t Debug,Release,MinSizeRel
 """,
                             formatter_class=HelpFormatter)
 
     parser.add_argument("proj-dir", nargs="?", default=".",
-                        help="the dir where CMakeLists.txt is located. When none is given, defaults to the current dir.")
+                        help="the directory where CMakeLists.txt is located (defaults to the current directory ie, \".\"). Passing a directory which does not contain a CMakeLists.txt will cause an exception.")
 
     cmds = parser.add_argument_group(title="Available commands")
     cmds.add_argument("-c", "--configure", action="store_true", default=False,
@@ -636,24 +738,28 @@ $ %(prog)s -b
     cmds.add_argument("--create-tree", action="store_true", default=False,
                       help="just create the build tree and the cmake preload scripts")
 
-    clo = parser.add_argument_group(title="Build selections")
+    clo = parser.add_argument_group(title="Selecting the builds")
     clo.add_argument("-s", "--systems", metavar="os1,os2,...",
-                     help="restrict actions to the given operating systems")
+                     help="(WIP) restrict actions to the given operating systems. This feature requires os-specific toolchains and is currently a WIP.")
     clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                     help="restrict actions to the given processor architectures")
+                     help="(WIP) restrict actions to the given processor architectures")
     clo.add_argument("-p", "--compilers", metavar="compiler1,compiler2,...",
                      help="restrict actions to the given compilers")
     clo.add_argument("-t", "--build-types", metavar="type1,type2,...",
                      help="restrict actions to the given build types (eg Release or Debug)")
     clo.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                     help="restrict actions to the given variants")
+                     help="(WIP) restrict actions to the given variants")
 
     parser.add_argument("--build-dir", default="./build",
                         help="set the build root (defaults to ./build)")
     parser.add_argument("--install-dir", default="./install",
                         help="set the install root (defaults to ./install)")
-    parser.add_argument("--num-processors", default="./install",
-                        help="build with the given number of processors")
+    parser.add_argument("-G", "--generator", default="",
+                        help="set the cmake generator")
+    parser.add_argument("-j", "--jobs", default=str(cpu_count()),
+                        help="""build with the given number of parallel jobs
+                        (defaults to %(default)s on this machine).
+                        This may not work with every generator.""")
 
     cli = parser.add_argument_group(title='Commands that show info')
     cli.add_argument("--show-builds", action="store_true", default=False,
@@ -684,54 +790,47 @@ $ %(prog)s -b
 
 if __name__ == "__main__":
 
-    try:
-        #print(sys.argv)
-        args = handle_args(sys.argv)
-        #print(args)
-    
-        proj = ProjectConfig(**vars(args))
+    #print(sys.argv)
+    args = handle_args(sys.argv)
+    #print(args)
 
-        if args.show_systems:
-            for b in proj.systems:
-                print(b)
+    proj = ProjectConfig(**vars(args))
 
-        if args.show_architectures:
-            for b in proj.architectures:
-                print(b)
+    if args.show_systems:
+        for b in proj.systems:
+            print(b)
 
-        if args.show_build_types:
-            for b in proj.build_types:
-                print(b)
+    if args.show_architectures:
+        for b in proj.architectures:
+            print(b)
 
-        if args.show_compilers:
-            for b in proj.compilers:
-                print(b)
+    if args.show_build_types:
+        for b in proj.build_types:
+            print(b)
 
-        if args.show_variants:
-            for b in proj.variants:
-                print(b)
+    if args.show_compilers:
+        for b in proj.compilers:
+            print(b)
 
-        if args.show_builds:
-            proj.show_builds()
+    if args.show_variants:
+        for b in proj.variants:
+            print(b)
 
-        if args.create_tree:
-            proj.create_tree()
+    if args.show_builds:
+        proj.show_builds()
 
-        if args.configure:
-            proj.configure()
+    if args.create_tree:
+        proj.create_tree()
 
-        if args.build:
-            proj.build()
+    if args.configure:
+        proj.configure()
 
-        if args.install:
-            proj.install()
+    if args.build:
+        proj.build()
 
-        if args.clean:
-            proj.clean()
+    if args.install:
+        proj.install()
 
-    except Exception as e:
-        print("Error:", str(e))
-        sys.exit(1)
-
-    sys.exit(0)
+    if args.clean:
+        proj.clean()
 
