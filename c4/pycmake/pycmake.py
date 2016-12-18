@@ -141,14 +141,11 @@ class CMakeSystemInformation:
         regex = r'^' + var_name + ' "(.*)"'
         for l in __class__.info():
             if l.startswith(var_name):
-                #print("found...:::", l)
                 if re.match(regex, l):
                     s = re.sub(regex, r'\1', l)
-                    #print("match...:::", l, s)
                     return s
-        err = "could not find variable {} in the output of cmake --system-information"
+        err = "could not find variable {} in the output of `cmake --system-information`"
         raise Exception(err.format(var_name))
-        return result
 
 #------------------------------------------------------------------------------
 class BuildItem:
@@ -770,8 +767,7 @@ def handle_args(in_args):
     # to update the examples in a Markdown file, pipe the help through
     # sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
     parser = ArgumentParser(description='Handle several cmake build trees of a single project',
-                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install]
-                            [more commands...] [options...] [proj-dir]""",
+                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install] [more commands...] [options...] [proj-dir]""",
                             epilog="""
 -----------------------------
 Some examples:
