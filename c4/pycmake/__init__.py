@@ -1,2 +1,1 @@
-from . import pycmake
-
+from .pycmake import *
