@@ -21,20 +21,13 @@ def open_file(name, access="r"):
 def which(cmd):
     if os.path.exists(cmd):
         return cmd
+    exts = ("",".exe",".bat") if System.current_str() == "windows" else ""
     for path in os.environ["PATH"].split(os.pathsep):
-        j = os.path.join(path, cmd)
-        if os.path.exists(j):
+        for e in exts:
+            j = os.path.join(path, cmd+e)
+            if os.path.exists(j):
                 return j
     return None      
-
-def find_executable(name):
-    sufs = [""] if System.current_str() != "windows" else ["",".exe",".bat"]
-    for s in sufs:
-        n = name + s
-        w = which(n)
-        if w is not None:
-            return w
-    return None
 
 def chkf(*args):
     "join the args as a path and check whether that path exists"
@@ -43,34 +36,44 @@ def chkf(*args):
         raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())
     return f
 
-def run(arglist, noecho=False):
+def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False, ):
+    "run a system command. Note that stderr is interspersed with stdout"
     s = " ".join(arglist)
-    if not noecho: print("running command:", " ".join(arglist))
-    try:
-        subprocess.check_call(s)
-    except:
-        print("error running command: '{}'".format(s))
-        raise
-
-def run_and_capture_output(arglist, as_bytes_string=False, noecho=False):
-    s = " ".join(arglist)
-    if not noecho: print("running command:", s)
+    if echo_cmd:
+        print("running command:", s)
     if as_bytes_string:
+        assert not echo_output
         result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    else:
+        result.check_returncode()
+        if capture_output:
+            return str(result.stdout)
+    elif not echo_output:
         result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 universal_newlines=True)
-    try:
         result.check_returncode()
-    except:
-        print("error running command: '{}'".format(s))
-        raise
-    out = result.stdout
-    return out
+        if capture_output:
+            return str(result.stdout)
+    elif echo_output:
+        # http://stackoverflow.com/a/4417735
+        popen = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 universal_newlines=True)
+        if capture_output:
+            out = ""
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line, end="")
+            if capture_output:
+                out += stdout_line
+        popen.stdout.close()
+        return_code = popen.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, s)
+        if capture_output:
+            return out
+
 
 def cmember(obj, name, function):
     """add and cache an object member which is the result of a given function.
-    This is useful for implementing lazy getters when the function call is expensive."""
+    This is for implementing lazy getters when the function call is expensive."""
     if hasattr(obj, name):
         val = getattr(obj, name)
     else:
@@ -116,32 +119,33 @@ class CMakeSystemInformation:
 
     @staticmethod
     def generator():
-        return cmember(__class__, '_generator',
+        return cmember(__class__, '_generator_default',
                       lambda: __class__._getstr('CMAKE_GENERATOR', 'default'))
 
     @staticmethod
     def system_name(which_generator = "default"):
-        return cmember(__class__, '_system_name',
+        return cmember(__class__, '_system_name_'+which_generator,
                        lambda: __class__._getstr('CMAKE_SYSTEM_NAME', which_generator).lower())
 
     @staticmethod
     def architecture(which_generator = "default"):
-        return cmember(__class__, '_architecture',
+        return cmember(__class__, '_architecture_'+which_generator,
                        lambda: __class__._getstr('CMAKE_SYSTEM_PROCESSOR', which_generator).lower())
 
     @staticmethod
     def cxx_compiler(which_generator = "default"):
-       return cmember(__class__, '_cxx_compiler',
+       return cmember(__class__, '_cxx_compiler_'+which_generator,
                       lambda: __class__._getpath('CMAKE_CXX_COMPILER', which_generator))
 
     @staticmethod
     def c_compiler(which_generator = "default"):
-        return cmember(__class__, '_c_compiler',
+        return cmember(__class__, '_c_compiler_'+which_generator,
                       lambda: __class__._getpath('CMAKE_C_COMPILER', which_generator))
 
     @staticmethod
     def info(which_generator = "default"):
-        return cmember(__class__, '_info'+which_generator, lambda: __class__.system_info(which_generator))
+        return cmember(__class__, '_info'+which_generator,
+                       lambda: __class__.system_info(which_generator))
 
     @staticmethod
     def _getpath(var_name, which_generator):
@@ -165,22 +169,26 @@ class CMakeSystemInformation:
 
     @staticmethod
     def system_info(which_generator):
-        p = re.sub(r'[() ]', '', which_generator)
-        p = os.path.join(PYCMAKE_DIR, "info-"+which_generator)
+        #print("CMakeSystemInfo: asked info for", which_generator)
+        p = re.sub(r'[() ]', '_', which_generator)
+        d = os.path.join(PYCMAKE_DIR, 'cmake_info', p)
+        p = os.path.join(d, 'info')
         if os.path.exists(p):
+            #print("CMakeSystemInfo: asked info for", which_generator, "... found", p)
             with open(p, "r") as f:
                 i = f.readlines()
         else:
             if which_generator == "default":
                 cmd = ['cmake', '--system-information']
             else:
-                which_generator = VisualStudioInfo.name_to_gen(which_generator)
-                gen = '"{}"'.format(which_generator)
-                cmd = ['cmake', '-G', gen, '--system-information']
-            if not os.path.exists(PYCMAKE_DIR):
-                os.makedirs(PYCMAKE_DIR)
-            with cwd_back(PYCMAKE_DIR):
-                out = run_and_capture_output(cmd, noecho=True)
+                which_generator = Generator.resolve_alias(which_generator)
+                cmd = ['cmake', '-G', '"{}"'.format(which_generator), '--system-information']
+            if not os.path.exists(d):
+                os.makedirs(d)
+            print("pycmake: CMake information for generator '{}' was not found. Creating and storing...".format(which_generator))
+            with cwd_back(d):
+                out = runsyscmd(cmd, echo_output=False, capture_output=True)
+            print("pycmake: finished generating information for generator '{}'".format(which_generator))
             with open(p, "w") as f:
                 f.write(out)
             i = out.split("\n")
@@ -272,6 +280,10 @@ class Architecture(BuildItem):
     def is32(self):
         return not self.is64
 
+    @property
+    def is_arm(self):
+        return "arm" in self.name.lower()
+
 #------------------------------------------------------------------------------
 class CompileOptions:
 
@@ -295,74 +307,59 @@ class Compiler(BuildItem):
         if str(System.current()) != "windows":
             cpp = CMakeSystemInformation.cxx_compiler()
         else:
-            vs = find_visual_studio()
-            if vs is None:
-                cpp = CMakeSystemInformation.cxx_compiler()
-            else:
-                generator = Generator.resolve_alias(vs)
-                cpp = CMakeSystemInformation.cxx_compiler(generator)
+            vs = VisualStudioInfo.find_any()
+            cpp = vs.name if vs is not None else CMakeSystemInformation.cxx_compiler()
         return cpp
         
     def __init__(self, path):
-        if path.startswith("vs"):
-            path = __class__.resolve_vs(path)
-            self.explicit = False
+        if path.startswith("vs") or path.startswith("Visual Studio"):
+            vs = VisualStudioInfo(path)
+            self.vs = vs
+            path = vs.cxx_compiler
+            name = self.vs.name
         else:
-            self.explicit = True
-        p = which(path)
-        if p is None:
-            raise Exception("compiler not found: " + path)
-        if p != path:
-            print("compiler: selected {} for {}".format(p, path))
-        path = os.path.abspath(path)
-        name = os.path.basename(path)
-        in_path = path
-        in_name = name
+            p = which(path)
+            if p is None:
+                raise Exception("compiler not found: " + path)
+            if p != path:
+                print("compiler: selected {} for {}".format(p, path))
+            path = os.path.abspath(p)
+            name = os.path.basename(path)
         name,version,version_full = self.get_version(path)
         self.shortname = name
         self.gcclike = self.shortname in ('gcc', 'clang', 'icc')
         self.is_msvc = self.shortname.startswith('vs')
-        name += version
+        if not self.is_msvc:
+            name += version
         self.path = path
         self.version = version
         self.version_full = version_full
         self.options = CompileOptions()
         super().__init__(name)
-        if in_name.endswith("c++"):
-            self.c_compiler = re.sub(r'c\+\+', r'cc', self.path)
-        elif self.shortname == "icc":
-            self.c_compiler = re.sub(r'icpc', r'icc', self.path)
-        elif self.shortname == "gcc":
-            self.c_compiler = re.sub(r'g\+\+', r'gcc', self.path)
-        elif self.shortname == "clang":
-            self.c_compiler = re.sub(r'clang\+\+', r'clang', self.path)
+        self.c_compiler = __class__.get_c_compiler(self.shortname, self.path)
+
+    @staticmethod
+    def get_c_compiler(shortname, cxx_compiler):
+        cc = None
+        #if cxx_compiler.endswith("c++") or cxx_compiler.endswith('c++.exe'):
+        #    cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
+        if shortname == "icc":
+            cc = re.sub(r'icpc', r'icc', cxx_compiler)
+        elif shortname == "gcc":
+            cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
+        elif shortname == "clang":
+            cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
         else:
-            self.c_compiler = self.path
-        if self.is_msvc:
-            self.msbuild = __class__.resolve_msbuild(self.name)
+            cc = cxx_compiler
+        return cc
 
     def get_version(self, path):
-
         # is this visual studio?
-        if re.search('Visual Studio', path):
-            out = run_and_capture_output([path], noecho=True).strip("\n")
-            #print("out", out)
-            version_full = out.split("\n")[0]
-            #print("version_full", version_full)
-            name = "vs"
-            if re.search('Visual Studio 13', path):
-                version = "2013"
-            elif re.search('Visual Studio 14', path):
-                version = "2015"
-            elif re.search('Visual Studio 15', path):
-                version = "2017"
-            else:
-                raise Exception("not implemented")
-            return name,version,version_full
-
+        if hasattr(self, "vs"):
+            return self.vs.name,str(self.vs.year),self.vs.name
         # other compilers
         #print("cmp: found compiler:", name, path)
-        out = run_and_capture_output([path, '--version'], noecho=True).strip("\n")
+        out = runsyscmd([path, '--version'], echo_cmd=False, capture_output=True).strip("\n")
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
@@ -370,19 +367,19 @@ class Compiler(BuildItem):
         vregex = r'(\d+\.\d+)\.\d+'
         if name.startswith("g++") or name.startswith("gcc"):
             name = "gcc"
-            version = run_and_capture_output([path, '-dumpversion'], noecho=True).strip("\n")
+            version = runsyscmd([path, '-dumpversion'], echo_cmd=False, capture_output=True).strip("\n")
             version = re.sub(vregex, r'\1', version)
             #print("gcc version:", version, "---")
         elif name.startswith("clang"):
             name = "clang"
-            version = re.sub(r'clang version ' + vregex + '.*', r'\1', firstline)
+            version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
             #print("clang version:", version, "---")
         elif name.startswith("icpc"):
             name = "icc"
-            version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', firstline)
+            version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             #print("icc version:", version, "---")
         else:
-            version = run_and_capture_output([path, '--dumpversion'], noecho=True).strip("\n")
+            version = runsyscmd([path, '--dumpversion'], echo_cmd=False, capture_output=True).strip("\n")
             version = re.sub(vregex, r'\1', version)
         #
         return name,version,version_full
@@ -464,7 +461,7 @@ class Compiler(BuildItem):
             self.options.macros.append(m)
         
     def _l(self, *linkerflags):
-        for f in flags:
+        for f in linkerflags:
             self.options.lflags.append(f)
 
     def _m(self, *macros):
@@ -486,24 +483,51 @@ class Compiler(BuildItem):
         "pthread":pthread,
     }
 
-    @staticmethod
-    def resolve_vs(name):
-        assert name.startswith("vs")
-        return CMakeSystemInformation.cxx_compiler(name)
-
 #------------------------------------------------------------------------------
 class VisualStudioInfo:
 
-    # an enumeration of known VS versions, set in order of preference
-    _versions = odict([
-        ('vs2015', 14),
-        ('vs2017', 15),
-        ('vs2013', 12),
-        ('vs2012', 11),
-        ('vs2010', 10),
-        ('vs2008', 9),
-        ('vs2005', 8),
-    ])
+    order = ('vs2015','vs2017','vs2013','vs2012','vs2010','vs2008','vs2005',)
+    # a reversible dictionary for the VS version numbers
+    _versions = {
+        'vs2015':14, 14:'vs2015', 'vs2015_64':14, 'vs2015_32':14, 'vs2015_arm':14 ,
+        'vs2017':15, 15:'vs2017', 'vs2017_64':15, 'vs2017_32':15, 'vs2017_arm':15 ,
+        'vs2013':12, 12:'vs2013', 'vs2013_64':12, 'vs2013_32':12, 'vs2013_arm':12 ,
+        'vs2012':11, 11:'vs2012', 'vs2012_64':11, 'vs2012_32':11, 'vs2012_arm':11 ,
+        'vs2010':10, 10:'vs2010', 'vs2010_64':10, 'vs2010_32':10, 'vs2010_ia64':10,
+        'vs2008':9 , 9 :'vs2008', 'vs2008_64':9 , 'vs2008_32':9 , 'vs2008_ia64':9 ,
+        'vs2005':8 , 8 :'vs2005', 'vs2005_64':8 , 'vs2005_32':8 , 
+    }
+    _sfx = ' Win64' if Architecture.current().is64 else ''
+    # a reversible dictionary for the names
+    _names = {
+        'vs2017'      : 'Visual Studio 15 2017' + _sfx , 'Visual Studio 15 2017' + _sfx : 'vs2017'      , 
+        'vs2017_32'   : 'Visual Studio 15 2017'        , 'Visual Studio 15 2017'        : 'vs2017_32'   ,
+        'vs2017_64'   : 'Visual Studio 15 2017 Win64'  , 'Visual Studio 15 2017 Win64'  : 'vs2017_64'   ,
+        'vs2017_arm'  : 'Visual Studio 15 2017 ARM'    , 'Visual Studio 15 2017 ARM'    : 'vs2017_arm'  ,
+        'vs2015'      : 'Visual Studio 14 2015' + _sfx , 'Visual Studio 14 2015' + _sfx : 'vs2015'      ,
+        'vs2015_32'   : 'Visual Studio 14 2015'        , 'Visual Studio 14 2015'        : 'vs2015_32'   ,
+        'vs2015_64'   : 'Visual Studio 14 2015 Win64'  , 'Visual Studio 14 2015 Win64'  : 'vs2015_64'   ,
+        'vs2015_arm'  : 'Visual Studio 14 2015 ARM'    , 'Visual Studio 14 2015 ARM'    : 'vs2015_arm'  ,
+        'vs2013'      : 'Visual Studio 12 2013' + _sfx , 'Visual Studio 12 2013' + _sfx : 'vs2013'      ,
+        'vs2013_32'   : 'Visual Studio 12 2013'        , 'Visual Studio 12 2013'        : 'vs2013_32'   ,
+        'vs2013_64'   : 'Visual Studio 12 2013 Win64'  , 'Visual Studio 12 2013 Win64'  : 'vs2013_64'   ,
+        'vs2013_arm'  : 'Visual Studio 12 2013 ARM'    , 'Visual Studio 12 2013 ARM'    : 'vs2013_arm'  ,
+        'vs2012'      : 'Visual Studio 11 2012' + _sfx , 'Visual Studio 11 2012' + _sfx : 'vs2012'      ,
+        'vs2012_32'   : 'Visual Studio 11 2012'        , 'Visual Studio 11 2012'        : 'vs2012_32'   ,
+        'vs2012_64'   : 'Visual Studio 11 2012 Win64'  , 'Visual Studio 11 2012 Win64'  : 'vs2012_64'   ,
+        'vs2012_arm'  : 'Visual Studio 11 2012 ARM'    , 'Visual Studio 11 2012 ARM'    : 'vs2012_arm'  ,
+        'vs2010'      : 'Visual Studio 10 2010' + _sfx , 'Visual Studio 10 2010' + _sfx : 'vs2010'      ,
+        'vs2010_32'   : 'Visual Studio 10 2010'        , 'Visual Studio 10 2010'        : 'vs2010_32'   ,
+        'vs2010_64'   : 'Visual Studio 10 2010 Win64'  , 'Visual Studio 10 2010 Win64'  : 'vs2010_64'   ,
+        'vs2010_ia64' : 'Visual Studio 10 2010 IA64'   , 'Visual Studio 10 2010 IA64'   : 'vs2010_ia64' ,
+        'vs2008'      : 'Visual Studio 8 2008' + _sfx  , 'Visual Studio 8 2008' + _sfx  : 'vs2008'      ,
+        'vs2008_32'   : 'Visual Studio 8 2008'         , 'Visual Studio 8 2008'         : 'vs2008_32'   ,
+        'vs2008_64'   : 'Visual Studio 8 2008 Win64'   , 'Visual Studio 8 2008 Win64'   : 'vs2008_64'   ,
+        'vs2008_ia64' : 'Visual Studio 8 2008 IA64'    , 'Visual Studio 8 2008 IA64'    : 'vs2008_ia64' ,
+        'vs2005'      : 'Visual Studio 5 2005' + _sfx  , 'Visual Studio 5 2005' + _sfx  : 'vs2005'      ,
+        'vs2005_32'   : 'Visual Studio 5 2005'         , 'Visual Studio 5 2005'         : 'vs2005_32'   ,
+        'vs2005_64'   : 'Visual Studio 5 2005 Win64'   , 'Visual Studio 5 2005 Win64'   : 'vs2005_64'   , 
+    }
 
     def __init__(self, name):
         if not name in __class__._versions.keys():
@@ -511,57 +535,93 @@ class VisualStudioInfo:
         ver = __class__._versions[name]
         self.name = name
         self.ver = ver
-        self.year = int(re.sub(r'^vs', '', name))
-        self.gen = __class__.name_to_gen(name)
+        self.year = int(re.sub(r'^vs(....).*', r'\1', name))
+        self.gen = __class__.to_gen(name)
         self.dir = __class__.vsdir(ver)
         self.msbuild = __class__.msbuild(ver)
         self.vcvarsall = __class__.vcvarsall(ver)
         self.is_installed = __class__.is_installed(ver)
+        self.cxx_compiler = __class__.cxx_compiler(ver)
+        self.c_compiler = __class__.c_compiler(ver)
 
     def check(self):
         pass
 
-    def cmd(self, args):
-        if isinstance(args, list):
+    def cmd(self, cmd_args, *runsyscmd_args):
+        if isinstance(cmd_args, list):
             args = " ".join(args)
         args = self.vcvarsall + "; " + args
-        raise Exception("TODO")
+        return runsyscmd(cmd_args, *runsyscmd_args)
 
     @staticmethod
     def find_any():
-        for k,v in __class__._versions.items():
-            if __class__.is_installed(v):
+        for k in __class__.order:
+            if __class__.is_installed(k):
                 return __class__(k)
         return None
 
     @staticmethod
-    def name_to_gen(name_or_gen):
-        if name_or_gen.startswith('Visual Studio '):
-            return name_or_gen
-        else:
-            a = __class__._versions.get(name_or_gen)
-            if a is None:
-                raise Exception("unknown Visual Studio alias: " + name_or_gen)
-            a = "Visual Studio " + str(a) + " " + re.sub(r'^vs', '', name_or_gen)
-        return a
+    def cxx_compiler(name_or_gen_or_ver):
+        if not __class__.is_installed(name_or_gen_or_ver):
+            return None
+        return CMakeSystemInformation.cxx_compiler(__class__.to_gen(name_or_gen_or_ver))
 
     @staticmethod
-    def vsdir(ver):
+    def c_compiler(name_or_gen_or_ver):
+        if not __class__.is_installed(name_or_gen_or_ver):
+            return None
+        return CMakeSystemInformation.c_compiler(__class__.to_gen(name_or_gen_or_ver))
+
+    @staticmethod
+    def to_name(ver_or_name_or_gen):
+        if isinstance(ver_or_name_or_gen, int):
+            return __class__._versions[ver_or_name_or_gen]
+        else:
+            if ver_or_name_or_gen.startswith('vs'):
+                return ver_or_name_or_gen
+            n = __class__._names.get(ver_or_name_or_gen)
+            if n is not None:
+                return n
+        raise Exception("could not find '{}'".format(ver_or_name_or_gen))
+
+    @staticmethod
+    def to_ver(ver_or_name_or_gen):
+        if isinstance(ver_or_name_or_gen, int):
+            return ver_or_name_or_gen
+        else:
+            n = __class__.to_name(ver_or_name_or_gen)
+            return __class__._versions[n]
+
+    @staticmethod
+    def to_gen(ver_or_name_or_gen):
+        if isinstance(ver_or_name_or_gen, int):
+            ver_or_name_or_gen = __class__._versions[ver_or_name_or_gen]
+        if ver_or_name_or_gen.startswith('Visual Studio'):
+            return ver_or_name_or_gen
+        return __class__._names[ver_or_name_or_gen]
+
+    @staticmethod
+    def vsdir(ver_or_name_or_gen):
+        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the directory where VS is installed"
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
             d = os.path.join(progfilesx86, 'Microsoft Visual Studio ' + str(ver) + '.0')
+            if not os.path.exists(d):
+                try:
+                    v = os.environ['VS{}0COMNTOOLS'.format(str(ver))]
+                    d = os.path.abspath(os.path.join(v, '..', '..'))
+                except:
+                    pass
         elif ver == 15:
             # VS 2017+ is no longer a singleton, and may be installed anywhere,
-            # so use CMake to do the grunt work for us, and pick up from there.
+            # and the environment variable VS***COMNTOOLS no longer exists.
+            # So use CMake to do the grunt work for us, and pick up from there.
             # http://stackoverflow.com/questions/40694598/how-do-i-call-visual-studio-2017-rcs-version-of-msbuild-from-a-bat-files
             def fn():
                 if not __class__.is_installed(ver): # but use cmake only if VS2017 is installed
                     return ""
-                gen = 'Visual Studio 15 2017'
-                if Architecture.current().is64:
-                    gen += ' Win64'
-                cxx = CMakeSystemInformation.cxx_compiler(gen)
+                cxx = CMakeSystemInformation.cxx_compiler(__class__.to_gen('vs2017'))
                 # VC dir is located on the root of the VS install dir
                 vsdir = re.sub(r'(.*)[\\/]VC[\\/].*', r'\1', str(cxx))
                 return vsdir
@@ -571,7 +631,8 @@ class VisualStudioInfo:
         return d
 
     @staticmethod
-    def vcvarsall(ver):
+    def vcvarsall(ver_or_name_or_gen):
+        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the path to vcvarsall.bat"
         if ver < 15:
             s = os.path.join(__class__.vsdir(ver), 'VC', 'vcvarsall.bat')
@@ -582,7 +643,8 @@ class VisualStudioInfo:
         return s
 
     @staticmethod
-    def msbuild(ver):
+    def msbuild(ver_or_name_or_gen):
+        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the MSBuild.exe path"
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
@@ -597,68 +659,71 @@ class VisualStudioInfo:
         return msbuild
 
     @staticmethod
-    def is_installed(ver):
-        if ver < 15:
-            import winreg as wr
-            key = "SOFTWARE\Microsoft\VisualStudio\{}.0"
-            try:
-                wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
-                # fail if we can't find the dir
-                if not os.path.exists(__class__.vsdir(ver)):
+    def is_installed(ver_or_name_or_gen):
+        ver = __class__.to_ver(ver_or_name_or_gen)
+        def find_out():
+            if ver < 15:
+                import winreg as wr
+                key = "SOFTWARE\Microsoft\VisualStudio\{}.0"
+                try:
+                    wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
+                    # fail if we can't find the dir
+                    if not os.path.exists(__class__.vsdir(ver)):
+                        return False
+                    # apparently the dir is not enough, so check also vcvarsall
+                    if not os.path.exists(__class__.vcvarsall(ver)):
+                        return False
+                    return True
+                except:
                     return False
-                if not os.path.exists(__class__.vcvarsall(ver)):
+            else:
+                #
+                # ~~~~~~~~~~~~~~ this is fragile.... ~~~~~~~~~~~~~~
+                #
+                # Unlike earlier versions, VS2017 is no longer a singleton installation.
+                # Each VS2017 installed instance keeps a store of its data under
+                # %ProgramData%\Microsoft\VisualStudio\Packages\_Instances\<hash>\state.json
+                #
+                # this info was taken from:
+                # http://stackoverflow.com/questions/40694598/how-do-i-call-visual-studio-2017-rcs-version-of-msbuild-from-a-bat-files
+                progdata = os.environ['ProgramData']
+                instances_dir = os.path.join(progdata, 'Microsoft', 'VisualStudio', 'Packages', '_Instances')
+                if not os.path.exists(instances_dir):
                     return False
-                return True
-            except:
+                pat = os.path.join(instances_dir, '*', 'state.json')
+                instances = glob.glob(pat)
+                if not instances:
+                    return False
+                for i in instances:
+                    with open(i, encoding="utf8") as json_str:
+                        d = json.load(json_str)
+                        def _get(*entry):
+                            j = "/".join(list(entry))
+                            try:
+                                if isinstance(entry, str):
+                                    v = d[entry]
+                                else:
+                                    v = None
+                                    for e in entry:
+                                        #print("key:", e, "value:", v if v is not None else "<none yet>")
+                                        v = v[e] if v is not None else d[e]
+                            except:
+                                raise Exception("could not find entry '" + j + "' in the json data at " + i + "\nMaybe the specs have changed?")
+                            return v
+                        # check that the version matches
+                        version_string = _get('catalogInfo', 'buildVersion')
+                        version_number = int(re.sub(r'(\d\d).*', r'\1', version_string))
+                        if version_number != ver:
+                            continue
+                        # check that the directory exists
+                        install_dir = _get('installationPath')
+                        if not os.path.exists(install_dir):
+                            continue
+                        # maybe further checks are necessary?
+                        # For now we stop here, and accept that this installation exists.
+                        return True
                 return False
-        else:
-            #
-            # ~~~~~~~~~~~~~~ this is fragile.... ~~~~~~~~~~~~~~
-            #
-            # Unlike earlier versions, VS2017 is no longer a singleton installation.
-            # Each VS2017 installed instance keeps a store of its data under
-            # %ProgramData%\Microsoft\VisualStudio\Packages\_Instances\<hash>\state.json
-            #
-            # this info was taken from:
-            # http://stackoverflow.com/questions/40694598/how-do-i-call-visual-studio-2017-rcs-version-of-msbuild-from-a-bat-files
-            progdata = os.environ['ProgramData']
-            instances_dir = os.path.join(progdata, 'Microsoft', 'VisualStudio', 'Packages', '_Instances')
-            if not os.path.exists(instances_dir):
-                return False
-            pat = os.path.join(instances_dir, '*', 'state.json')
-            instances = glob.glob(pat)
-            if not instances:
-                return False
-            got_one = False
-            for i in instances:
-                with open(i, encoding="utf8") as json_str:
-                    d = json.load(json_str)
-                    def _get(*entry):
-                        j = "/".join(list(entry))
-                        try:
-                            if isinstance(entry, str):
-                                v = d[entry]
-                            else:
-                                v = None
-                                for e in entry:
-                                    #print("key:", e, "value:", v if v is not None else "<none yet>")
-                                    v = v[e] if v is not None else d[e]
-                        except:
-                            raise Exception("could not find entry '" + j + "' in the json data at " + i + "\nMaybe the specs have changed?")
-                        return v
-                    # check that the version matches
-                    version_string = _get('catalogInfo', 'buildVersion')
-                    version_number = int(re.sub(r'(\d\d).*', r'\1', version_string))
-                    if version_number != ver:
-                        continue
-                    # check that the directory exists
-                    install_dir = _get('installationPath')
-                    if not os.path.exists(install_dir):
-                        continue
-                    # maybe further checks are necessary?
-                    # For now we stop here, and accept that this installation exists.
-                    got_one = True
-            return got_one
+        return cmember(__class__, '_is_installed_'+str(ver), find_out)
 
 #------------------------------------------------------------------------------
 class Variant(BuildItem):
@@ -687,9 +752,29 @@ class Generator(BuildItem):
         s = CMakeSystemInformation.generator()
         return s
 
-    def __init__(self, name_or_alias, num_jobs):
-        name = Generator.resolve_alias(name_or_alias)
-        self.alias = name_or_alias
+    @staticmethod
+    def create_default(sys, arch, compiler, num_jobs):
+        if not compiler.is_msvc:
+            if System.current_str() == "windows":
+                return Generator("Unix Makefiles", num_jobs)
+            else:
+                return Generator(__class__.default_str(), num_jobs)
+        else:
+            name = compiler.name
+            if arch.is_arm:
+                raise Exception("not implemented")
+            elif arch.is64:
+                if not compiler.name.endswith("_64"):
+                    compiler.name += "_64"
+            elif arch.is32:
+                if not compiler.name.endswith("_32"):
+                    compiler.name += "_32"
+            return Generator(name, num_jobs)
+
+    def __init__(self, name, num_jobs):
+        if name.startswith('vs'):
+            name = VisualStudioInfo.to_gen(name)
+        self.alias = name
         super().__init__(name)
         self.num_jobs = num_jobs
         self.is_makefile = name.endswith("Makefiles")
@@ -715,7 +800,7 @@ class Generator(BuildItem):
                     raise Exception("there's more than one solution file in the project folder")
                 self.sln = sln[0]
             t = ['/t:'+str(t) for t in targets]
-            return [compiler.msbuild, '/maxcpucount:'+self.num_jobs] + t + [self.sln]
+            return [compiler.vs.msbuild, '/maxcpucount:'+self.num_jobs] + t + [self.sln]
         else:
             return ['cmake', '--build', '.', '--'] + targets
 
@@ -767,42 +852,10 @@ class Generator(BuildItem):
     """
 
     @staticmethod
-    def resolve_alias(alias):
-        a = alias
-        #
-        if not alias.startswith("vs"):
-            return a
-        #
-        if alias.startswith("vs2017"):
-            a = 'Visual Studio 15 2017'
-        elif alias.startswith("vs2015"):
-            a = 'Visual Studio 14 2015'
-        elif alias.startswith("vs2013"):
-            a = 'Visual Studio 12 2013'
-        elif alias.startswith("vs2012"):
-            a = 'Visual Studio 11 2012'
-        elif alias.startswith("vs2010"):
-            a = 'Visual Studio 10 2010'
-        elif alias.startswith("vs2008"):
-            a = 'Visual Studio 09 2008'
-        elif alias.startswith("vs2005"):
-            a = 'Visual Studio 08 2005'
-        else:
-            raise Exception("unknown alias for visual studio: '{}'".format(alias))
-        #
-        if alias.endswith("_arm"):
-            a += " ARM"
-        elif alias.endswith("_ia64"):
-            a += " IA64"
-        elif alias.endswith("_32"):
-            pass
-        elif alias.endswith("_64"):
-            a += " Win64"
-        else:
-            # no platform specified, so choose generator for the current platform
-            if Architecture.current().is64:
-                a += " Win64"
-        return a
+    def resolve_alias(gen):
+        if gen.startswith('vs') or gen.startswith('Visual Studio'):
+            return VisualStudioInfo.to_gen(gen)
+        return gen
 
 #------------------------------------------------------------------------------
 class Build:
@@ -812,8 +865,8 @@ class Build:
 
     def __init__(self, proj_root, build_root, install_root,
                  sys, arch, buildtype, compiler, variant,
-                 generator):
-        self.generator = generator
+                 num_jobs):
+        self.generator = Generator.create_default(sys, arch, compiler, num_jobs)
         self.system = sys
         self.architecture = arch
         self.buildtype = buildtype
@@ -863,9 +916,9 @@ class Build:
         def p(var, value): _s(var, re.sub(r'\\', '/', value), "PATH")
         def f(var, value): _s(var, re.sub(r'\\', '/', value), "FILEPATH")
 
+        p("CMAKE_INSTALL_PREFIX", self.installdir)
         f("CMAKE_CXX_COMPILER", self.compiler.path)
         f("CMAKE_C_COMPILER", self.compiler.c_compiler)
-        p("CMAKE_INSTALL_PREFIX", self.installdir)
         s("CMAKE_BUILD_TYPE", self.buildtype)
         flags = self._gather_flags()
         if flags:
@@ -899,7 +952,7 @@ endfunction(_pycmakedbg)
                    + self.generator.configure_args() +
                    [#'-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
                    self.projdir])
-            run(cmd)
+            runsyscmd(cmd, echo_output=True)
             with open("pycmake_configure.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
 
@@ -911,7 +964,7 @@ endfunction(_pycmakedbg)
             #if self.compiler.is_msvc and len(targets) == 0:
             #    targets = ["ALL_BUILD"]
             cmd = self.generator.cmd(targets, self.compiler)
-            run(cmd)
+            runsyscmd(cmd, echo_output=True)
             with open("pycmake_build.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
 
@@ -925,13 +978,13 @@ endfunction(_pycmakedbg)
             else:
                 targets = ["install"]
             cmd = self.generator.cmd(targets, self.compiler)
-            run(cmd)
+            runsyscmd(cmd, echo_output=True)
 
     def clean(self):
         self.create_dir()
         with cwd_back(self.builddir):
             cmd = self.generator.cmd(['clean'])
-            run(cmd)
+            runsyscmd(cmd, echo_output=True)
             os.remove("pycmake_build.done")
 
 #------------------------------------------------------------------------------
@@ -976,7 +1029,8 @@ class ProjectConfig:
         self.compilers = _get('compilers', Compiler)
         self.variants = _get('variants', None)
 
-        self.generator = Generator(kwargs.get('generator'), kwargs.get('jobs'))
+        #self.generator = Generator(kwargs.get('generator'))
+        self.num_jobs = kwargs.get('jobs')
 
         configfile = os.path.join(projdir, "pycmake.json")
         self.configfile = None
@@ -1010,7 +1064,7 @@ class ProjectConfig:
             return False
         b = Build(self.rootdir, self.builddir, self.installdir,
                   sys, arch, buildtype, compiler, variant,
-                  self.generator)
+                  self.num_jobs)
         self.builds.append(b)
         #print(self.system_builds)
         self.system_builds[sys].append(b)
@@ -1098,14 +1152,15 @@ class ProjectConfig:
 #-------------------------------------------------------------------------------
 
 def handle_args(in_args):
-    from argparse import ArgumentParser,RawDescriptionHelpFormatter as HelpFormatter
+    import argparse
 
-    def argwip(h):
+    def argwip(h): # TODO
         return argparse.SUPPRESS
 
     # to update the examples in a Markdown file, pipe the help through
     # sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
-    parser = ArgumentParser(description='Handle several cmake build trees of a single project',
+    parser = argparse.ArgumentParser(description='Handle several cmake build trees of a single project',
+                            formatter_class=argparse.RawDescriptionHelpFormatter,
                             usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install] [more commands...] [options...] [proj-dir]""",
                             epilog="""
 -----------------------------
@@ -1138,8 +1193,7 @@ $ %(prog)s -p clang++,g++ -t Debug,Release
 
 # Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees).
 $ %(prog)s -p clang++,g++,icpc -t Debug,Release,MinSizeRel
-""",
-                            formatter_class=HelpFormatter)
+""")
 
     parser.add_argument("proj-dir", nargs="?", default=".",
                         help="the directory where CMakeLists.txt is located (defaults to the current directory ie, \".\"). Passing a directory which does not contain a CMakeLists.txt will cause an exception.")
@@ -1220,20 +1274,6 @@ $ %(prog)s -p clang++,g++,icpc -t Debug,Release,MinSizeRel
 #------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-
-    arch = Architecture.current()
-    for v in ("vs2017",):
-        vs = Generator(v, cpu_count())
-        print(v, "--->", vs.name)
-        v32 = v + "_32" 
-        vs = Generator(v32, cpu_count())
-        print(v32, "--->", vs.name)
-        v64 = v + "_64" 
-        vs = Generator(v64, cpu_count())
-        print(v64, "--->", vs.name)
-        cxx = Compiler(v)
-        print("compiler:", v, cxx.name)
-    exit()
 
     #print(sys.argv)
     args = handle_args(sys.argv)
