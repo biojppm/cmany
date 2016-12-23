@@ -1,4 +1,6 @@
 README.html
 build
 install
-
+__pycache__
+.idea
+*~
