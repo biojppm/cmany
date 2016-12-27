@@ -168,9 +168,9 @@ class CMakeSystemInformation:
         raise Exception(err.format(var_name))
 
     @staticmethod
-    def system_info(which_generator):
+    def system_info(gen):
         #print("CMakeSystemInfo: asked info for", which_generator)
-        p = re.sub(r'[() ]', '_', which_generator)
+        p = re.sub(r'[() ]', '_', gen)
         d = os.path.join(PYCMAKE_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
         if os.path.exists(p):
@@ -178,17 +178,17 @@ class CMakeSystemInformation:
             with open(p, "r") as f:
                 i = f.readlines()
         else:
-            if which_generator == "default":
+            if gen == "default":
                 cmd = ['cmake', '--system-information']
             else:
-                which_generator = Generator.resolve_alias(which_generator)
-                cmd = ['cmake', '-G', '"{}"'.format(which_generator), '--system-information']
+                gen = Generator.resolve_alias(gen)
+                cmd = ['cmake', '-G', '"{}"'.format(gen), '--system-information']
             if not os.path.exists(d):
                 os.makedirs(d)
-            print("pycmake: CMake information for generator '{}' was not found. Creating and storing...".format(which_generator))
+            print("pycmake: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
             with cwd_back(d):
                 out = runsyscmd(cmd, echo_output=False, capture_output=True)
-            print("pycmake: finished generating information for generator '{}'".format(which_generator))
+            print("pycmake: finished generating information for generator '{}'".format(gen))
             with open(p, "w") as f:
                 f.write(out)
             i = out.split("\n")
@@ -224,12 +224,12 @@ class System(BuildItem):
     """Specifies an operating system"""
 
     @staticmethod
-    def current():
+    def default():
         "return the current operating system"
-        return System(__class__.current_str())
+        return System(__class__.default_str())
 
     @staticmethod
-    def current_str():
+    def default_str():
         s = CMakeSystemInformation.system_name()
         if s == "mac os x" or s == "Darwin":
             s = "mac"
@@ -250,12 +250,12 @@ class Architecture(BuildItem):
     """Specifies a processor architecture"""
 
     @staticmethod
-    def current():
+    def default():
         "return the architecture of the current machine"
-        return Architecture(__class__.current_str())
+        return Architecture(__class__.default_str())
 
     @staticmethod
-    def current_str():
+    def default_str():
         s = CMakeSystemInformation.architecture()
         if s == "amd64":
             s = "x86_64"
@@ -299,12 +299,12 @@ class Compiler(BuildItem):
     """Specifies a compiler"""
 
     @staticmethod
-    def current():
-        return Compiler(__class__.current_str())
+    def default():
+        return Compiler(__class__.default_str())
 
     @staticmethod
-    def current_str():
-        if str(System.current()) != "windows":
+    def default_str():
+        if str(System.default()) != "windows":
             cpp = CMakeSystemInformation.cxx_compiler()
         else:
             vs = VisualStudioInfo.find_any()
@@ -384,6 +384,10 @@ class Compiler(BuildItem):
         #
         return name,version,version_full
 
+    options = {
+
+        'wall':('-Wall','')
+    }
     def wall(self, yes=True):
         if self.gcclike:
             if yes: self._f('-Wall')
@@ -497,7 +501,7 @@ class VisualStudioInfo:
         'vs2008':9 , 9 :'vs2008', 'vs2008_64':9 , 'vs2008_32':9 , 'vs2008_ia64':9 ,
         'vs2005':8 , 8 :'vs2005', 'vs2005_64':8 , 'vs2005_32':8 , 
     }
-    _sfx = ' Win64' if Architecture.current().is64 else ''
+    _sfx = ' Win64' if Architecture.default().is64 else ''
     # a reversible dictionary for the names
     _names = {
         'vs2017'      : 'Visual Studio 15 2017' + _sfx , 'Visual Studio 15 2017' + _sfx : 'vs2017'      , 
@@ -529,6 +533,53 @@ class VisualStudioInfo:
         'vs2005_64'   : 'Visual Studio 5 2005 Win64'   , 'Visual Studio 5 2005 Win64'   : 'vs2005_64'   , 
     }
 
+    _toolsets = (
+        # vs2017 compiler toolset
+        'v141_clang', 'v141_xp', 'v141',
+        # vs2015 compiler toolset
+        'v140_clang', 'v140_xp', 'v140',
+        # vs2013 compiler toolset
+        'v120_xp', 'v120',
+        # vs2013 compiler toolset
+        'v110_xp', 'v110',
+        # vs2013 compiler toolset
+        'v100_xp', 'v100',
+        # aliases - implicit compiler toolset (the same as the chosen VS version)
+        'xp', 'clang'
+    )
+
+    @staticmethod
+    def parse_toolset(name):
+        ts = '|'.join(__class__._toolsets)
+        rx = 'vs.....*_('+ts+')$'
+        if not re.search(rx, name):
+            return None
+        toolset = re.sub(rx, r'\1', name)
+        if not toolset in __class__._toolsets:
+            raise Exception("could not parse toolset {} from vs spec {}".format(toolset, name))
+        if toolset == 'clang' or toolset == 'xp':
+            assert re.match('vs....', name)
+            year = int(re.sub(r'^vs(....).*', r'\1', name))
+            if year == 2017:
+                vs_toolset = 'v141_' + toolset
+            elif year == 2015:
+                vs_toolset = 'v140_' + toolset
+            else:
+                assert toolset != "clang"
+                if year == 2013:
+                    vs_toolset = 'v120_' + toolset
+                elif year == 2012:
+                    vs_toolset = 'v110_' + toolset
+                elif year == 2010:
+                    vs_toolset = 'v100_' + toolset
+                else:
+                    raise Exception("toolset not implemented for " + name + ". toolset="+toolset)
+        else:
+            vs_toolset = toolset
+        if vs_toolset.endswith('clang'):
+            vs_toolset += '_c2'
+        return vs_toolset
+
     def __init__(self, name):
         if not name in __class__._versions.keys():
             raise Exception("unknown alias")
@@ -543,9 +594,6 @@ class VisualStudioInfo:
         self.is_installed = __class__.is_installed(ver)
         self.cxx_compiler = __class__.cxx_compiler(ver)
         self.c_compiler = __class__.c_compiler(ver)
-
-    def check(self):
-        pass
 
     def cmd(self, cmd_args, *runsyscmd_args):
         if isinstance(cmd_args, list):
@@ -602,8 +650,8 @@ class VisualStudioInfo:
 
     @staticmethod
     def vsdir(ver_or_name_or_gen):
-        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the directory where VS is installed"
+        ver = __class__.to_ver(ver_or_name_or_gen)
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
             d = os.path.join(progfilesx86, 'Microsoft Visual Studio ' + str(ver) + '.0')
@@ -632,8 +680,8 @@ class VisualStudioInfo:
 
     @staticmethod
     def vcvarsall(ver_or_name_or_gen):
-        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the path to vcvarsall.bat"
+        ver = __class__.to_ver(ver_or_name_or_gen)
         if ver < 15:
             s = os.path.join(__class__.vsdir(ver), 'VC', 'vcvarsall.bat')
         elif ver == 15:
@@ -644,15 +692,15 @@ class VisualStudioInfo:
 
     @staticmethod
     def msbuild(ver_or_name_or_gen):
-        ver = __class__.to_ver(ver_or_name_or_gen)
         "get the MSBuild.exe path"
+        ver = __class__.to_ver(ver_or_name_or_gen)
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
             msbuild = os.path.join(progfilesx86, 'MSBuild', str(ver)+'.0', 'bin', 'MSBuild.exe')
         else:
             if ver > 15:
                 raise Exception('VS Version not implemented: ' + str(ver))
-            if Architecture.current().is64:
+            if Architecture.default().is64:
                 msbuild = os.path.join(__class__.vsdir(ver), 'MSBuild', '15.0', 'Bin', 'amd64', 'MSBuild.exe')
             else:
                 msbuild = os.path.join(__class__.vsdir(ver), 'MSBuild', '15.0', 'Bin', 'MSBuild.exe')
@@ -738,7 +786,7 @@ class Generator(BuildItem):
 
     """
     Visual Studio aliases example:
-    vs2013: use the bitness of the current OS
+    vs2013: use the bitness of the default OS
     vs2013_32: use 32bit version
     vs2013_64: use 64bit version
     """
@@ -755,7 +803,7 @@ class Generator(BuildItem):
     @staticmethod
     def create_default(sys, arch, compiler, num_jobs):
         if not compiler.is_msvc:
-            if System.current_str() == "windows":
+            if System.default_str() == "windows":
                 return Generator("Unix Makefiles", num_jobs)
             else:
                 return Generator(__class__.default_str(), num_jobs)
@@ -790,7 +838,7 @@ class Generator(BuildItem):
         else:
             return []
 
-    def cmd(self, targets, compiler):
+    def cmd(self, targets, build):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
         elif self.is_msvc:
@@ -799,8 +847,10 @@ class Generator(BuildItem):
                 if len(sln) != 1:
                     raise Exception("there's more than one solution file in the project folder")
                 self.sln = sln[0]
-            t = ['/t:'+str(t) for t in targets]
-            return [compiler.vs.msbuild, '/maxcpucount:'+self.num_jobs] + t + [self.sln]
+            return [build.compiler.vs.msbuild, self.sln,
+                    '/maxcpucount:'+str(self.num_jobs),
+                    '/property:Configuration='+str(build.buildtype),
+                    '/target:'+';'.join(targets)]
         else:
             return ['cmake', '--build', '.', '--'] + targets
 
@@ -872,7 +922,7 @@ class Build:
         self.buildtype = buildtype
         self.compiler = compiler
         self.variant = variant
-        #self.crosscompile = (sys != System.current())
+        #self.crosscompile = (sys != System.default())
         #self.toolchain = None
         self.dir = self._cat("-")
         self.projdir = chkf(proj_root)
@@ -961,9 +1011,9 @@ endfunction(_pycmakedbg)
         with cwd_back(self.builddir):
             if not os.path.exists("pycmake_configure.done"):
                 self.configure()
-            #if self.compiler.is_msvc and len(targets) == 0:
-            #    targets = ["ALL_BUILD"]
-            cmd = self.generator.cmd(targets, self.compiler)
+            if self.compiler.is_msvc and len(targets) == 0:
+                targets = ["ALL_BUILD"]
+            cmd = self.generator.cmd(targets, self)
             runsyscmd(cmd, echo_output=True)
             with open("pycmake_build.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
@@ -973,17 +1023,16 @@ endfunction(_pycmakedbg)
         with cwd_back(self.builddir):
             if not os.path.exists("pycmake_build.done"):
                 self.build()
-            if self.compiler.is_msvc:
-                targets = ["INSTALL"]
+            if self.generator.is_msvc:
+                cmd = self.generator.cmd(["INSTALL"], self)
             else:
-                targets = ["install"]
-            cmd = self.generator.cmd(targets, self.compiler)
+                cmd = self.generator.cmd(["install"], self)
             runsyscmd(cmd, echo_output=True)
 
     def clean(self):
         self.create_dir()
         with cwd_back(self.builddir):
-            cmd = self.generator.cmd(['clean'])
+            cmd = self.generator.cmd(['clean'], self)
             runsyscmd(cmd, echo_output=True)
             os.remove("pycmake_build.done")
 
@@ -1133,192 +1182,26 @@ class ProjectConfig:
 
     def _execute(self, fn, msg, **restrict_to):
         builds = self.select_and_show(**restrict_to)
-        if len(builds) == 0:
+        num = len(builds)
+        if num == 0:
             return
         print("")
         print("===============================================")
-        print(msg, ": start")
-        for b in builds:
+        if num > 1:
+            print(msg, ": start", num, "builds")
+        else:
+            print(msg, ": start", builds[0])
+        for i,b in enumerate(builds):
             print("-----------------------------------------------")
-            print(msg, ":", b)
+            if num > 1:
+                print(msg, "#{} of {}: builds".format(i, num), b)
+            else:
+                print(msg, b)
             print("-----------------------------------------------")
             fn(b)
         print("-----------------------------------------------")
-        print(msg, ": finished")
+        if num > 1:
+            print(msg, ": finished", num, "builds")
+        else:
+            print(msg, ": finished", builds[0])
         print("===============================================")
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-
-def handle_args(in_args):
-    import argparse
-
-    def argwip(h): # TODO
-        return argparse.SUPPRESS
-
-    # to update the examples in a Markdown file, pipe the help through
-    # sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
-    parser = argparse.ArgumentParser(description='Handle several cmake build trees of a single project',
-                            formatter_class=argparse.RawDescriptionHelpFormatter,
-                            usage="""%(prog)s [-c,--configure] [-b,--build] [-i,--install] [more commands...] [options...] [proj-dir]""",
-                            epilog="""
------------------------------
-Some examples:
-
-# Configure and build a CMakeLists.txt project located on the dir above.
-# The build trees will be placed under a folder "build" located on the
-# current dir. Likewise, installation will be set to a sister dir
-# named "install". A c++ compiler will be selected from the path, and the
-# CMAKE_BUILD_TYPE will be set to Release.
-$ %(prog)s -b ..
-
-# Same as above, but now look for CMakeLists.txt on the current dir.
-$ %(prog)s -b .
-
-# Same as above.
-$ %(prog)s -b
-
-# Same as above, and additionally install.
-$ %(prog)s -i
-
-# Build both Debug and Release build types (resulting in 2 build trees).
-$ %(prog)s -t Debug,Release
-
-# Build using both clang++ and g++ (2 build trees).
-$ %(prog)s -p clang++,g++
-
-# Build using both clang++,g++ and in Debug,Release modes (4 build trees).
-$ %(prog)s -p clang++,g++ -t Debug,Release
-
-# Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees).
-$ %(prog)s -p clang++,g++,icpc -t Debug,Release,MinSizeRel
-""")
-
-    parser.add_argument("proj-dir", nargs="?", default=".",
-                        help="the directory where CMakeLists.txt is located (defaults to the current directory ie, \".\"). Passing a directory which does not contain a CMakeLists.txt will cause an exception.")
-
-    cmds = parser.add_argument_group(title="Available commands")
-    cmds.add_argument("-c", "--configure", action="store_true", default=False,
-                      help="only configure the selected builds")
-    cmds.add_argument("-b", "--build", action="store_true", default=False,
-                      help="build the selected builds, configuring before if necessary")
-    cmds.add_argument("-i", "--install", action="store_true", default=False,
-                      help="install the selected builds, configuring and building before if necessary")
-    cmds.add_argument("--clean", action="store_true", default=False,
-                      help="clean the selected builds")
-    cmds.add_argument("--create-tree", action="store_true", default=False,
-                      help="just create the build tree and the cmake preload scripts")
-
-    clo = parser.add_argument_group(title="Selecting the builds")
-    clo.add_argument("-t", "--build-types", metavar="type1,type2,...", default="Release",
-                     help="""restrict actions to the given build types.
-                     Defaults to \"%(default)s\".""")
-    clo.add_argument("-p", "--compilers", metavar="compiler1,compiler2,...",
-                     default=str(Compiler.current_str()),
-                     help="""restrict actions to the given compilers.
-                     Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
-    clo.add_argument("-s", "--systems", metavar="os1,os2,...", default=str(System.current_str()),
-                     help="""(WIP) restrict actions to the given operating systems.
-                     Defaults to the current system, \"%(default)s\".
-                     This feature requires os-specific toolchains and is currently a
-                     work-in-progress.""")
-    clo.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                     default=str(Architecture.current_str()),
-                     help="""(WIP) restrict actions to the given processor architectures.
-                     Defaults to CMake's default architecture, \"%(default)s\" on this system.
-                     This feature requires os-specific toolchains and is currently a
-                     work-in-progress.""")
-    clo.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                     help="""(WIP) restrict actions to the given variants.
-                     This feature is currently a work-in-progress.""")
-
-    parser.add_argument("--build-dir", default="./build",
-                        help="set the build root (defaults to ./build)")
-    parser.add_argument("--install-dir", default="./install",
-                        help="set the install root (defaults to ./install)")
-    parser.add_argument("-G", "--generator", default=str(Generator.default_str()),
-                        help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
-    parser.add_argument("-j", "--jobs", default=str(cpu_count()),
-                        help="""build with the given number of parallel jobs
-                        (defaults to %(default)s on this machine).
-                        This may not work with every generator.""")
-
-    cli = parser.add_argument_group(title='Commands that show info')
-    cli.add_argument("--show-args", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-builds", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-systems", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-architectures", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-build-types", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-compilers", action="store_true", default=False,
-                     help="")
-    cli.add_argument("--show-variants", action="store_true", default=False,
-                     help="")
-
-    ns = parser.parse_args(in_args[1:])
-    #print(ns)
-    # fix comma-separated lists
-    for i in ('systems','architectures','build_types','compilers','variants'):
-        a = getattr(ns, i)
-        if a is not None:
-            a = a.split(",")
-            setattr(ns, i, a)
-
-    return ns
-
-#------------------------------------------------------------------------------
-
-if __name__ == "__main__":
-
-    #print(sys.argv)
-    args = handle_args(sys.argv)
-    #print(args)
-
-    proj = ProjectConfig(**vars(args))
-
-    if args.show_args:
-        from pprint import pprint
-        pprint(args)
-
-    if args.show_systems:
-        for b in proj.systems:
-            print(b)
-
-    if args.show_architectures:
-        for b in proj.architectures:
-            print(b)
-
-    if args.show_build_types:
-        for b in proj.build_types:
-            print(b)
-
-    if args.show_compilers:
-        for b in proj.compilers:
-            print(b)
-
-    if args.show_variants:
-        for b in proj.variants:
-            print(b)
-
-    if args.show_builds:
-        proj.show_builds()
-
-    if args.create_tree:
-        proj.create_tree()
-
-    if args.configure:
-        proj.configure()
-
-    if args.build:
-        proj.build()
-
-    if args.install:
-        proj.install()
-
-    if args.clean:
-        proj.clean()
