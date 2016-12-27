@@ -7,10 +7,14 @@ import re
 import glob
 import json
 import argparse
+import copy
 from datetime import datetime as datetime
 from collections import OrderedDict as odict
 from multiprocessing import cpu_count as cpu_count
 
+"""TODO:
+-fix mixing architecture with VS specs
+"""
 
 PYCMAKE_DIR = os.path.expanduser("~/.pycmake/")
 
@@ -300,6 +304,16 @@ class CompileOptions:
         self.lflags = []
         self.macros = []
 
+    def merge(self, other):
+        """other will take precedence, ie, their options will come last"""
+        c = CompileOptions()
+        c.name = self.name+"+"+other.name
+        c.cmake_flags = self.cmake_flags + other.cmake_flags
+        c.cflags = self.cflags + other.cflags
+        c.lflags = self.lflags + other.lflags
+        c.macros = self.macros + other.macros
+        return c
+
 
 # -----------------------------------------------------------------------------
 
@@ -323,29 +337,41 @@ class CompileOption:
             return self.gcclike
 
 
-option_presets = odict([
+known_options = odict([
     #    name                   gcclike                  vs                explanation
     _opt('cpp11'              , '-std=c++11'           , ''              , 'enable C++11 mode'),  # nopep8
     _opt('cpp14'              , '-std=c++14'           , ''              , 'enable C++14 mode'),  # nopep8
     _opt('cpp1z'              , '-std=c++1z'           , ''              , 'enable C++1z mode'),  # nopep8
+    _opt('thread'             , '-pthread'             , ''              , 'enable threads'),  # nopep8
     _opt('wall'               , '-Wall'                , '/Wall'         , 'enable full warnings'),  # nopep8
     _opt('pedantic'           , '-Wpedantic'           , '/W4'           , 'compile in pedantic mode'),  # nopep8
     _opt('strict_aliasing'    , '-fstrict-aliasing'    , ''              , 'enable strict aliasing'),  # nopep8
     _opt('no_strict_aliasing' , '-fno-strict-aliasing' , ''              , 'disable strict aliasing'),  # nopep8
-    _opt('fast_math'          , '-ffast-math'          , '/fp:fast'      , 'enable fast math http://stackoverflow.com/a/22135559'),  # nopep8
+    _opt('fast_math'          , '-ffast-math'          , '/fp:fast /Qfast_transcendentals', 'enable fast math http://stackoverflow.com/a/22135559'),  # nopep8
     _opt('no_rtti'            , '-fno-rtti'            , '/GR-'          , 'disable run-time type information'),  # nopep8
     _opt('no_exceptions'      , '-fno-exceptions'      , '/EHsc-'        , 'disable exceptions'),  # nopep8
     _opt('no_stdlib'          , '-fnostdlib'           , '/NODEFAULTLIB' , 'disable standard library'),  # nopep8
-    _opt('thread'             , '-pthread'             , ''              , 'enable threads'),  # nopep8
-    _opt('g'                  , '-g'                   , ''              , 'add debug information'),  # nopep8
-    _opt('g3'                 , '-g3'                  , ''              , 'add full debug information'),  # nopep8
+    _opt('static_stdlib'      , '-static-libstdc++ -static-libgcc', '/MD', 'link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas'),  # nopep8
+    _opt('lto'                , '-flto'                , '/GL'           , 'enable whole program optimization'),  # nopep8
+    _opt('g'                  , '-g'                   , '/Zi'           , 'add debug information'),  # nopep8
+    _opt('g3'                 , '-g3'                  , '/Zi'           , 'add full debug information'),  # nopep8
+    _opt('no_bufsec'          , ''                     , '/GS-'          , 'disable buffer security checks'),  # nopep8
+    _opt('o2'                 , '-O2'                  , '/O2'           , 'optimize level 2'), # nopep8
+    _opt('o3'                 , '-O3'                  , '/Ox'           , 'optimize level 3'), # nopep8
+    _opt('os'                 , '-Os'                  , '/Os'           , 'optimize for size'),  # nopep8
+    _opt('ofast'              , '-Ofast'               , '/Ot'           , 'optimize for speed'), # nopep8
+    _opt('onative'            , '-march=native'        , ''              , 'optimize for native architecture'), # nopep8
+    _opt('sse'                , '-msse'                , '/arch:sse'     , 'enable SSE instructions'), # nopep8
+    _opt('sse2'               , '-msse2'               , '/arch:sse2'    , 'enable SSE2 instructions'), # nopep8
+    _opt('avx'                , '-mavx'                , '/arch:avx'     , 'enable AVX instructions'), # nopep8
+    _opt('avx2'               , '-mavx2'               , '/arch:avx2'    , 'enable AVX2 instructions'), # nopep8
 ])
 
 del _opt
 
 
-def get_compile_option_preset(name):
-    opt = option_presets.get(name)
+def get_known_option(name):
+    opt = known_options.get(name)
     if opt is None:
         raise Exception("could not find compile option preset: " + name)
     return opt
@@ -412,7 +438,7 @@ class Compiler(BuildItem):
             return self.vs.name, str(self.vs.year), self.vs.name
         # # other compilers
         # print("cmp: found compiler:", name, path)
-        out = runsyscmd([path, '--version'], echo_cmd=False, capture_output=True).strip("\n")
+        out = runsyscmd([path, '--version'], echo_cmd=False, echo_output=False, capture_output=True).strip("\n")
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
@@ -420,7 +446,7 @@ class Compiler(BuildItem):
         vregex = r'(\d+\.\d+)\.\d+'
         if name.startswith("g++") or name.startswith("gcc"):
             name = "gcc"
-            version = runsyscmd([path, '-dumpversion'], echo_cmd=False, capture_output=True).strip("\n")
+            version = runsyscmd([path, '-dumpversion'], echo_cmd=False, echo_output=False, capture_output=True).strip("\n")
             version = re.sub(vregex, r'\1', version)
             # print("gcc version:", version, "---")
         elif name.startswith("clang"):
@@ -432,7 +458,7 @@ class Compiler(BuildItem):
             version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             # print("icc version:", version, "---")
         else:
-            version = runsyscmd([path, '--dumpversion'], echo_cmd=False, capture_output=True).strip("\n")
+            version = runsyscmd([path, '--dumpversion'], echo_cmd=False, echo_output=False, capture_output=True).strip("\n")
             version = re.sub(vregex, r'\1', version)
         #
         return name, version, version_full
@@ -670,7 +696,7 @@ class VisualStudioInfo:
     @staticmethod
     def devenv(ver_or_name_or_gen):
         """get path to devenv"""
-        pass
+        raise Exception("not implemented")
 
     @staticmethod
     def is_installed(ver_or_name_or_gen):
@@ -779,16 +805,7 @@ class Generator(BuildItem):
             else:
                 return Generator(__class__.default_str(), num_jobs)
         else:
-            name = compiler.name
-            if arch.is_arm:
-                raise Exception("not implemented")
-            elif arch.is64:
-                if not compiler.name.endswith("_64"):
-                    compiler.name += "_64"
-            elif arch.is32:
-                if not compiler.name.endswith("_32"):
-                    compiler.name += "_32"
-            return Generator(name, num_jobs)
+            return Generator(compiler.name, num_jobs)
 
     @staticmethod
     def resolve_alias(gen):
@@ -798,6 +815,7 @@ class Generator(BuildItem):
 
     def __init__(self, name, num_jobs):
         if name.startswith('vs'):
+            n = name
             name = VisualStudioInfo.to_gen(name)
         self.alias = name
         super().__init__(name)
@@ -806,9 +824,12 @@ class Generator(BuildItem):
         self.is_ninja = name.endswith("Ninja")
         self.is_msvc = name.startswith("Visual Studio")
 
-    def configure_args(self):
+    def configure_args(self, build):
         if self.name != "":
-            return ['-G', '"{}"'.format(self.name)]
+            if self.is_msvc and build.compiler.vs.toolset is not None:
+                return ['-G', '"{}"'.format(self.name), '-T', build.compiler.vs.toolset]
+            else:
+                return ['-G', '"{}"'.format(self.name)]
         else:
             return []
 
@@ -922,8 +943,10 @@ class Build:
             os.makedirs(self.builddir)
 
     def _gather_flags(self):
-        flags = self.generator.compile_flags()
-        return flags
+        #flags = self.generator.compile_flags()
+        #flags += self.compiler.
+        #return flags
+        return []
 
     def create_preload_file(self):
         self.create_dir()
@@ -970,7 +993,7 @@ endfunction(_pycmakedbg)
             self.create_preload_file()
         with cwd_back(self.builddir):
             cmd = (['cmake', '-C', os.path.basename(self.preload_file),]
-                   + self.generator.configure_args() +
+                   + self.generator.configure_args(self) +
                    [# '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
                    self.projdir])
             runsyscmd(cmd, echo_output=True)
@@ -1164,7 +1187,7 @@ class ProjectConfig:
         for i, b in enumerate(builds):
             print("-----------------------------------------------")
             if num > 1:
-                print(msg + ": build #{} of {}:".format(i, num), b)
+                print(msg + ": build #{} of {}:".format(i+1, num), b)
             else:
                 print(msg, b)
             print("-----------------------------------------------")
@@ -1261,8 +1284,6 @@ class projcmd(cmdbase):
                             help="""build with the given number of parallel jobs
                             (defaults to %(default)s on this machine).""")
         parser.add_argument("-G", "--generator", default=Generator.default_str(),
-                            help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
-        parser.add_argument("-C", "--compiler-flags", default=Generator.default_str(),
                             help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
 
 
