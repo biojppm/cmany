@@ -145,6 +145,36 @@ if System.current_str() == 'windows':
             c('vs2005_32'  , 'vs2005_32'   )
             c('vs2005_64'  , 'vs2005_64'   )
 
+        def test03_parse_toolset(self):
+            def t(spec, ts_vs):
+                cts_vs = VisualStudioInfo.parse_toolset(spec)
+                if cts_vs != ts_vs:
+                    self.fail("{} should be '{}' but is '{}'".format(spec, ts_vs, cts_vs))
+            t('vs2017'            , None           )
+            t('vs2017_clang'      , 'v141_clang_c2')
+            t('vs2017_xp'         , 'v141_xp'      )
+            t('vs2017_v141'       , 'v141'         )
+            t('vs2017_v141_xp'    , 'v141_xp'      )
+            t('vs2017_v141_clang' , 'v141_clang_c2')
+            t('vs2017_v140'       , 'v140'         )
+            t('vs2017_v140_xp'    , 'v140_xp'      )
+            t('vs2017_v140_clang' , 'v140_clang_c2')
+            t('vs2017_v120'       , 'v120'         )
+            t('vs2017_v120_xp'    , 'v120_xp'      )
+            t('vs2017_v110'       , 'v110'         )
+            t('vs2017_v110_xp'    , 'v110_xp'      )
+            t('vs2017_v100'       , 'v100'         )
+            t('vs2017_v100_xp'    , 'v100_xp'      )
+            t('vs2015'            , None           )
+            t('vs2015_clang'      , 'v140_clang_c2')
+            t('vs2015_xp'         , 'v140_xp'      )
+            t('vs2013'            , None           )
+            t('vs2013_xp'         , 'v120_xp'      )
+            t('vs2012'            , None           )
+            t('vs2012_xp'         , 'v110_xp'      )
+            t('vs2010'            , None           )
+            t('vs2010_xp'         , 'v100_xp'      )
+
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
