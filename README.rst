@@ -49,48 +49,48 @@ a folder named "build" located on the current folder. Likewise, the installation
 prefix will be set to a sister folder named "install". A c++ compiler will
 be selected from the system, and the CMAKE_BUILD_TYPE will be set to Release::
 
-    $ %(prog)s build ..
+    $ cmany build ..
 
 Same as above, but now look for CMakeLists.txt on the current dir::
 
-    $ %(prog)s build .
+    $ cmany build .
 
 Same as above: like with cmake, omitting the project dir defaults will cause
 searching for CMakeLists.txt on the current dir::
 
-    $ %(prog)s build
+    $ cmany build
 
 Same as above: 'b' is an alias to 'install'::
 
-    $ %(prog)s b
+    $ cmany b
 
 Same as above, and additionally install. 'i' is an alias to 'install'::
 
-    $ %(prog)s i
+    $ cmany i
 
 Only configure; do not build, do not install. 'c' is an alias to 'configure'::
 
-    $ %(prog)s c
+    $ cmany c
 
 Build only the Debug build type::
 
-    $ %(prog)s b -t Debug
+    $ cmany b -t Debug
 
 Build both Debug and Release build types (resulting in 2 build trees)::
 
-    $ %(prog)s b -t Debug,Release
+    $ cmany b -t Debug,Release
 
 Build using both clang++ and g++ (2 build trees)::
 
-    $ %(prog)s b -c clang++,g++
+    $ cmany b -c clang++,g++
 
 Build using both clang++,g++ and in Debug,Release modes (4 build trees)::
 
-    $ %(prog)s b -c clang++,g++ -t Debug,Release
+    $ cmany b -c clang++,g++ -t Debug,Release
 
 Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees)::
 
-    $ %(prog)s b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
+    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
 
 
 Status
