@@ -512,9 +512,9 @@ class VisualStudioInfo:
 
     _toolsets = (
         # vs2017 compiler toolsets
-        'v141_clang', 'v141_xp', 'v141',
+        'v141_clang_c2', 'v141_clang', 'v141_xp', 'v141',
         # vs2015 compiler toolsets
-        'v140_clang', 'v140_xp', 'v140',
+        'v140_clang_c2', 'v140_clang', 'v140_xp', 'v140',
         # vs2013 compiler toolsets
         'v120_xp', 'v120',
         # vs2013 compiler toolsets
@@ -522,19 +522,26 @@ class VisualStudioInfo:
         # vs2013 compiler toolsets
         'v100_xp', 'v100',
         # aliases - implicit compiler toolsets (the same as the chosen VS version)
-        'xp', 'clang'
+        'clang_c2', 'clang', 'xp',
     )
+    _toolsets_for_re = sorted(_toolsets, key=lambda x: -len(x))
 
     @staticmethod
-    def parse_toolset(name):
-        ts = '|'.join(__class__._toolsets)
-        rx = 'vs.....*_('+ts+')$'
-        if not re.search(rx, name):
-            return None
-        toolset = re.sub(rx, r'\1', name)
+    def sep_name_toolset(name, canonize=True):
+        toolset = None
+        for t in __class__._toolsets_for_re:
+            rx = r'vs.....*_({})$'.format(t)
+            if re.search(rx, name):
+                toolset = re.sub(rx, r'\1', name)
+                name_without_toolset = re.sub(r'(vs.....*)_({})$'.format(t), r'\1', name)
+                break
+        if toolset is None:
+            return name,None
         if toolset not in __class__._toolsets:
             raise Exception("could not parse toolset {} from vs spec {}".format(toolset, name))
-        if toolset == 'clang' or toolset == 'xp':
+        if not canonize:
+            return name_without_toolset, toolset
+        if toolset in ('clang_c2', 'clang', 'xp'):
             assert re.match('vs....', name)
             year = int(re.sub(r'^vs(....).*', r'\1', name))
             if year == 2017:
@@ -555,13 +562,12 @@ class VisualStudioInfo:
             vs_toolset = toolset
         if vs_toolset.endswith('clang'):
             vs_toolset += '_c2'
-        return vs_toolset
+        return name_without_toolset, vs_toolset
 
     @staticmethod
-    def sep_name_toolset(name):
-        toolset = __class__.parse_toolset(name)
-        cn = name if toolset is None else name[:(-len(toolset)-1)]
-        return cn, toolset
+    def parse_toolset(name, canonize=True):
+        _, toolset = __class__.sep_name_toolset(name, canonize)
+        return toolset
 
     def __init__(self, name):
         cn, toolset = __class__.sep_name_toolset(name)
@@ -607,38 +613,38 @@ class VisualStudioInfo:
         return CMakeSystemInformation.c_compiler(__class__.to_gen(name_or_gen_or_ver))
 
     @staticmethod
-    def to_name(ver_or_name_or_gen):
-        if isinstance(ver_or_name_or_gen, int):
-            return __class__._versions[ver_or_name_or_gen]
+    def to_name(name_or_gen_or_ver):
+        if isinstance(name_or_gen_or_ver, int):
+            return __class__._versions[name_or_gen_or_ver]
         else:
-            if ver_or_name_or_gen.startswith('vs'):
-                return __class__.sep_name_toolset(ver_or_name_or_gen)[0]
-            n = __class__._names.get(ver_or_name_or_gen)
+            if name_or_gen_or_ver.startswith('vs'):
+                return __class__.sep_name_toolset(name_or_gen_or_ver)[0]
+            n = __class__._names.get(name_or_gen_or_ver)
             if n is not None:
                 return n
-        raise Exception("could not find '{}'".format(ver_or_name_or_gen))
+        raise Exception("could not find '{}'".format(name_or_gen_or_ver))
 
     @staticmethod
-    def to_ver(ver_or_name_or_gen):
-        if isinstance(ver_or_name_or_gen, int):
-            return ver_or_name_or_gen
+    def to_ver(name_or_gen_or_ver):
+        if isinstance(name_or_gen_or_ver, int):
+            return name_or_gen_or_ver
         else:
-            n = __class__.to_name(ver_or_name_or_gen)
+            n = __class__.to_name(name_or_gen_or_ver)
             return __class__._versions[n]
 
     @staticmethod
-    def to_gen(ver_or_name_or_gen):
-        if isinstance(ver_or_name_or_gen, int):
-            ver_or_name_or_gen = __class__._versions[ver_or_name_or_gen]
-        if ver_or_name_or_gen.startswith('Visual Studio'):
-            return ver_or_name_or_gen
-        ver_or_name_or_gen = __class__.sep_name_toolset(ver_or_name_or_gen)[0]
-        return __class__._names[ver_or_name_or_gen]
+    def to_gen(name_or_gen_or_ver):
+        if isinstance(name_or_gen_or_ver, int):
+            name_or_gen_or_ver = __class__._versions[name_or_gen_or_ver]
+        if name_or_gen_or_ver.startswith('Visual Studio'):
+            return name_or_gen_or_ver
+        name_or_gen_or_ver = __class__.sep_name_toolset(name_or_gen_or_ver)[0]
+        return __class__._names[name_or_gen_or_ver]
 
     @staticmethod
-    def vsdir(ver_or_name_or_gen):
+    def vsdir(name_or_gen_or_ver):
         """get the directory where VS is installed"""
-        ver = __class__.to_ver(ver_or_name_or_gen)
+        ver = __class__.to_ver(name_or_gen_or_ver)
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
             d = os.path.join(progfilesx86, 'Microsoft Visual Studio ' + str(ver) + '.0')
@@ -666,9 +672,9 @@ class VisualStudioInfo:
         return d
 
     @staticmethod
-    def vcvarsall(ver_or_name_or_gen):
+    def vcvarsall(name_or_gen_or_ver):
         """get the path to vcvarsall.bat"""
-        ver = __class__.to_ver(ver_or_name_or_gen)
+        ver = __class__.to_ver(name_or_gen_or_ver)
         if ver < 15:
             s = os.path.join(__class__.vsdir(ver), 'VC', 'vcvarsall.bat')
         elif ver == 15:
@@ -678,9 +684,9 @@ class VisualStudioInfo:
         return s
 
     @staticmethod
-    def msbuild(ver_or_name_or_gen):
+    def msbuild(name_or_gen_or_ver):
         """get the MSBuild.exe path"""
-        ver = __class__.to_ver(ver_or_name_or_gen)
+        ver = __class__.to_ver(name_or_gen_or_ver)
         if ver < 15:
             progfilesx86 = os.environ['ProgramFiles(x86)']
             msbuild = os.path.join(progfilesx86, 'MSBuild', str(ver)+'.0', 'bin', 'MSBuild.exe')
@@ -694,13 +700,13 @@ class VisualStudioInfo:
         return msbuild
 
     @staticmethod
-    def devenv(ver_or_name_or_gen):
+    def devenv(name_or_gen_or_ver):
         """get path to devenv"""
         raise Exception("not implemented")
 
     @staticmethod
-    def is_installed(ver_or_name_or_gen):
-        ver = __class__.to_ver(ver_or_name_or_gen)
+    def is_installed(name_or_gen_or_ver):
+        ver = __class__.to_ver(name_or_gen_or_ver)
         return cmember(__class__, '_is_installed_'+str(ver), lambda: __class__._is_installed_impl(ver))
 
     @staticmethod
