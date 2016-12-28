@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+
+import os
+import re
+import subprocess
+
+
+def splitesc(string, split_char, escape_char=r'\\'):
+    """split a string at the given character, allowing for escaped characters
+    http://stackoverflow.com/a/21107911"""
+    rx = r'(?<!{}){}'.format(escape_char, split_char)
+    s = re.split(rx, string)
+    return s
+
+
+def which(cmd):
+    """look for an executable in the current PATH environment variable"""
+    if os.path.exists(cmd):
+        return cmd
+    exts = ("",".exe",".bat") if System.default_str() == "windows" else ""
+    for path in os.environ["PATH"].split(os.pathsep):
+        for e in exts:
+            j = os.path.join(path, cmd+e)
+            if os.path.exists(j):
+                return j
+    return None
+
+
+def chkf(*args):
+    """join the args as a path and check whether that path exists"""
+    f = os.path.join(*args)
+    if not os.path.exists(f):
+        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())
+    return f
+
+
+def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False, ):
+    """run a system command. Note that stderr is interspersed with stdout"""
+    s = " ".join(arglist)
+    if echo_cmd:
+        print("running command:", s)
+    if as_bytes_string:
+        assert not echo_output
+        result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result.check_returncode()
+        if capture_output:
+            return str(result.stdout)
+    elif not echo_output:
+        result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                universal_newlines=True)
+        result.check_returncode()
+        if capture_output:
+            return str(result.stdout)
+    elif echo_output:
+        # http://stackoverflow.com/a/4417735
+        popen = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 universal_newlines=True)
+        out = ""
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line, end="")
+            if capture_output:
+                out += stdout_line
+        popen.stdout.close()
+        return_code = popen.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, s)
+        if capture_output:
+            return out
+
+
+def cacheattr(obj, name, function):
+    """add and cache an object member which is the result of a given function.
+    This is for implementing lazy getters when the function call is expensive."""
+    if hasattr(obj, name):
+        val = getattr(obj, name)
+    else:
+        val = function()
+        setattr(obj, name, val)
+    return val
+
+
+def ctor(cls, args):
+    if not isinstance(args, list):
+        args = [args]
+    l = []
+    for i in args:
+        l.append(cls(i))
+    return l
+
+
+# -----------------------------------------------------------------------------
+class cwd_back:
+    """temporarily change into a directory inside a with block"""
+
+    def __init__(self, dir_):
+        self.dir = dir_
+
+    def __enter__(self):
+        self.old = os.getcwd()
+        if self.old == self.dir:
+            return
+        print("Entering directory", self.dir, "(was in {})".format(self.old))
+        chkf(self.dir)
+        os.chdir(self.dir)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.old == self.dir:
+            return
+        print("Returning to directory", self.old, "(currently in {})".format(self.dir))
+        chkf(self.old)
+        os.chdir(self.old)

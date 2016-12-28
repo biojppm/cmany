@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+
 import unittest as ut
-from c4.pycmake import *
+from c4.cmany import *
+from c4.cmany.vsinfo import *
 import os.path
 
+
+class TestSplitEsc(ut.TestCase):
+
+    def test(self):
+        from c4.cmany.util import splitesc
+        self.assertEqual(splitesc('hello\,world,yet\,another', ','), ['hello\,world','yet\,another'])
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -257,3 +266,4 @@ if System.default_str() == 'windows':
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     ut.main()
+
