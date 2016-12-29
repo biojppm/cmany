@@ -12,7 +12,7 @@ cmds = odict([
     ('configure', ['c']),
     ('build', ['b']),
     ('install', ['i']),
-    ('create', []),
+#    ('create', []),
     ('showvars', []),
 ])
 
@@ -163,12 +163,12 @@ class install(selectcmd):
     def _exec(self, proj, args):
         proj.install()
 
-
+"""
 class create(selectcmd):
     '''create a CMakeSettings.json file with the given combination of build parameters'''
     def _exec(self, proj, args):
         print("creating", os.path.join(proj.rootdir, "CMakeSettings.json"))
-
+"""
 
 class showvars(selectcmd):
     '''show the value of certain CMake cache vars'''
@@ -176,7 +176,8 @@ class showvars(selectcmd):
         super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
     def _exec(self, proj, args):
-        print("comparing", args.var_names, proj.builds)
+        proj.showvars(args.var_names)
+
 
 # ------------------------------------------------------------------------------
 
