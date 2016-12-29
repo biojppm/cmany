@@ -4,9 +4,20 @@
 from setuptools import setup, find_packages
 import os.path
 
+
 def read(*rnames):
     with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
         return f.read()
+
+
+def readreqs(*rnames):
+    def _skipcomment(line):
+        return line if (line and not line.startswith('--') and not line.startswith('#')) else ""
+    with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
+        l = [_skipcomment(line.strip()) for line in f]
+    print("reqs=", l)
+    return l
+
 
 setup(name = "cmany",
       version = "0.1",
@@ -35,11 +46,6 @@ setup(name = "cmany",
       packages = find_packages('src'),
       package_dir = {'':'src'},
       entry_points = {'console_scripts':['cmany = c4.cmany.main:cmany_main'],},
-      install_requires = [
-          ''
-      ],
-      tests_require = [
-          'nose2',
-          'coverage',
-      ],
+      install_requires = readreqs('requirements.txt'),
+      tests_require = readreqs('requirements_test.txt'),
 )
