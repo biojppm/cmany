@@ -26,28 +26,20 @@ under a ``build`` folder which is under the current folder::
 Features
 --------
 
-* Saves the tedious work of creating several build trees by hand.
+* Saves the tedious work of dealing with several build trees by hand.
 * Useful for build comparisons.
-* An added advantage is that a full rebuild is avoided when the build type
-is changed. Although this feature is already present when using
-multi-configuration cmake generators such as Visual Studio, this is
-something that's been missing from mono-configuration generators like
-Unix Makefiles.
+* Avoids a full rebuild when the build type is changed. Although this feature already exists in multi-configuration cmake generators such as Visual Studio, it is missing from mono-configuration generators like Unix Makefiles.
+* ... TODO
 
 
 Basic usage examples
 --------------------
 
-To get help::
-
-    $ cmany help
-    $ cmany build -h
-
 Configure and build a CMakeLists.txt project located on the folder above
 the current one. The build trees will be placed in separate folders under
 a folder named "build" located on the current folder. Likewise, the installation
-prefix will be set to a sister folder named "install". A c++ compiler will
-be selected from the system, and the CMAKE_BUILD_TYPE will be set to Release::
+prefix will be set to a sister folder named "install". A C++ compiler will
+be selected from the system, and the ``CMAKE_BUILD_TYPE`` will be set to Release::
 
     $ cmany build ..
 
@@ -92,11 +84,20 @@ Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees)::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
 
+To get a list of available commands::
+
+    $ cmany help
+
+To get help on a particular command (eg, ``build``), either of the following can be used::
+
+    $ cmany help build
+    $ cmany build -h
+
 
 Status
 ------
 
-This project is under development, in pre-alpha.
+This project is a pre-alpha under development.
 
 Installation
 ------------
@@ -106,12 +107,12 @@ TODO.
 Contribute
 ----------
 
-TODO.
+Send your pull requests to `<https://github.com/biojppm/cmany/pulls>`.
 
 Support
 -------
 
-TODO.
+Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
 
 License
 -------

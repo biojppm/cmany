@@ -6,8 +6,8 @@ from setuptools import setup
 setup(name="cmany",
       version="0.1",
       description="CMake build tree batching tool",
-      url="",
-      download_url="",
+      url="https://github.com/biojppm/cmany",
+      download_url="https://github.com/biojppm/cmany",
       license="License :: OSI Approved :: MIT License",
       classifiers=[
           "Intended Audience :: Developers",
