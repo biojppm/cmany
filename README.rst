@@ -102,7 +102,11 @@ This project is a pre-alpha under development.
 Installation
 ------------
 
-TODO.
+To install from source using Pip::
+
+    git clone https://github.com/biojppm/cmany
+    cd cmany
+    pip3 install .
 
 Contribute
 ----------
