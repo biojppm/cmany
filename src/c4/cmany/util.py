@@ -15,7 +15,8 @@ def splitesc(string, split_char, escape_char=r'\\'):
 
 
 def cslist(arg):
-    '''transform comma-separated arguments into a list of strings. commas can be escaped with backslash, \\'''
+    '''transform comma-separated arguments into a list of strings.
+    commas can be escaped with backslash, \\'''
     return splitesc(arg, ',')
 
 
@@ -40,7 +41,7 @@ def chkf(*args):
     return f
 
 
-def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False, ):
+def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
     """run a system command. Note that stderr is interspersed with stdout"""
     s = " ".join(arglist)
     if echo_cmd:
@@ -114,20 +115,23 @@ def nested_lookup(dictionary, *entry):
 class cwd_back:
     """temporarily change into a directory inside a with block"""
 
-    def __init__(self, dir_):
+    def __init__(self, dir_, silent=False):
         self.dir = dir_
+        self.silent = silent
 
     def __enter__(self):
         self.old = os.getcwd()
         if self.old == self.dir:
             return
-        print("Entering directory", self.dir, "(was in {})".format(self.old))
+        if not self.silent:
+            print("Entering directory", self.dir, "(was in {})".format(self.old))
         chkf(self.dir)
         os.chdir(self.dir)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.old == self.dir:
             return
-        print("Returning to directory", self.old, "(currently in {})".format(self.dir))
+        if not self.silent:
+            print("Returning to directory", self.old, "(currently in {})".format(self.dir))
         chkf(self.old)
         os.chdir(self.old)
