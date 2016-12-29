@@ -6,11 +6,14 @@ from collections import OrderedDict as odict
 
 from c4.cmany import *
 
+
 cmds = odict([
     ('help', ['h']),
     ('configure', ['c']),
     ('build', ['b']),
     ('install', ['i']),
+    ('create', []),
+    ('showvars', []),
 ])
 
 
@@ -26,8 +29,7 @@ def cmany_main(in_args=None):
     p.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
     for cmd,aliases in cmds.items():
         cl = getattr(sys.modules[__name__], cmd)
-        h = sp.add_parser(name=cmd, aliases=aliases,
-                          help=cl.__doc__, description=cl.__doc__)
+        h = sp.add_parser(name=cmd, aliases=aliases, help=cl.__doc__)
         cl().add_args(h)
         def exec_cmd(args, cmd_class = cl):
             obj = cmd_class()
@@ -161,6 +163,20 @@ class install(selectcmd):
     def _exec(self, proj, args):
         proj.install()
 
+
+class create(selectcmd):
+    '''create a CMakeSettings.json file with the given combination of build parameters'''
+    def _exec(self, proj, args):
+        print("creating", os.path.join(proj.rootdir, "CMakeSettings.json"))
+
+
+class showvars(selectcmd):
+    '''show the value of certain CMake cache vars'''
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('var_names', default="", nargs='+')
+    def _exec(self, proj, args):
+        print("comparing", args.var_names, proj.builds)
 
 # ------------------------------------------------------------------------------
 
