@@ -5,7 +5,7 @@ from .util import *
 
 
 # -----------------------------------------------------------------------------
-class CMakeSystemInformation:
+class CMakeSysInfo:
     """encapsulates the results returned from `cmake [-G <which_generator>] --system-information`.
     This is used for selecting default values for system, compiler, generator, etc."""
 

@@ -25,7 +25,7 @@ def cmany_main(in_args=None):
     sp = p.add_subparsers(help='')
     p.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
     for cmd,aliases in cmds.items():
-        cl = cmdclass(cmd)
+        cl = getattr(sys.modules[__name__], cmd)
         h = sp.add_parser(name=cmd, aliases=aliases,
                           help=cl.__doc__, description=cl.__doc__)
         cl().add_args(h)
@@ -42,19 +42,10 @@ def cmany_main(in_args=None):
     args.func(args)
 
 
-def cmdclass(cmd_name):
-    return getattr(sys.modules[__name__], cmd_name)
-
-
 def argerror(*msg_args):
     print(*msg_args, '\n')
     cmany_main(['-h'])
     exit(1)
-
-
-def cslist(arg):
-    '''transform comma-separated arguments into a list of strings. commas can be escaped with backslash, \\'''
-    return splitesc(arg, ',')
 
 
 # -----------------------------------------------------------------------------

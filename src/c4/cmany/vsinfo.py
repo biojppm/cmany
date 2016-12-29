@@ -8,11 +8,16 @@ import json
 from .util import *
 from .cmake_sysinfo import *
 
-is64 = "64" in CMakeSystemInformation.architecture()
+is64 = "64" in CMakeSysInfo.architecture()
 
 # -----------------------------------------------------------------------------
 class VisualStudioInfo:
     """encapsulates info on Visual Studio installations"""
+
+    # This class was previously in a multi-purpose module, and that's why
+    # many of the methods here are static. Now that this logic is in a 
+    # dedicated module, the static properties and methods should be
+    # moved outside of the class to become module members.
 
     order = ('vs2015','vs2017','vs2013','vs2012','vs2010','vs2008','vs2005',)
     # a reversible dictionary for the VS version numbers
@@ -151,13 +156,13 @@ class VisualStudioInfo:
     def cxx_compiler(name_or_gen_or_ver):
         if not __class__.is_installed(name_or_gen_or_ver):
             return None
-        return CMakeSystemInformation.cxx_compiler(__class__.to_gen(name_or_gen_or_ver))
+        return CMakeSysInfo.cxx_compiler(__class__.to_gen(name_or_gen_or_ver))
 
     @staticmethod
     def c_compiler(name_or_gen_or_ver):
         if not __class__.is_installed(name_or_gen_or_ver):
             return None
-        return CMakeSystemInformation.c_compiler(__class__.to_gen(name_or_gen_or_ver))
+        return CMakeSysInfo.c_compiler(__class__.to_gen(name_or_gen_or_ver))
 
     @staticmethod
     def to_name(name_or_gen_or_ver):
@@ -209,7 +214,7 @@ class VisualStudioInfo:
             def fn():
                 if not __class__.is_installed(ver):  # but use cmake only if VS2017 is installed
                     return ""
-                cxx = CMakeSystemInformation.cxx_compiler(__class__.to_gen('vs2017'))
+                cxx = CMakeSysInfo.cxx_compiler(__class__.to_gen('vs2017'))
                 # VC dir is located on the root of the VS install dir
                 vsdir = re.sub(r'(.*)[\\/]VC[\\/].*', r'\1', str(cxx))
                 return vsdir
@@ -294,27 +299,13 @@ class VisualStudioInfo:
             for i in instances:
                 with open(i, encoding="utf8") as json_str:
                     d = json.load(json_str)
-
-                    def _get(*entry):
-                        j = "/".join(list(entry))
-                        try:
-                            if isinstance(entry, str):
-                                v = d[entry]
-                            else:
-                                v = None
-                                for e in entry:
-                                    # print("key:", e, "value:", v if v is not None else "<none yet>")
-                                    v = v[e] if v is not None else d[e]
-                        except:
-                            raise Exception("could not find entry '" + j + "' in the json data at " + i + "\nMaybe the specs have changed?")  # nopep8
-                        return v
                     # check that the version matches
-                    version_string = _get('catalogInfo', 'buildVersion')
+                    version_string = nested_lookup(d, 'catalogInfo', 'buildVersion')
                     version_number = int(re.sub(r'(\d\d).*', r'\1', version_string))
                     if version_number != ver:
                         continue
                     # check that the directory exists
-                    install_dir = _get('installationPath')
+                    install_dir = nested_lookup(d, 'installationPath')
                     if not os.path.exists(install_dir):
                         continue
                     # maybe further checks are necessary?

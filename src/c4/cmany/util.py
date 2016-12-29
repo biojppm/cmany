@@ -2,6 +2,7 @@
 
 import os
 import re
+import sys
 import subprocess
 
 
@@ -13,11 +14,16 @@ def splitesc(string, split_char, escape_char=r'\\'):
     return s
 
 
+def cslist(arg):
+    '''transform comma-separated arguments into a list of strings. commas can be escaped with backslash, \\'''
+    return splitesc(arg, ',')
+
+
 def which(cmd):
     """look for an executable in the current PATH environment variable"""
     if os.path.exists(cmd):
         return cmd
-    exts = ("",".exe",".bat") if System.default_str() == "windows" else ""
+    exts = ("",".exe",".bat") if sys.platform == "win32" else ""
     for path in os.environ["PATH"].split(os.pathsep):
         for e in exts:
             j = os.path.join(path, cmd+e)
@@ -86,6 +92,22 @@ def ctor(cls, args):
     for i in args:
         l.append(cls(i))
     return l
+
+
+def nested_lookup(dictionary, *entry):
+    """get a nested entry from a dictionary"""
+    try:
+        if isinstance(entry, str):
+            v = dictionary[entry]
+        else:
+            v = None
+            for e in entry:
+                # print("key:", e, "value:", v if v is not None else "<none yet>")
+                v = v[e] if v is not None else dictionary[e]
+    except:
+        raise Exception("could not find entry '" +
+                        "/".join(list(entry)) + "' in the dictionary")
+    return v
 
 
 # -----------------------------------------------------------------------------
