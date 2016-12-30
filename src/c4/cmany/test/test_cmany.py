@@ -49,7 +49,7 @@ if System.default_str() == 'windows':
             def c(a, s):
                 sc = VisualStudioInfo.to_gen(a)
                 if sc != s:
-                    self.fail("{} should be '{}' but is '{}".format(a, s, sc))
+                    self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
             _sfx = " Win64" if Architecture.default().is64 else ""
             c('vs2017'      , 'Visual Studio 15 2017' + _sfx )
             c('vs2017_32'   , 'Visual Studio 15 2017'        )
@@ -98,19 +98,19 @@ if System.default_str() == 'windows':
             c('Visual Studio 10 2010'        , 'Visual Studio 10 2010'        )
             c('Visual Studio 10 2010 Win64'  , 'Visual Studio 10 2010 Win64'  )
             c('Visual Studio 10 2010 IA64'   , 'Visual Studio 10 2010 IA64'   )
-            c('Visual Studio 8 2008' + _sfx  , 'Visual Studio 8 2008' + _sfx  )
-            c('Visual Studio 8 2008'         , 'Visual Studio 8 2008'         )
-            c('Visual Studio 8 2008 Win64'   , 'Visual Studio 8 2008 Win64'   )
-            c('Visual Studio 8 2008 IA64'    , 'Visual Studio 8 2008 IA64'    )
-            c('Visual Studio 5 2005' + _sfx  , 'Visual Studio 5 2005' + _sfx  )
-            c('Visual Studio 5 2005'         , 'Visual Studio 5 2005'         )
-            c('Visual Studio 5 2005 Win64'   , 'Visual Studio 5 2005 Win64'   )
+            c('Visual Studio 9 2008' + _sfx  , 'Visual Studio 9 2008' + _sfx  )
+            c('Visual Studio 9 2008'         , 'Visual Studio 9 2008'         )
+            c('Visual Studio 9 2008 Win64'   , 'Visual Studio 9 2008 Win64'   )
+            c('Visual Studio 9 2008 IA64'    , 'Visual Studio 9 2008 IA64'    )
+            c('Visual Studio 8 2005' + _sfx  , 'Visual Studio 8 2005' + _sfx  )
+            c('Visual Studio 8 2005'         , 'Visual Studio 8 2005'         )
+            c('Visual Studio 8 2005 Win64'   , 'Visual Studio 8 2005 Win64'   )
 
         def test02_gen_to_name(self):
             def c(a, s):
                 sc = VisualStudioInfo.to_name(a)
                 if sc != s:
-                    self.fail("{} should be '{}' but is '{}".format(a, s, sc))
+                    self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
 
             c('Visual Studio 15 2017'        , 'vs2017_32'   )
             c('Visual Studio 15 2017 Win64'  , 'vs2017_64'   )
@@ -127,11 +127,11 @@ if System.default_str() == 'windows':
             c('Visual Studio 10 2010'        , 'vs2010_32'   )
             c('Visual Studio 10 2010 Win64'  , 'vs2010_64'   )
             c('Visual Studio 10 2010 IA64'   , 'vs2010_ia64' )
-            c('Visual Studio 8 2008'         , 'vs2008_32'   )
-            c('Visual Studio 8 2008 Win64'   , 'vs2008_64'   )
-            c('Visual Studio 8 2008 IA64'    , 'vs2008_ia64' )
-            c('Visual Studio 5 2005'         , 'vs2005_32'   )
-            c('Visual Studio 5 2005 Win64'   , 'vs2005_64'   )
+            c('Visual Studio 9 2008'         , 'vs2008_32'   )
+            c('Visual Studio 9 2008 Win64'   , 'vs2008_64'   )
+            c('Visual Studio 9 2008 IA64'    , 'vs2008_ia64' )
+            c('Visual Studio 8 2005'         , 'vs2005_32'   )
+            c('Visual Studio 8 2005 Win64'   , 'vs2005_64'   )
             c('vs2017'     , 'vs2017'      )
             c('vs2017_32'  , 'vs2017_32'   )
             c('vs2017_64'  , 'vs2017_64'   )
