@@ -3,6 +3,13 @@
 
 from setuptools import setup, find_packages, Extension
 import os.path
+import sys
+
+v = sys.version_info
+if  < (3,2):
+    # this is because of subprocess. That code is in c4/cmany/util.py.
+    msg = 'cmany requires at least Python 3.3. Current version is {}. Sorry.'
+    sys.exit(msg.format(sys.version_info))
 
 
 def read(*rnames):
