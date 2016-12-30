@@ -4,7 +4,6 @@ import os
 import re
 import glob
 import json
-import winreg as wr
 
 from .util import *
 from .cmake_sysinfo import *
@@ -241,6 +240,7 @@ class VisualStudioInfo:
         """get the MSBuild.exe path"""
         ver = __class__.to_ver(name_or_gen_or_ver)
         if ver < 12:   # VS2012 and below
+            import winreg as wr
             msbuild = None
             msbvers = ('4.0', '3.5', '2.0')
             for v in msbvers:
@@ -278,6 +278,7 @@ class VisualStudioInfo:
     def _is_installed_impl(ver):
         assert isinstance(ver, int)
         if ver < 15:
+            import winreg as wr
             key = "SOFTWARE\\Microsoft\\VisualStudio\\{}.0"
             try:
                 wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
