@@ -108,8 +108,6 @@ class setcwd:
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
 # See http://stackoverflow.com/a/40590445
-
-
 if False and sys.version_info >= (3,5):
     run_replacement = subprocess.run
 else:
@@ -122,7 +120,7 @@ else:
         def check_returncode(self):
             if self.returncode:
                 raise subprocess.CalledProcessError(
-                    self.returncode, self.args, self.stdout, self.stderr)
+                    self.returncode, *self.args, self.stdout, self.stderr)
 
     def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
         if input is not None:
