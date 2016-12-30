@@ -128,68 +128,6 @@ class CompileOptions:
 
 
 # -----------------------------------------------------------------------------
-
-
-
-class CompileOption:
-
-    def __init__(self, name, gcclike, vs, expl):
-        self.name = name
-        self.gcclike = gcclike
-        self.vs = vs
-        self.expl = expl
-
-    def get(self, compiler):
-        if compiler.is_msvc:
-            return self.vs
-        else:
-            return self.gcclike
-
-
-def _opt(name, gcclike, vs, expl):
-        return name, CompileOption(name, gcclike, vs, expl)
-
-known_options = odict([
-    #    name                   gcclike                  vs                explanation
-    _opt('cpp11'              , '-std=c++11'           , ''              , 'enable C++11 mode'),  # nopep8
-    _opt('cpp14'              , '-std=c++14'           , ''              , 'enable C++14 mode'),  # nopep8
-    _opt('cpp1z'              , '-std=c++1z'           , ''              , 'enable C++1z mode'),  # nopep8
-    _opt('thread'             , '-pthread'             , ''              , 'enable threads'),  # nopep8
-    _opt('wall'               , '-Wall'                , '/Wall'         , 'enable full warnings'),  # nopep8
-    _opt('pedantic'           , '-Wpedantic'           , '/W4'           , 'compile in pedantic mode'),  # nopep8
-    _opt('strict_aliasing'    , '-fstrict-aliasing'    , ''              , 'enable strict aliasing'),  # nopep8
-    _opt('no_strict_aliasing' , '-fno-strict-aliasing' , ''              , 'disable strict aliasing'),  # nopep8
-    _opt('fast_math'          , '-ffast-math'          , '/fp:fast /Qfast_transcendentals', 'enable fast math http://stackoverflow.com/a/22135559'),  # nopep8
-    _opt('no_rtti'            , '-fno-rtti'            , '/GR-'          , 'disable run-time type information'),  # nopep8
-    _opt('no_exceptions'      , '-fno-exceptions'      , '/EHsc-'        , 'disable exceptions'),  # nopep8
-    _opt('no_stdlib'          , '-fnostdlib'           , '/NODEFAULTLIB' , 'disable standard library'),  # nopep8
-    _opt('static_stdlib'      , '-static-libstdc++ -static-libgcc', '/MD', 'link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas'),  # nopep8
-    _opt('lto'                , '-flto'                , '/GL'           , 'enable whole program optimization'),  # nopep8
-    _opt('g'                  , '-g'                   , '/Zi'           , 'add debug information'),  # nopep8
-    _opt('g3'                 , '-g3'                  , '/Zi'           , 'add full debug information'),  # nopep8
-    _opt('no_bufsec'          , ''                     , '/GS-'          , 'disable buffer security checks'),  # nopep8
-    _opt('o2'                 , '-O2'                  , '/O2'           , 'optimize level 2'), # nopep8
-    _opt('o3'                 , '-O3'                  , '/Ox'           , 'optimize level 3'), # nopep8
-    _opt('os'                 , '-Os'                  , '/Os'           , 'optimize for size'),  # nopep8
-    _opt('ofast'              , '-Ofast'               , '/Ot'           , 'optimize for speed'), # nopep8
-    _opt('onative'            , '-march=native'        , ''              , 'optimize for native architecture'), # nopep8
-    _opt('sse'                , '-msse'                , '/arch:sse'     , 'enable SSE instructions'), # nopep8
-    _opt('sse2'               , '-msse2'               , '/arch:sse2'    , 'enable SSE2 instructions'), # nopep8
-    _opt('avx'                , '-mavx'                , '/arch:avx'     , 'enable AVX instructions'), # nopep8
-    _opt('avx2'               , '-mavx2'               , '/arch:avx2'    , 'enable AVX2 instructions'), # nopep8
-])
-
-del _opt
-
-
-def get_known_option(name):
-    opt = known_options.get(name)
-    if opt is None:
-        raise Exception("could not find compile option preset: " + name)
-    return opt
-
-
-# -----------------------------------------------------------------------------
 class Compiler(BuildItem):
     """Specifies a compiler"""
 
