@@ -18,32 +18,40 @@ environment:
     # http://www.appveyor.com/docs/installed-software#python
 
     - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5.x" # currently 3.5.2
+      PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python35-x64"
-      PYTHON_VERSION: "3.5.x" # currently 3.5.2
+      PYTHON_VERSION: "3.5.x"
       PYTHON_ARCH: "64"
 
     - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.x" # currently 3.4.4
+      PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x" # currently 3.4.4
+      PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "64"
 
     - PYTHON: "C:\\Python33"
-      PYTHON_VERSION: "3.3.x" # currently 3.3.5
+      PYTHON_VERSION: "3.3.x"
       PYTHON_ARCH: "32"
 
     - PYTHON: "C:\\Python33-x64"
-      PYTHON_VERSION: "3.3.x" # currently 3.3.5
+      PYTHON_VERSION: "3.3.x"
       PYTHON_ARCH: "64"
 
-configuration:
-  - Release
-  - Debug
+    - PYTHON: "C:\\Python32"
+      PYTHON_VERSION: "3.2.x"
+      PYTHON_ARCH: "32"
+
+    - PYTHON: "C:\\Python32-x64"
+      PYTHON_VERSION: "3.2.x"
+      PYTHON_ARCH: "64"
+
+#configuration:
+#  - Release
+#  - Debug
 
 install:
   # If there is a newer build queued for the same PR, cancel this one.
@@ -76,8 +84,9 @@ install:
 
   - 'dir "C:\Program Files (x86)"'
   - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\bin"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\bin\amd64"'
+  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\"'
+  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"'
+  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64"'
   - 'IF EXIST "C:\Program Files (x86)\MSBuild\14.0" ECHO "Found VS2015"'
 
 build_script:
