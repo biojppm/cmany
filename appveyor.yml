@@ -1,13 +1,14 @@
 # see https://packaging.python.org/appveyor/
 # see https://github.com/ogrisel/python-appveyor-demo/
 
+# https://www.appveyor.com/updates/2016/03/08/
+image: Visual Studio 2015
 environment:
   global:
     # SDK v7.0 MSVC Express 2008's SetEnv.cmd script will fail if the
     # /E:ON and /V:ON options are not enabled in the batch script intepreter
     # See: http://stackoverflow.com/a/13751649/163740
     CMD_IN_ENV: "cmd /E:ON /V:ON /C .\\appveyor\\run_with_env.cmd"
-
   matrix:
 
     # Pre-installed Python versions - see:
@@ -65,7 +66,6 @@ install:
   - "%PYTHON%\\Scripts\\pip install -r requirements_test.txt"
 
   - "cmake --version"
-
 build_script:
   # Build the compiled extension
   - "%PYTHON%\\python.exe setup.py build"
