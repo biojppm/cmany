@@ -120,7 +120,8 @@ else:
         def check_returncode(self):
             if self.returncode:
                 print('return code for', self.args, 'is', self.returncode)
-                print('stdout is', stdout)
+                print('\n\n\nstdout is', self.stdout)
+                print('\n\n\nstderr is', self.stderr)
                 raise subprocess.CalledProcessError(
                     self.returncode, self.args, self.stdout, self.stderr)
 
