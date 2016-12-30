@@ -1,6 +1,11 @@
-README.html
+*~
+*.bck
+*.bak
+.idea
+.eggs
+*.egg-info
+__pycache__
 build
 install
-__pycache__
-.idea
-*~
+dist
+README.html

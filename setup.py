@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 import os.path
 
 
@@ -15,7 +15,6 @@ def readreqs(*rnames):
         return line if (line and not line.startswith('--') and not line.startswith('#')) else ""
     with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
         l = [_skipcomment(line.strip()) for line in f]
-    print("reqs=", l)
     return l
 
 
@@ -48,4 +47,6 @@ setup(name = "cmany",
       entry_points = {'console_scripts':['cmany = c4.cmany.main:cmany_main'],},
       install_requires = readreqs('requirements.txt'),
       tests_require = readreqs('requirements_test.txt'),
+      #include_package_data = True,
+      #package_data = {'c4.cmany':['test/*','test/*/*']}
 )
