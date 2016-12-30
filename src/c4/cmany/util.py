@@ -112,7 +112,7 @@ def nested_lookup(dictionary, *entry):
 
 
 # -----------------------------------------------------------------------------
-class cwd_back:
+class setcwd:
     """temporarily change into a directory inside a with block"""
 
     def __init__(self, dir_, silent=False):

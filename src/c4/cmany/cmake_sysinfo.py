@@ -80,7 +80,7 @@ class CMakeSysInfo:
             if not os.path.exists(d):
                 os.makedirs(d)
             print("cmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
-            with cwd_back(d):
+            with setcwd(d):
                 out = runsyscmd(cmd, echo_output=False, capture_output=True)
             print("cmany: finished generating information for generator '{}'".format(gen))
             with open(p, "w") as f:

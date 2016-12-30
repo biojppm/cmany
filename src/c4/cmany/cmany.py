@@ -419,7 +419,7 @@ class Build:
         self.create_dir()
         if not os.path.exists(self.preload_file):
             self.create_preload_file()
-        with cwd_back(self.builddir):
+        with setcwd(self.builddir):
             cmd = (['cmake', '-C', os.path.basename(self.preload_file),]
                    + self.generator.configure_args(self) +
                    [# '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
@@ -430,7 +430,7 @@ class Build:
 
     def build(self, targets = []):
         self.create_dir()
-        with cwd_back(self.builddir):
+        with setcwd(self.builddir):
             if not os.path.exists("cmany_configure.done"):
                 self.configure()
             if self.compiler.is_msvc and len(targets) == 0:
@@ -442,7 +442,7 @@ class Build:
 
     def install(self):
         self.create_dir()
-        with cwd_back(self.builddir):
+        with setcwd(self.builddir):
             if not os.path.exists("cmany_build.done"):
                 self.build()
             cmd = self.generator.install(self)
@@ -451,7 +451,7 @@ class Build:
 
     def clean(self):
         self.create_dir()
-        with cwd_back(self.builddir):
+        with setcwd(self.builddir):
             cmd = self.generator.cmd(['clean'], self)
             runsyscmd(cmd, echo_output=True)
             os.remove("cmany_build.done")
@@ -480,7 +480,7 @@ message(STATUS "cmany:preload----------------------")
         vlist = [v + ':' for v in varlist]
         values = odict()
         rx = r'(^.*?)=(.*)$'
-        with cwd_back(self.builddir, silent=True):
+        with setcwd(self.builddir, silent=True):
             with open('CMakeCache.txt') as f:
                 for line in f:
                     for v in vlist:
