@@ -1,5 +1,11 @@
 # TODO see this https://blog.ionelmc.ro/2014/05/25/python-packaging/
-language: cpp
+# TODO see https://github.com/google/googletest/blob/master/.travis.yml
+# Build matrix / environment variable are explained on:
+# http://about.travis-ci.org/docs/user/build-configuration/
+# This file can be validated on:
+# http://lint.travis-ci.org/
+
+language: python
 sudo: required
 dist: trusty # python3-pip requires 14.04+
 python:

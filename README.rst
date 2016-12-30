@@ -116,7 +116,7 @@ Build using both clang++,g++ and in Debug,Release modes (4 build trees)::
     build/linux-x86_64-gcc6.1-debug
     build/linux-x86_64-gcc6.1-release
 
-Build using clang++,g++,icpc in Debug,Release,RelWithDebInfo modes (9 build trees)::
+Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees)::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
     $ tree -fi -L 1 build/*
