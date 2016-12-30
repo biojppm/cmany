@@ -86,19 +86,19 @@ def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as
         print("running command:", s)
     if as_bytes_string:
         assert not echo_output
-        result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = subprocess_run(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif not echo_output:
-        result = subprocess_run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        result = subprocess_run(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 universal_newlines=True)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif echo_output:
         # http://stackoverflow.com/a/4417735
-        popen = subprocess.Popen(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        popen = subprocess.Popen(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  universal_newlines=True)
         out = ""
         for stdout_line in iter(popen.stdout.readline, ""):
