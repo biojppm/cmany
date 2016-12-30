@@ -108,29 +108,40 @@ class setcwd:
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
 # See http://stackoverflow.com/a/40590445
-def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
-    if input is not None:
-        if 'stdin' in kwargs:
-            raise ValueError('stdin and input arguments may not both be used.')
-        kwargs['stdin'] = subprocess.PIPE
-    process = subprocess.Popen(*popenargs, **kwargs)
-    try:
-        stdout, stderr = process.communicate(input)
-    except:
-        process.kill()
-        process.wait()
-        raise
-    retcode = process.poll()
-    if check and retcode:
-        raise subprocess.CalledProcessError(
-            retcode, process.args, output=stdout, stderr=stderr)
-    return subprocess.CompletedProcess(args=process.args, returncode=retcode,
-                                       stdout=stdout, stderr=stderr)
 
 
 if False and sys.version_info >= (3,5):
     run_replacement = subprocess.run
 else:
+    class CompletedProcess:
+        def __init__(self, args, returncode, stdout, stderr):
+            self.args = args
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+        def check_returncode(self):
+            if self.returncode:
+                raise subprocess.CalledProcessError(
+                    self.returncode, self.args, self.stdout, self.stderr)
+
+    def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
+        if input is not None:
+            if 'stdin' in kwargs:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = subprocess.PIPE
+        process = subprocess.Popen(*popenargs, **kwargs)
+        try:
+            stdout, stderr = process.communicate(input)
+        except:
+            process.kill()
+            process.wait()
+            raise
+        retcode = process.poll()
+        if check and retcode:
+            raise subprocess.CalledProcessError(
+                retcode, process.args, output=stdout, stderr=stderr)
+        return CompletedProcess(args=process.args, returncode=retcode,
+                                stdout=stdout, stderr=stderr)
     run_replacement = subprocess_run_impl
 
 
