@@ -1,3 +1,4 @@
+# TODO see this https://blog.ionelmc.ro/2014/05/25/python-packaging/
 language: cpp
 sudo: required
 python:
@@ -11,6 +12,10 @@ python:
   - "pypy3"
 install:
   # command to install dependencies
-  - pip3 install -r requirements_test.txt .
+  - python3 --version
+  - pip --version
+  - pip install -r requirements_test.txt .
 # command to run tests
-script: ./setup.py nosetest
+script: ./setup.py nosetests
+after_success:
+  codecov

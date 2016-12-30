@@ -1,13 +1,14 @@
 cmany
 =====
 
+Easily batch-build cmake projects!
+
+
 .. image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
     :target: https://travis-ci.org/biojppm/cmany
-
 .. image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
     :target: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany
 
-Easily batch-build cmake projects!
 
 cmany is a command line tool and Python3 module to easily build
 several variations of a CMake C/C++ project. These variations

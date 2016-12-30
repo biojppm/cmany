@@ -4,6 +4,7 @@ import os
 import re
 import glob
 import json
+import winreg as wr
 
 from .util import *
 from .cmake_sysinfo import *
@@ -239,16 +240,28 @@ class VisualStudioInfo:
     def msbuild(name_or_gen_or_ver):
         """get the MSBuild.exe path"""
         ver = __class__.to_ver(name_or_gen_or_ver)
-        if ver < 15:
-            progfilesx86 = os.environ['ProgramFiles(x86)']
-            msbuild = os.path.join(progfilesx86, 'MSBuild', str(ver)+'.0', 'bin', 'MSBuild.exe')
+        if ver < 12:   # VS2012 and below
+            msbuild = None
+            msbvers = ('4.0', '3.5', '2.0')
+            for v in msbvers:
+                key = "SOFTWARE\\Microsoft\\MSBuild\\ToolsVersions\\{}\\MS‌​BuildToolsPath"
+                try:
+                    val = wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
+                    msbuild = os.path.join(val, 'MSBuild.exe')
+                    break
+                except:
+                    pass
+            # default to some probable value if no registry key was found
+            if msbuild is None:
+                val = 'C:\\Windows\Microsoft.NET\Framework{}\\v{}\\MSBuild.exe'
+                for v in msbvers:
+                    msbuild = val.format('64' if is64 else '', '3.5')
+                    if os.path.exists(msbuild):
+                        break
         else:
-            if ver > 15:
-                raise Exception('VS Version not implemented: ' + str(ver))
-            if is64:
-                msbuild = os.path.join(__class__.vsdir(ver), 'MSBuild', '15.0', 'Bin', 'amd64', 'MSBuild.exe')
-            else:
-                msbuild = os.path.join(__class__.vsdir(ver), 'MSBuild', '15.0', 'Bin', 'MSBuild.exe')
+            root = os.environ['ProgramFiles(x86)'] if ver < 15 else __class__.vsdir(ver)
+            val = '{}\\MSBuild\\{}.0\\bin\\{}MSBuild.exe'
+            msbuild = val.format(root, ver, 'amd64\\' if is64 else '')
         return msbuild
 
     @staticmethod
@@ -265,8 +278,7 @@ class VisualStudioInfo:
     def _is_installed_impl(ver):
         assert isinstance(ver, int)
         if ver < 15:
-            import winreg as wr
-            key = "SOFTWARE\Microsoft\VisualStudio\{}.0"
+            key = "SOFTWARE\\Microsoft\\VisualStudio\\{}.0"
             try:
                 wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
                 # fail if we can't find the dir
