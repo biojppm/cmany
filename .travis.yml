@@ -8,7 +8,7 @@ python:
   - "3.6"
   - "3.7-dev"
   # PyPy versions
-  - "pypy3" # Pypy3 2.4.0
+  - "pypy3"
 install:
   # command to install dependencies
   - pip3 install -r requirements_test.txt .

@@ -1,6 +1,12 @@
 cmany
 =====
 
+.. image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
+    :target: https://travis-ci.org/biojppm/cmany
+
+.. image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
+    :target: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany
+
 Easily batch-build cmake projects!
 
 cmany is a command line tool and Python3 module to easily build
@@ -23,10 +29,11 @@ under a ``build`` folder which is under the current folder::
     build/linux-x86_64-gcc6.1-Debug
     build/linux-x86_64-gcc6.1-Release
 
+
 Features
 --------
 
-* Saves the tedious work of dealing with several build trees by hand.
+* Saves the tedious work of dealing with many build trees by hand.
 * Useful for build comparisons.
 * Avoids a full rebuild when the build type is changed. Although this feature already exists in multi-configuration cmake generators such as Visual Studio, it is missing from mono-configuration generators like Unix Makefiles.
 * ... TODO
@@ -59,17 +66,16 @@ will be this::
 
 The command-line behaviour of cmany is similar to that of CMake
 except that the resulting build tree is not placed directly at the current
-directory, but will instead be nested under ``./build``,
-which is created if it doesn't exist. To make it unique, the name
-for the build tree will be obtained from combining the names of the
+directory, but will instead be nested under ``./build``. To make it unique, the
+name for the build tree will be obtained from combining the names of the
 operating system, architecture, compiler+version and the CMake build type.
 Like with CMake, omitting the path to the project dir will cause
-searching for CMakeLists.txt on the current dir.
-The configure command has an alias of 'c'. So this has the same result as above::
+searching for CMakeLists.txt on the current dir. Also, the configure
+command has an alias of 'c'. So the following has the same result as above::
 
     $ cmany c
 
-You can skip the configure command and invoke build at once as if per
+The ``cmany build`` command will configure AND build at once as if per
 ``cmake --build``. This will invoke ``cmany configure`` if necessary::
 
     $ cmany build
