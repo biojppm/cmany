@@ -6,43 +6,6 @@ import sys
 import subprocess
 
 
-# subprocess.run() was introduced in Python 3.5 http://stackoverflow.com/questions/40590192/getting-an-error-attributeerror-module-object-has-no-attribute-run-while
-
-class runresult:
-    def __init__(self, args, retcode, stdout, stderr):
-        self.args = args
-        self.retcode = retcode
-        self.stdout = stdout
-        self.stderr = stderr
-    def check_returncode(self):
-        if self.retcode:
-            raise subprocess.CalledProcessError(
-                self.retcode, self.args, output=self.stdout, stderr=self.stderr)
-
-def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
-    if input is not None:
-        if 'stdin' in kwargs:
-            raise ValueError('stdin and input arguments may not both be used.')
-        kwargs['stdin'] = subprocess.PIPE
-    process = subprocess.Popen(*popenargs, **kwargs)
-    try:
-        stdout, stderr = process.communicate(input)
-    except:
-        process.kill()
-        process.wait()
-        raise
-    retcode = process.poll()
-    if check and retcode:
-        raise subprocess.CalledProcessError(
-            retcode, process.args, output=stdout, stderr=stderr)
-    return runresult(process.args, retcode, stdout, stderr)
-
-
-if sys.version_info >= (3,5):
-    subprocess_run = subprocess.run
-else:
-    subprocess_run = subprocess_run_impl
-
 
 def splitesc(string, split_char, escape_char=r'\\'):
     """split a string at the given character, allowing for escaped characters
@@ -77,40 +40,6 @@ def chkf(*args):
     if not os.path.exists(f):
         raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())
     return f
-
-
-def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
-    """run a system command. Note that stderr is interspersed with stdout"""
-    s = " ".join(arglist)
-    if echo_cmd:
-        print("running command:", s)
-    if as_bytes_string:
-        assert not echo_output
-        result = subprocess_run(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        result.check_returncode()
-        if capture_output:
-            return str(result.stdout)
-    elif not echo_output:
-        result = subprocess_run(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                universal_newlines=True)
-        result.check_returncode()
-        if capture_output:
-            return str(result.stdout)
-    elif echo_output:
-        # http://stackoverflow.com/a/4417735
-        popen = subprocess.Popen(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 universal_newlines=True)
-        out = ""
-        for stdout_line in iter(popen.stdout.readline, ""):
-            print(stdout_line, end="")
-            if capture_output:
-                out += stdout_line
-        popen.stdout.close()
-        return_code = popen.wait()
-        if return_code != 0:
-            raise subprocess.CalledProcessError(return_code, s)
-        if capture_output:
-            return out
 
 
 def cacheattr(obj, name, function):
@@ -173,3 +102,68 @@ class setcwd:
             print("Returning to directory", self.old, "(currently in {})".format(self.dir))
         chkf(self.old)
         os.chdir(self.old)
+
+# -----------------------------------------------------------------------------
+
+# subprocess.run() was introduced only in Python 3.5,
+# so we provide a replacement implementation to use in older Python versions.
+# See http://stackoverflow.com/a/40590445
+def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
+    if input is not None:
+        if 'stdin' in kwargs:
+            raise ValueError('stdin and input arguments may not both be used.')
+        kwargs['stdin'] = subprocess.PIPE
+    process = subprocess.Popen(*popenargs, **kwargs)
+    try:
+        stdout, stderr = process.communicate(input)
+    except:
+        process.kill()
+        process.wait()
+        raise
+    retcode = process.poll()
+    if check and retcode:
+        raise subprocess.CalledProcessError(
+            retcode, process.args, output=stdout, stderr=stderr)
+    return subprocess.CompletedProcess(args=process.args, returncode=retcode,
+                                       stdout=stdout, stderr=stderr)
+
+
+if False and sys.version_info >= (3,5):
+    run_replacement = subprocess.run
+else:
+    run_replacement = subprocess_run_impl
+
+
+def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
+    """run a system command. Note that stderr is interspersed with stdout"""
+    s = " ".join(arglist)
+    if echo_cmd:
+        print("running command:", s)
+    if as_bytes_string:
+        assert not echo_output
+        result = run_replacement(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result.check_returncode()
+        if capture_output:
+            return str(result.stdout)
+    elif not echo_output:
+        result = run_replacement(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 universal_newlines=True)
+        result.check_returncode()
+        if capture_output:
+            return str(result.stdout)
+    elif echo_output:
+        # http://stackoverflow.com/a/4417735
+        popen = subprocess.Popen(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 universal_newlines=True)
+        out = ""
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line, end="")
+            if capture_output:
+                out += stdout_line
+        popen.stdout.close()
+        return_code = popen.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, s)
+        if capture_output:
+            return out
+
