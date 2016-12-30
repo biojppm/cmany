@@ -80,10 +80,10 @@ install:
   - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"'
   - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64"'
   - 'IF EXIST "C:\Program Files (x86)\MSBuild\14.0" ECHO "Found VS2015"'
-  - 'cmake -G "Visual Studio 12 2013" --system-information'
-  - 'cmake -G "Visual Studio 12 2013 Win64" --system-information'
-  - 'cmake -G "Visual Studio 14 2015" --system-information'
-  - 'cmake -G "Visual Studio 14 2015 Win64" --system-information'
+  - 'cmake -G "Visual Studio 12 2013" --system-information ; echo Exit Code is %errorlevel%'
+  - 'cmake -G "Visual Studio 12 2013 Win64" --system-information ; echo Exit Code is %errorlevel%'
+  - 'cmake -G "Visual Studio 14 2015" --system-information ; echo Exit Code is %errorlevel%'
+  - 'cmake -G "Visual Studio 14 2015 Win64" --system-information ; echo Exit Code is %errorlevel%'
 
 build_script:
   # Build the compiled extension
