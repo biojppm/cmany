@@ -6,6 +6,44 @@ import sys
 import subprocess
 
 
+# subprocess.run() was introduced in Python 3.5 http://stackoverflow.com/questions/40590192/getting-an-error-attributeerror-module-object-has-no-attribute-run-while
+
+class runresult:
+    def __init__(self, args, retcode, stdout, stderr):
+        self.args = args
+        self.retcode = retcode
+        self.stdout = stdout
+        self.stderr = stderr
+    def check_returncode(self):
+        if self.retcode:
+            raise subprocess.CalledProcessError(
+                self.retcode, self.args, output=stdout, stderr=stderr)
+
+def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
+    if input is not None:
+        if 'stdin' in kwargs:
+            raise ValueError('stdin and input arguments may not both be used.')
+        kwargs['stdin'] = subprocess.PIPE
+    process = subprocess.Popen(*popenargs, **kwargs)
+    try:
+        stdout, stderr = process.communicate(input)
+    except:
+        process.kill()
+        process.wait()
+        raise
+    retcode = process.poll()
+    if check and retcode:
+        raise subprocess.CalledProcessError(
+            retcode, process.args, output=stdout, stderr=stderr)
+    return runresult(process.args, retcode, stdout, stderr)
+
+
+if sys.version_info >= (3,5):
+    subprocess_run = subprocess.run
+else:
+    subprocess_run = subprocess_run_impl
+
+
 def splitesc(string, split_char, escape_char=r'\\'):
     """split a string at the given character, allowing for escaped characters
     http://stackoverflow.com/a/21107911"""
@@ -53,7 +91,7 @@ def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as
         if capture_output:
             return str(result.stdout)
     elif not echo_output:
-        result = subprocess.run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        result = subprocess_run(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 universal_newlines=True)
         result.check_returncode()
         if capture_output:
