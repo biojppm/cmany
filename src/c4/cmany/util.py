@@ -119,8 +119,10 @@ else:
             self.stderr = stderr
         def check_returncode(self):
             if self.returncode:
+                print('return code for', self.args, 'is', self.returncode)
+                print('stdout is', stdout)
                 raise subprocess.CalledProcessError(
-                    self.returncode, *self.args, self.stdout, self.stderr)
+                    self.returncode, self.args, self.stdout, self.stderr)
 
     def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
         if input is not None:
@@ -145,7 +147,11 @@ else:
 
 def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
     """run a system command. Note that stderr is interspersed with stdout"""
-    s = " ".join(arglist)
+    if isinstance(arglist, list):
+        s = " ".join(arglist)
+    else:
+        s = arglist
+        arglist = [s]
     if echo_cmd:
         print("running command:", s)
     if as_bytes_string:
