@@ -53,10 +53,10 @@ class VisualStudioInfo:
         'vs2010_32'   : 'Visual Studio 10 2010'        , 'Visual Studio 10 2010'        : 'vs2010_32'   ,  # nopep8
         'vs2010_64'   : 'Visual Studio 10 2010 Win64'  , 'Visual Studio 10 2010 Win64'  : 'vs2010_64'   ,  # nopep8
         'vs2010_ia64' : 'Visual Studio 10 2010 IA64'   , 'Visual Studio 10 2010 IA64'   : 'vs2010_ia64' ,  # nopep8
-        'vs2008'      : 'Visual Studio 8 2008' + _sfx  , 'Visual Studio 8 2008' + _sfx  : 'vs2008'      ,  # nopep8
-        'vs2008_32'   : 'Visual Studio 8 2008'         , 'Visual Studio 8 2008'         : 'vs2008_32'   ,  # nopep8
-        'vs2008_64'   : 'Visual Studio 8 2008 Win64'   , 'Visual Studio 8 2008 Win64'   : 'vs2008_64'   ,  # nopep8
-        'vs2008_ia64' : 'Visual Studio 8 2008 IA64'    , 'Visual Studio 8 2008 IA64'    : 'vs2008_ia64' ,  # nopep8
+        'vs2008'      : 'Visual Studio 9 2008' + _sfx  , 'Visual Studio 9 2008' + _sfx  : 'vs2008'      ,  # nopep8
+        'vs2008_32'   : 'Visual Studio 9 2008'         , 'Visual Studio 9 2008'         : 'vs2008_32'   ,  # nopep8
+        'vs2008_64'   : 'Visual Studio 9 2008 Win64'   , 'Visual Studio 9 2008 Win64'   : 'vs2008_64'   ,  # nopep8
+        'vs2008_ia64' : 'Visual Studio 9 2008 IA64'    , 'Visual Studio 9 2008 IA64'    : 'vs2008_ia64' ,  # nopep8
         'vs2005'      : 'Visual Studio 5 2005' + _sfx  , 'Visual Studio 5 2005' + _sfx  : 'vs2005'      ,  # nopep8
         'vs2005_32'   : 'Visual Studio 5 2005'         , 'Visual Studio 5 2005'         : 'vs2005_32'   ,  # nopep8
         'vs2005_64'   : 'Visual Studio 5 2005 Win64'   , 'Visual Studio 5 2005 Win64'   : 'vs2005_64'   ,  # nopep8

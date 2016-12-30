@@ -15,6 +15,7 @@ install:
   # command to install dependencies
   - sudo apt-get update
   - sudo apt-get install -y python3-pip python3-dev
+  - sudo apt-get install -y cmake build-essential
   - python3 -V
   - pip3 -V
   - pip3 install -r requirements_test.txt .

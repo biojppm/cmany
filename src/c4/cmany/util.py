@@ -17,7 +17,7 @@ class runresult:
     def check_returncode(self):
         if self.retcode:
             raise subprocess.CalledProcessError(
-                self.retcode, self.args, output=stdout, stderr=stderr)
+                self.retcode, self.args, output=self.stdout, stderr=self.stderr)
 
 def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
     if input is not None:
