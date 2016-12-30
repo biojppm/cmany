@@ -12,9 +12,13 @@ python:
   - "pypy3"
 install:
   # command to install dependencies
+  - sudo apt-get update
+  #- sudo apt-get install -y libffi-dev libssl-dev
+  - sudo apt-get install -y python3-pip
   - python3 --version
-  - pip --version
-  - pip install -r requirements_test.txt .
+  - pip3 --version
+  #- pip3 install pyopenssl ndg-httpsclient pyasn1
+  - pip3 install -r requirements_test.txt .
 # command to run tests
 script: ./setup.py nosetests
 after_success:
