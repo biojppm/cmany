@@ -4,8 +4,10 @@
 .idea
 .eggs
 *.egg-info
+*.pyc
 __pycache__
 build
 install
 dist
 README.html
+
