@@ -54,16 +54,6 @@ class System(BuildItem):
         if s == "mac os x" or s == "Darwin":
             s = "mac"
         return s
-        # if not hasattr(System, "_current"):
-        #     if sys.platform == "linux" or sys.platform == "linux2":
-        #         System._current = System("linux")
-        #     elif sys.platform == "darwin":
-        #         System._current = System("mac")
-        #     elif sys.platform == "win32":
-        #         System._current = System("windows")
-        #     else:
-        #         raise Exception("unknown system")
-        # return System._current
 
 
 # -----------------------------------------------------------------------------
