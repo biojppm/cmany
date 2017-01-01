@@ -108,20 +108,17 @@ class setcwd:
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
 # See http://stackoverflow.com/a/40590445
-if False and sys.version_info >= (3,5):
+if sys.version_info >= (3,5):
     run_replacement = subprocess.run
 else:
     class CompletedProcess:
-        def __init__(self, args, returncode, stdout, stderr):
+        def __init__(self, returncode, args, stdout, stderr):
             self.args = args
             self.returncode = returncode
             self.stdout = stdout
             self.stderr = stderr
         def check_returncode(self):
             if self.returncode:
-                print('return code for', self.args, 'is', self.returncode)
-                print('\n\n\nstdout is', self.stdout)
-                print('\n\n\nstderr is', self.stderr)
                 raise subprocess.CalledProcessError(
                     self.returncode, self.args, self.stdout, self.stderr)
 
@@ -143,6 +140,8 @@ else:
                 retcode, process.args, output=stdout, stderr=stderr)
         return CompletedProcess(args=process.args, returncode=retcode,
                                 stdout=stdout, stderr=stderr)
+
+    # point run_replacement to our implementation
     run_replacement = subprocess_run_impl
 
 
@@ -152,34 +151,23 @@ def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as
         s = " ".join(arglist)
     else:
         s = arglist
-        arglist = [s]
+        #arglist = [s]
     if echo_cmd:
         print("running command:", s)
     if as_bytes_string:
         assert not echo_output
-        result = run_replacement(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = run_replacement(s)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif not echo_output:
-        result = run_replacement(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        result = run_replacement(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  universal_newlines=True)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif echo_output:
-        # http://stackoverflow.com/a/4417735
-        popen = subprocess.Popen(arglist, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 universal_newlines=True)
-        out = ""
-        for stdout_line in iter(popen.stdout.readline, ""):
-            print(stdout_line, end="")
-            if capture_output:
-                out += stdout_line
-        popen.stdout.close()
-        return_code = popen.wait()
-        if return_code != 0:
-            raise subprocess.CalledProcessError(return_code, s)
+        result = run_replacement(s, universal_newlines=True)
+        result.check_returncode()
         if capture_output:
-            return out
-
+            return str(result.stdout)
