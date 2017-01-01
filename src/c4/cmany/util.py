@@ -5,6 +5,21 @@ import re
 import sys
 import subprocess
 
+def sys_str():
+    if sys.platform == "linux" or sys.platform == "linux2":
+        return "linux"
+    elif sys.platform == "darwin":
+        return "mac"
+    elif sys.platform == "win32":
+        return "windows"
+    else:
+        raise Exception("unknown system")
+
+def in_windows():
+    return sys.platform == "win32"
+
+def in_unix():
+    return sys.platform in ("linux", "linux2", "darwin")
 
 
 def splitesc(string, split_char, escape_char=r'\\'):
@@ -152,22 +167,33 @@ def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as
     else:
         s = arglist
         #arglist = [s]
+
+    # there appear to be some differences in the way that quoted arguments
+    # are treated
+    if in_unix():
+        cmd = arglist
+    elif in_windows():
+        cmd = s
+    else:
+        raise Exception("unknown system")
+
     if echo_cmd:
         print("running command:", s)
+
     if as_bytes_string:
         assert not echo_output
-        result = run_replacement(s)
+        result = run_replacement(cmd)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif not echo_output:
-        result = run_replacement(s, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  universal_newlines=True)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
     elif echo_output:
-        result = run_replacement(s, universal_newlines=True)
+        result = run_replacement(cmd, universal_newlines=True)
         result.check_returncode()
         if capture_output:
             return str(result.stdout)
