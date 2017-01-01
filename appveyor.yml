@@ -72,23 +72,15 @@ install:
   # target Python version and architecture
   - "%PYTHON%\\Scripts\\pip install -r requirements_test.txt"
 
-  - "cmake --version"
+  #- '.ci/show_cmake_sysinfo.bat'
 
-  - 'dir "C:\Program Files (x86)"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"'
-  - 'dir "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64"'
-  - 'IF EXIST "C:\Program Files (x86)\MSBuild\14.0" ECHO "Found VS2015"'
-  - '.ci/show_cmake_sysinfo.bat'
-
-build_script:
-  # Build the compiled extension
-  - "%PYTHON%\\python.exe setup.py build"
+#build_script:
+#  # Build the compiled extension
+#  - "%PYTHON%\\python.exe setup.py build"
 
 test_script:
   # Run the project tests
-  - "%PYTHON%\\python.exe setup.py nosetests"
+  - "set PYTHONPATH=src && %PYTHON%\\python.exe -m nose -v --with-id --nocapture"
 
 after_test:
   # If tests are successful, create binary packages for the project.

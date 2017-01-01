@@ -29,6 +29,6 @@ install:
   - which g++ && g++ --version
   - which clang++ && clang++ --version
 # command to run tests
-script: python3 setup.py nosetests
+script: env PYTHONPATH=src python3 -m nose -v --with-id --nocapture
 after_success:
   codecov

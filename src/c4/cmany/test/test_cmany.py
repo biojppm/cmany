@@ -5,10 +5,10 @@ from c4.cmany import *
 from c4.cmany.vsinfo import *
 import os.path
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+# util
 
 class TestSplitEsc(ut.TestCase):
 
@@ -16,10 +16,13 @@ class TestSplitEsc(ut.TestCase):
         from c4.cmany.util import splitesc
         self.assertEqual(splitesc('hello\,world,yet\,another', ','), ['hello\,world','yet\,another'])
 
+# TODO: test runsyscmd
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+# vsinfo
+
 if System.default_str() == 'windows':
 
     class TestVisualStudioInfo(ut.TestCase):
@@ -265,6 +268,26 @@ if System.default_str() == 'windows':
             t('vs2012_xp'             , 'vs2012'     , 'v110_xp'      )
             t('vs2010'                , 'vs2010'     , None           )
             t('vs2010_xp'             , 'vs2010'     , 'v100_xp'      )
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+test_projs = [
+    #'hello'
+]
+
+for p in test_projs:
+    import c4.cmany.util
+    import os
+    class CMakeTestProj:
+        def __init__(self, compilers=None):
+            self.compilers = None
+            self.python = os.environ['PYTHON']
+        def test_build(self):
+            cmd = [self.python, 'build', ]
+            c4.cmany.util.runsyscmd(cmd)
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
