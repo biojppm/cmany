@@ -1,13 +1,20 @@
+build
+install
+README.html
+
+# Editor/IDE files
 *~
 *.bck
 *.bak
 .idea
-.eggs
-*.egg-info
+
+# Python files
 *.pyc
 __pycache__
-build
-install
+.noseids
+
+# setup.py files
+.eggs
+*.egg-info
 dist
-README.html
 
