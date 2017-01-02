@@ -72,7 +72,7 @@ install:
   # target Python version and architecture
   - "%PYTHON%\\Scripts\\pip install -r requirements_test.txt"
 
-  - ".ci/show_cmake_sysinfo.bat"
+  - ".ci\\show_cmake_sysinfo.bat"
 
 #build_script:
 #  # Build the compiled extension
@@ -80,7 +80,7 @@ install:
 
 test_script:
   # Run the project tests
-  - ".ci/appveyor_test.bat"
+  - ".ci\\appveyor_test.bat"
 
 after_test:
   # If tests are successful, create binary packages for the project.
