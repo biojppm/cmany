@@ -72,11 +72,11 @@ install:
   # target Python version and architecture
   - "%PYTHON%\\Scripts\\pip install -r requirements_test.txt"
 
-#  - ".ci\\show_cmake_sysinfo.bat"
+  - ".ci\\show_cmake_sysinfo.bat"
 
-#build_script:
-#  # Build the compiled extension
-#  - "%PYTHON%\\python.exe setup.py build"
+build_script:
+  # Build the compiled extension
+  - "%PYTHON%\\python.exe setup.py build"
 
 test_script:
   # Run the project tests
