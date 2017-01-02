@@ -81,7 +81,7 @@ build_script:
 test_script:
   # Run the project tests
   - "echo start test"
-  #- ".ci\\appveyor_test.bat"
+  - ".ci\\appveyor_test.bat"
   - "echo end test"
 
 after_test:
