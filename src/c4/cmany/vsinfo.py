@@ -208,7 +208,7 @@ def parse_toolset(name, canonize=True):
 def vsdir(name_or_gen_or_ver):
     """get the directory where VS is installed"""
     ver = to_ver(name_or_gen_or_ver)
-    d = None
+    d = ""
     if ver < 15:
         progfilesx86 = os.environ['ProgramFiles(x86)']
         d = os.path.join(progfilesx86, 'Microsoft Visual Studio ' + str(ver) + '.0')
@@ -227,7 +227,7 @@ def vsdir(name_or_gen_or_ver):
                 path = nested_lookup(idata, 'installationPath')
                 return path
             except:
-                return None
+                return ""
         d = cacheattr(sys.modules[__name__], '_vs2017dir', fn)
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
