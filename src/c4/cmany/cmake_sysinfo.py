@@ -98,8 +98,8 @@ class CMakeSysInfo:
                 cmd = ['cmake', '--system-information']
             else:
                 if gen.startswith('vs') or gen.startswith('Visual Studio'):
-                    from .vsinfo import VisualStudioInfo
-                    gen = VisualStudioInfo.to_gen(gen)
+                    from c4.cmany import vsinfo
+                    gen = vsinfo.to_gen(gen)
                 cmd = ['cmake', '-G', '"{}"'.format(gen), '--system-information']
             if not os.path.exists(d):
                 os.makedirs(d)

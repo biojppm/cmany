@@ -203,7 +203,7 @@ class Compiler(BuildItem):
             version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             # print("icc version:", version, "---")
         else:
-            version = slntout([path, '--dumpversion'])
+            version = slntout([path, '-dumpversion'])
             version = re.sub(vregex, r'\1', version)
         #
         return name, version, version_full
@@ -423,7 +423,7 @@ class Build:
             os.remove("cmany_build.done")
 
     def getvars(self, varlist):
-        return cmake_sysinfo.getcachevars(self.builddir, varlist)
+        return getcachevars(self.builddir, varlist)
 
     def _gather_flags(self):
         # flags = self.generator.compile_flags()
