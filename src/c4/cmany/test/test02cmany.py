@@ -66,7 +66,7 @@ def run_projs(testobj, args, check_fn=None):
                            numbuilds=1)
             check_fn(tb)
 
-        if numbuilds < 2:
+        if numbuilds == 1:
             continue
 
         # run all combinations at once
@@ -74,7 +74,7 @@ def run_projs(testobj, args, check_fn=None):
         id = '.test/1--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
         p._run(args + ['--build-dir', bd,
                        '--install-dir', id,
-                       '-c', ','.join([str(c) for c in compiler_set]),
+                       '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
                        '-t', ','.join([str(b) for b in build_types])])
         if check_fn:
             for c in compiler_set:
@@ -91,7 +91,7 @@ def run_projs(testobj, args, check_fn=None):
                 id = '.test/2--{}--{}--install'.format(c, t)
                 p._run(args + ['--build-dir', bd,
                          '--install-dir', id,
-                         '-c', str(c),
+                         '-c', c.name if c.is_msvc else c.path,
                          '-t', str(t)])
                 if check_fn:
                     tb = TestBuild(proj=p, buildroot=bd, installroot=id,

@@ -219,8 +219,8 @@ def vsdir(name_or_gen_or_ver):
             except:
                 pass
     elif ver == 15:
-        # VS 2017+ is no longer a singleton, and may be installed anywhere,
-        # and the environment variable VS***COMNTOOLS no longer exists.
+        # VS 2017+ is no longer a singleton, and may be installed anywhere;
+        # also, the environment variable VS***COMNTOOLS no longer exists.
         def fn():
             try:
                 idata = _vs2017_get_instance_data()
