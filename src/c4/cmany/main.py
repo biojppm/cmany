@@ -48,7 +48,8 @@ def cmany_main(in_args=None):
 
 
 def argerror(*msg_args):
-    print(*msg_args, '\n')
+    print(*msg_args, end='')
+    print('\n')
     cmany_main(['-h'])
     exit(1)
 
