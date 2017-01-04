@@ -25,6 +25,7 @@ install:
   - pip3 -V
   - pip3 install -r requirements_test.txt .
   - cmake --version
+  - cmake --help
   - which cc && cc --version
   - which c++ && c++ --version
   - which g++ && (g++ -dumpversion ; g++ --version)
