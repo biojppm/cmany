@@ -1,36 +1,21 @@
 #!/usr/bin/env python3
 
 import unittest as ut
-from c4.cmany import *
-from c4.cmany.vsinfo import *
 import os.path
+import sys
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# util
+import c4.cmany.util as util
+import c4.cmany.vsinfo as vsinfo
 
-class TestSplitEsc(ut.TestCase):
-
-    def test(self):
-        from c4.cmany.util import splitesc
-        self.assertEqual(splitesc('hello\,world,yet\,another', ','), ['hello\,world','yet\,another'])
-
-# TODO: test runsyscmd
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# vsinfo
-
-if System.default_str() == 'windows':
+if util.in_windows():
 
     class TestVisualStudioInfo(ut.TestCase):
 
         def test00_instances(self):
-            for k in VisualStudioInfo.order:
-                vs = VisualStudioInfo(k)
+            for k in vsinfo.order:
+                vs = vsinfo.VisualStudioInfo(k)
                 self.assertIsInstance(vs.year, int)
+
                 def c(w):
                     if not os.path.exists(w):
                         self.fail(vs.name + ": " + w + " does not exist")
@@ -42,18 +27,18 @@ if System.default_str() == 'windows':
                     c(vs.cxx_compiler)
                     c(vs.c_compiler)
 
-        #def test01_find_any(self):
-        #    any = VisualStudioInfo.find_any()
-        #    if any is None:
-        #        self.fail("could not find any VS installation")
-        #    self.assertIsNotNone(any)
+        # def test01_find_any(self):
+        #     any = VisualStudioInfo.find_any()
+        #     if any is None:
+        #         self.fail("could not find any VS installation")
+        #     self.assertIsNotNone(any)
 
         def test01_name_to_gen(self):
             def c(a, s):
-                sc = VisualStudioInfo.to_gen(a)
+                sc = vsinfo.to_gen(a)
                 if sc != s:
                     self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
-            _sfx = " Win64" if Architecture.default().is64 else ""
+            _sfx = " Win64" if util.in_64bit() else ""
             c('vs2017'      , 'Visual Studio 15 2017' + _sfx )
             c('vs2017_32'   , 'Visual Studio 15 2017'        )
             c('vs2017_64'   , 'Visual Studio 15 2017 Win64'  )
@@ -111,7 +96,7 @@ if System.default_str() == 'windows':
 
         def test02_gen_to_name(self):
             def c(a, s):
-                sc = VisualStudioInfo.to_name(a)
+                sc = vsinfo.to_name(a)
                 if sc != s:
                     self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
 
@@ -165,7 +150,7 @@ if System.default_str() == 'windows':
 
         def test03_parse_toolset(self):
             def t(spec, name_vs, ts_vs):
-                cname_vs,cts_vs = VisualStudioInfo.sep_name_toolset(spec)
+                cname_vs,cts_vs = vsinfo.sep_name_toolset(spec)
                 if cname_vs != name_vs:
                     self.fail("{} should be '{}' but is '{}'".format(spec, name_vs, cname_vs))
                 if cts_vs != ts_vs:
@@ -269,29 +254,8 @@ if System.default_str() == 'windows':
             t('vs2010'                , 'vs2010'     , None           )
             t('vs2010_xp'             , 'vs2010'     , 'v100_xp'      )
 
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
-test_projs = [
-    #'hello'
-]
-
-for p in test_projs:
-    import c4.cmany.util
-    import os
-    class CMakeTestProj:
-        def __init__(self, compilers=None):
-            self.compilers = None
-            self.python = os.environ['PYTHON']
-        def test_build(self):
-            cmd = [self.python, 'build', ]
-            c4.cmany.util.runsyscmd(cmd)
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     ut.main()
-
