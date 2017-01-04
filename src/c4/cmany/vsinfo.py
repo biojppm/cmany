@@ -376,15 +376,15 @@ def _vs2017_resolve_instance(which_instance=None):
 
 def _vs2017_get_instances():
     def fn():
+        d = odict()
         progdata = os.environ['ProgramData']
         instances_dir = os.path.join(progdata, 'Microsoft', 'VisualStudio', 'Packages', '_Instances')
         if not os.path.exists(instances_dir):
-            return None
+            return d
         pat = os.path.join(instances_dir, '*', 'state.json')
         instances = glob.glob(pat)
         if not instances:
-            return None
-        d = odict()
+            return d
         for i in instances:
             d[os.path.basename(os.path.dirname(i))] = i
         return d
