@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import subprocess
+import platform
+
 
 def sys_str():
     if sys.platform == "linux" or sys.platform == "linux2":
@@ -15,11 +17,37 @@ def sys_str():
     else:
         raise Exception("unknown system")
 
+
 def in_windows():
     return sys.platform == "win32"
 
+
 def in_unix():
     return sys.platform in ("linux", "linux2", "darwin")
+
+
+def in_64bit():
+    """return True if in a 64-bit architecture"""
+    # http://stackoverflow.com/a/12578715/5875572
+    machine = platform.machine()
+    if machine.endswith('64'):
+        return True
+    elif machine.endswith('86'):
+        return False
+    raise Exception("unknown platform architecture")
+    # return (struct.calcsize('P') * 8) == 64
+
+
+def in_32bit():
+    """return True if in a 32-bit architecture"""
+    # http://stackoverflow.com/a/12578715/5875572
+    machine = platform.machine()
+    if machine.endswith('64'):
+        return False
+    elif machine.endswith('86'):
+        return True
+    raise Exception("unknown platform architecture")
+    # return (struct.calcsize('P') * 8) == 32
 
 
 def splitesc(string, split_char, escape_char=r'\\'):
@@ -40,7 +68,7 @@ def which(cmd):
     """look for an executable in the current PATH environment variable"""
     if os.path.exists(cmd):
         return cmd
-    exts = ("",".exe",".bat") if sys.platform == "win32" else ""
+    exts = ("", ".exe", ".bat") if sys.platform == "win32" else ""
     for path in os.environ["PATH"].split(os.pathsep):
         for e in exts:
             j = os.path.join(path, cmd+e)
@@ -53,7 +81,7 @@ def chkf(*args):
     """join the args as a path and check whether that path exists"""
     f = os.path.join(*args)
     if not os.path.exists(f):
-        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())
+        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())  # nopep8
     return f
 
 
