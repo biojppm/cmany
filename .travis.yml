@@ -34,9 +34,10 @@ install:
   - which c++ && c++ --version
   - which g++ && (g++ -dumpversion ; g++ --version)
   - which clang++ && (clang++ -dumpversion ; clang++ --version)
+  - ls -l ./.ci/travis_test.sh
 
 # command to run tests
-script: ./.ci/travis_test.sh
+script: chmod a+x ./.ci/travis_test.sh ; ./.ci/travis_test.sh
 
 after_success:
   codecov
