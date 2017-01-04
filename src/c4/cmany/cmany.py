@@ -166,6 +166,8 @@ class Compiler(BuildItem):
             cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
         elif shortname == "clang":
             cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
+        elif shortname == "c++":
+            cc = "cc"
         else:
             cc = cxx_compiler
         return cc

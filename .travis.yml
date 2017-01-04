@@ -36,7 +36,7 @@ install:
   - which clang++ && (clang++ -dumpversion ; clang++ --version)
 
 # command to run tests
-script: env PYTHONPATH=src python3 -m nose -d -v --with-id --nocapture
+script: ./.ci/travis_test.sh
 
 after_success:
   codecov
