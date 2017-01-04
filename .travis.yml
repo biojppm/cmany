@@ -26,8 +26,9 @@ install:
   - pip3 install -r requirements_test.txt .
   - cmake --version
   - which cc && cc --version
-  - which g++ && g++ --version
-  - which clang++ && clang++ --version
+  - which c++ && c++ --version
+  - which g++ && (g++ -dumpversion ; g++ --version)
+  - which clang++ && (clang++ -dumpversion ; clang++ --version)
 # command to run tests
 script: env PYTHONPATH=src python3 -m nose -v --with-id --nocapture
 after_success:
