@@ -1,5 +1,6 @@
 build
 install
+.test/
 README.html
 
 # Editor/IDE files
@@ -12,6 +13,7 @@ README.html
 *.pyc
 __pycache__
 .noseids
+.tox
 
 # setup.py files
 .eggs
