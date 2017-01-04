@@ -2,7 +2,10 @@
 
 import sys
 import pprint
+import argparse
 from collections import OrderedDict as odict
+
+from .util import cslist
 
 from c4.cmany import *
 
@@ -27,7 +30,7 @@ def cmany_main(in_args=None):
                                 epilog=examples)
     sp = p.add_subparsers(help='')
     p.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
-    for cmd,aliases in cmds.items():
+    for cmd, aliases in cmds.items():
         cl = getattr(sys.modules[__name__], cmd)
         h = sp.add_parser(name=cmd, aliases=aliases, help=cl.__doc__)
         cl().add_args(h)
