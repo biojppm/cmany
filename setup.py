@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, find_packages
 import os.path
 import sys
 
-v = sys.version_info
-if v < (3,3):
+
+if sys.version_info < (3, 3):
     # this is because of subprocess. That code is in c4/cmany/util.py.
     msg = 'cmany requires at least Python 3.3. Current version is {}. Sorry.'
     sys.exit(msg.format(sys.version_info))
@@ -19,20 +19,21 @@ def read(*rnames):
 
 def readreqs(*rnames):
     def _skipcomment(line):
-        return line if (line and not line.startswith('--') and not line.startswith('#')) else ""
+        return line if (line and not line.startswith('--')
+                        and not line.startswith('#')) else ""
     with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
         l = [_skipcomment(line.strip()) for line in f]
     return l
 
 
-setup(name = "cmany",
-      version = "0.1",
-      description = "CMake build tree batching tool",
-      long_description = read('README.rst'),
-      url = "https://github.com/biojppm/cmany",
-      download_url = "https://github.com/biojppm/cmany",
-      license = "License :: OSI Approved :: MIT License",
-      classifiers = [
+setup(name="cmany",
+      version="0.1",
+      description="CMake build tree batching tool",
+      long_description=read('README.rst'),
+      url="https://github.com/biojppm/cmany",
+      download_url="https://github.com/biojppm/cmany",
+      license="License :: OSI Approved :: MIT License",
+      classifiers=[
           "License :: OSI Approved :: MIT License",
           "Intended Audience :: Developers",
           "Development Status :: 2 - Pre-Alpha",
@@ -44,16 +45,16 @@ setup(name = "cmany",
           "Topic :: Software Development :: Libraries :: Python Modules",
           "Topic :: Utilities",
       ],
-      keywords = ["cmake", "c", "c++"],
-      author = "Joao Paulo Magalhaes",
-      author_email = "dev@jpmag.me",
-      zip_safe = False,
-      namespace_packages = ['c4'],
-      packages = find_packages('src'),
-      package_dir = {'':'src'},
-      entry_points = {'console_scripts':['cmany = c4.cmany.main:cmany_main'],},
-      install_requires = readreqs('requirements.txt'),
-      tests_require = readreqs('requirements_test.txt'),
-      #include_package_data = True,
-      #package_data = {'c4.cmany':['test/*','test/*/*']}
+      keywords=["cmake", "c", "c++"],
+      author="Joao Paulo Magalhaes",
+      author_email="dev@jpmag.me",
+      zip_safe=False,
+      namespace_packages=['c4'],
+      packages=find_packages('src'),
+      package_dir={'': 'src'},
+      entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
+      install_requires=readreqs('requirements.txt'),
+      tests_require=readreqs('requirements_test.txt'),
+      # include_package_data=True,
+      # package_data={'c4.cmany':['test/*','test/*/*']}
 )
