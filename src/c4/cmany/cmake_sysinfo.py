@@ -1,43 +1,67 @@
 
 import re
-from .conf import *
-from .util import *
+import os
+
+from collections import OrderedDict as odict
+
+from .conf import CMANY_DIR
+from .util import cacheattr, setcwd, runsyscmd
+
+def getcachevar(builddir, var):
+    v = getcachevars(builddir, [var])
+    return v[var]
+
+def getcachevars(builddir, varlist):
+    vlist = [v + ':' for v in varlist]
+    values = odict()
+    rx = r'^(.*?):.*?=(.*)$'
+    with setcwd(builddir, silent=True):
+        with open('CMakeCache.txt') as f:
+            for line in f:
+                for v in vlist:
+                    if line.startswith(v):
+                        ls = line.strip()
+                        vt = re.sub(rx, r'\1', ls)
+                        values[vt] = re.sub(rx, r'\2', ls)
+    return values
 
 
 # -----------------------------------------------------------------------------
 class CMakeSysInfo:
-    """encapsulates the results returned from `cmake [-G <which_generator>] --system-information`.
-    This is used for selecting default values for system, compiler, generator, etc."""
+    """encapsulates the results returned from
+    `cmake [-G <which_generator>] --system-information`.
+    This is used for selecting default values for system, compiler,
+    generator, etc."""
 
     @staticmethod
     def generator():
         return cacheattr(__class__, '_generator_default',
-                       lambda: __class__._getstr('CMAKE_GENERATOR', 'default'))
+                         lambda: __class__._getstr('CMAKE_GENERATOR', 'default'))
 
     @staticmethod
     def system_name(which_generator="default"):
-        return cacheattr(__class__, '_system_name_'+which_generator,
-                       lambda: __class__._getstr('CMAKE_SYSTEM_NAME', which_generator).lower())
+        return cacheattr(__class__, '_system_name_' + which_generator,
+                         lambda: __class__._getstr('CMAKE_SYSTEM_NAME', which_generator).lower())
 
     @staticmethod
     def architecture(which_generator="default"):
-        return cacheattr(__class__, '_architecture_'+which_generator,
-                       lambda: __class__._getstr('CMAKE_SYSTEM_PROCESSOR', which_generator).lower())
+        return cacheattr(__class__, '_architecture_' + which_generator,
+                         lambda: __class__._getstr('CMAKE_SYSTEM_PROCESSOR', which_generator).lower())
 
     @staticmethod
     def cxx_compiler(which_generator="default"):
-        return cacheattr(__class__, '_cxx_compiler_'+which_generator,
-                       lambda: __class__._getpath('CMAKE_CXX_COMPILER', which_generator))
+        return cacheattr(__class__, '_cxx_compiler_' + which_generator,
+                         lambda: __class__._getpath('CMAKE_CXX_COMPILER', which_generator))
 
     @staticmethod
     def c_compiler(which_generator="default"):
-        return cacheattr(__class__, '_c_compiler_'+which_generator,
-                       lambda: __class__._getpath('CMAKE_C_COMPILER', which_generator))
+        return cacheattr(__class__, '_c_compiler_' + which_generator,
+                         lambda: __class__._getpath('CMAKE_C_COMPILER', which_generator))
 
     @staticmethod
     def info(which_generator="default"):
-        return cacheattr(__class__, '_info'+which_generator,
-                       lambda: __class__.system_info(which_generator))
+        return cacheattr(__class__, '_info' + which_generator,
+                         lambda: __class__.system_info(which_generator))
 
     @staticmethod
     def _getpath(var_name, which_generator):
@@ -87,4 +111,3 @@ class CMakeSysInfo:
                 f.write(out)
             i = out.split("\n")
         return i
-
