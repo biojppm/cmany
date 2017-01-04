@@ -265,9 +265,9 @@ class Generator(BuildItem):
     def configure_args(self, build):
         if self.name != "":
             if self.is_msvc and build.compiler.vs.toolset is not None:
-                return ['-G', '"{}"'.format(self.name), '-T', build.compiler.vs.toolset]
+                return ['-G', self.name, '-T', build.compiler.vs.toolset]
             else:
-                return ['-G', '"{}"'.format(self.name)]
+                return ['-G', self.name]
         else:
             return []
 

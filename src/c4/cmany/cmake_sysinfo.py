@@ -29,7 +29,7 @@ def getcachevars(builddir, varlist):
 # -----------------------------------------------------------------------------
 class CMakeSysInfo:
     """encapsulates the results returned from
-    `cmake [-G <which_generator>] --system-information`.
+    `cmake [-G <which_generator>][-T <toolset>] --system-information`.
     This is used for selecting default values for system, compiler,
     generator, etc."""
 
@@ -100,7 +100,7 @@ class CMakeSysInfo:
                 if gen.startswith('vs') or gen.startswith('Visual Studio'):
                     from c4.cmany import vsinfo
                     gen = vsinfo.to_gen(gen)
-                cmd = ['cmake', '-G', '"{}"'.format(gen), '--system-information']
+                cmd = ['cmake', '-G', str(gen), '--system-information']
             if not os.path.exists(d):
                 os.makedirs(d)
             print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))

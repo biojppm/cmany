@@ -145,19 +145,19 @@ class TestBuild:
 # -----------------------------------------------------------------------------
 class Test00Help(ut.TestCase):
 
-    def test00mh(self):
+    def test00_mh(self):
         projs[0]._run(['-h'])
 
-    def test01mmhelp(self):
+    def test01_mmhelp(self):
         projs[0]._run(['--help'])
 
-    def test02cmd_mhelp(self):
+    def test02_cmd_mhelp(self):
         for c, aliases in main.cmds.items():
             if c == 'help':
                 continue
             projs[0]._run([c, '-h'])
 
-    def test03cmd_mmhelp(self):
+    def test03_cmd_mmhelp(self):
         for c, aliases in main.cmds.items():
             if c == 'help':
                 continue
@@ -169,10 +169,10 @@ class Test00Help(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test01Configure(ut.TestCase):
 
-    def test00default(self):
+    def test00_default(self):
         run_projs(self, ['c'], lambda tb: tb.checkc(self))
 
-    def test01custom_dirs(self):
+    def test01_custom_dirs(self):
         run_projs(self, ['c'], lambda tb: tb.checkc(self))
 
 
@@ -181,7 +181,7 @@ class Test01Configure(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test02Build(ut.TestCase):
 
-    def test00default(self):
+    def test00_default(self):
         run_projs(self, ['b'], lambda tb: tb.checkb(self))
 
 
@@ -190,7 +190,7 @@ class Test02Build(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test03Install(ut.TestCase):
 
-    def test00default(self):
+    def test00_default(self):
         run_projs(self, ['i'], lambda tb: tb.checki(self))
 
 
@@ -199,4 +199,3 @@ class Test03Install(ut.TestCase):
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
     ut.main()
-

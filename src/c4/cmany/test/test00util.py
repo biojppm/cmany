@@ -22,16 +22,16 @@ class Test00splitesc(ut.TestCase):
 
 class Test01runsyscmd(ut.TestCase):
 
-    def test00noargs(self):
+    def test00_noargs(self):
         invoke_and_compare(self, [])
 
-    def test01noargs(self):
+    def test01_noargs(self):
         invoke_and_compare(self, ['arg1', 'arg2'])
 
-    def test02quoted_args(self):
+    def test02_quoted_args(self):
         invoke_and_compare(self, ['"arg1"', '"arg2"'])
 
-    def test02quoted_args_with_spaces(self):
+    def test03_quoted_args_with_spaces(self):
         invoke_and_compare(self, ['"arg1 and more"', '"arg2 and more"'])
 
 
@@ -52,7 +52,7 @@ setattr(sys.modules[__name__], 'echo_args', tmp)""".format(out)
     # print("invoke_and_compare: code=", code)
     exec(code)
     # print("invoke_and_compare: echo_args=", echo_args)
-    tester.assertEqual(echo_args, [a.strip('"') for a in cmd_args])
+    tester.assertEqual(echo_args, cmd_args)
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'echo':

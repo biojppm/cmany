@@ -188,16 +188,11 @@ else:
     run_replacement = subprocess_run_impl
 
 
-def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
+def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
     """run a system command. Note that stderr is interspersed with stdout"""
 
-    # issue the command as a string to prevent problems with quotes
-    if isinstance(arglist, list):
-        cmd = " ".join(arglist)
-    elif isinstance(arglist, str):
-        cmd = arglist
-    else:
-        raise Exception("the command must be either a list or a string")
+    if not isinstance(cmd, list):
+        raise Exception("the command must be a list with each argument a different element in the list ")
 
     if echo_cmd:
         print('$', cmd)
