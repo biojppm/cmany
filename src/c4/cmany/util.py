@@ -190,38 +190,39 @@ else:
 
 def runsyscmd(arglist, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
     """run a system command. Note that stderr is interspersed with stdout"""
-    if isinstance(arglist, list):
-        s = " ".join(arglist)
-    else:
-        s = arglist
-        #arglist = [s]
 
-    # there appear to be some differences in the way that quoted arguments
-    # are treated
-    if in_unix():
+    # issue the command as a string to prevent problems with quotes
+    if isinstance(arglist, list):
+        cmd = " ".join(arglist)
+    elif isinstance(arglist, str):
         cmd = arglist
-    elif in_windows():
-        cmd = s
     else:
-        raise Exception("unknown system")
+        raise Exception("the command must be either a list or a string")
 
     if echo_cmd:
-        print("running command:", s)
+        print('$', cmd)
 
     if as_bytes_string:
-        assert not echo_output
-        result = run_replacement(cmd)
-        result.check_returncode()
         if capture_output:
-            return str(result.stdout)
-    elif not echo_output:
-        result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                 universal_newlines=True)
-        result.check_returncode()
-        if capture_output:
-            return str(result.stdout)
-    elif echo_output:
-        result = run_replacement(cmd, universal_newlines=True)
-        result.check_returncode()
-        if capture_output:
-            return str(result.stdout)
+            result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDERR)
+            result.check_returncode()
+            return result.stdout
+        else:
+            result = run_replacement(cmd)
+            result.check_returncode()
+    else:
+        if not echo_output:
+            result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                     universal_newlines=True)
+            result.check_returncode()
+            if capture_output:
+                return str(result.stdout)
+        elif echo_output:
+            if capture_output:
+                result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        universal_newlines=True)
+                result.check_returncode()
+                return str(result.stdout)
+            else:
+                result = run_replacement(cmd, universal_newlines=True)
+                result.check_returncode()
