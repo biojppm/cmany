@@ -6,8 +6,11 @@
 # http://lint.travis-ci.org/
 
 language: python
+
 sudo: required
+
 dist: trusty # python3-pip requires 14.04+
+
 python:
   - "3.7-dev"
   - "3.6"
@@ -16,6 +19,7 @@ python:
   - "3.3"
 #  # PyPy versions
 #  - "pypy3"
+
 install:
   # command to install dependencies
   - sudo apt-get update
@@ -30,7 +34,9 @@ install:
   - which c++ && c++ --version
   - which g++ && (g++ -dumpversion ; g++ --version)
   - which clang++ && (clang++ -dumpversion ; clang++ --version)
+
 # command to run tests
-script: env PYTHONPATH=src python3 -m nose -v --with-id --nocapture
+script: env PYTHONPATH=src python3 -m nose -d -v --with-id --nocapture
+
 after_success:
   codecov
