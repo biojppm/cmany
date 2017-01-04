@@ -2,7 +2,7 @@
 .. image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
     :target: https://travis-ci.org/biojppm/cmany
 .. image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
-    :target: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany
+    :target: https://ci.appveyor.com/project/biojppm/cmany
 
 cmany
 =====
