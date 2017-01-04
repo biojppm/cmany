@@ -208,6 +208,7 @@ def parse_toolset(name, canonize=True):
 def vsdir(name_or_gen_or_ver):
     """get the directory where VS is installed"""
     ver = to_ver(name_or_gen_or_ver)
+    d = None
     if ver < 15:
         progfilesx86 = os.environ['ProgramFiles(x86)']
         d = os.path.join(progfilesx86, 'Microsoft Visual Studio ' + str(ver) + '.0')
@@ -221,9 +222,12 @@ def vsdir(name_or_gen_or_ver):
         # VS 2017+ is no longer a singleton, and may be installed anywhere,
         # and the environment variable VS***COMNTOOLS no longer exists.
         def fn():
-            idata = _vs2017_get_instance_data()
-            path = nested_lookup(idata, 'installationPath')
-            return path
+            try:
+                idata = _vs2017_get_instance_data()
+                path = nested_lookup(idata, 'installationPath')
+                return path
+            except:
+                return None
         d = cacheattr(sys.modules[__name__], '_vs2017dir', fn)
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
