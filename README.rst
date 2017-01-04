@@ -10,9 +10,10 @@ cmany
 Easily batch-build cmake projects!
 
 cmany is a command line tool and Python3 module to easily build
-several variations of a CMake C/C++ project. These variations
-consist in combining different compilers, cmake build types, processor
-architectures (WIP), operating systems (also WIP), or compilation flags (WIP).
+several variations of a CMake C/C++ project. These variations consist
+in combining different compilers, cmake build types, processor
+architectures (WIP), operating systems (also WIP), or compilation
+flags (WIP).
 
 For example, to configure and build a project using clang++ and g++
 in both Debug and Release::
@@ -35,7 +36,11 @@ Features
 
 * Saves the tedious work of dealing with many build trees by hand.
 * Useful for build comparisons.
-* Avoids a full rebuild when the build type is changed. Although this feature already exists in multi-configuration cmake generators such as Visual Studio, it is missing from mono-configuration generators like Unix Makefiles.
+* Useful for cross-compiler validation.
+* Avoids a full rebuild when the build type is changed. Although this feature
+  already exists in multi-configuration cmake generators such as Visual
+  Studio, it is missing from mono-configuration generators like Unix
+  Makefiles.
 * ... TODO
 
 
@@ -52,8 +57,8 @@ The following command invokes CMake to configure this project::
 
     $ cmany configure .
 
-As an example, using g++ 6.1 in Linux x86_64, the result of the command above
-will be this::
+As an example, using g++ 6.1 in Linux x86_64, the result of the
+command above will be this::
 
     $ tree -fi -L 2
     ./build
@@ -64,14 +69,15 @@ will be this::
     $ ls build/*/CMakeCache.txt
     ./build/linux-x86_64-gcc6.1-release/CMakeCache.txt
 
-The command-line behaviour of cmany is similar to that of CMake
-except that the resulting build tree is not placed directly at the current
-directory, but will instead be nested under ``./build``. To make it unique, the
-name for the build tree will be obtained from combining the names of the
-operating system, architecture, compiler+version and the CMake build type.
-Like with CMake, omitting the path to the project dir will cause
-searching for CMakeLists.txt on the current dir. Also, the configure
-command has an alias of 'c'. So the following has the same result as above::
+The command-line behaviour of cmany is similar to that of CMake except
+that the resulting build tree is not placed directly at the current
+directory, but will instead be nested under ``./build``. To make it
+unique, the name for the build tree will be obtained from combining
+the names of the operating system, architecture, compiler+version and
+the CMake build type.  Like with CMake, omitting the path to the
+project dir will cause searching for CMakeLists.txt on the current
+dir. Also, the configure command has an alias of 'c'. So the following
+has the same result as above::
 
     $ cmany c
 
@@ -84,8 +90,8 @@ Same as above: 'b' is an alias to 'build'::
 
     $ cmany b
 
-Same as above, and additionally install. That is, configure AND build AND install.
-'i' is an alias to 'install'::
+Same as above, and additionally install. That is, configure AND build
+AND install.  'i' is an alias to 'install'::
 
     $ cmany i
 
@@ -134,7 +140,8 @@ To get a list of available commands::
 
     $ cmany help
 
-To get help on a particular command (eg, ``build``), either of the following can be used::
+To get help on a particular command (eg, ``build``), either of the following
+can be used::
 
     $ cmany help build
     $ cmany build -h
