@@ -45,7 +45,9 @@ class VisualStudioInfo:
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # vs search order
-order = ('vs2015', 'vs2017', 'vs2013', 'vs2012', 'vs2010', 'vs2008', 'vs2005', )  # nopep8
+order = ('vs2015', 'vs2017', 'vs2013', 'vs2012', 'vs2010',
+         #'vs2008', 'vs2005',
+      )
 
 def find_any():
     for vs in order:
@@ -282,13 +284,13 @@ def devenv(name_or_gen_or_ver):
 
 def cxx_compiler(name_or_gen_or_ver):
     if not is_installed(name_or_gen_or_ver):
-        return None
+        return ""
     return CMakeSysInfo.cxx_compiler(to_gen(name_or_gen_or_ver))
 
 
 def c_compiler(name_or_gen_or_ver):
     if not is_installed(name_or_gen_or_ver):
-        return None
+        return ""
     return CMakeSysInfo.c_compiler(to_gen(name_or_gen_or_ver))
 
 
