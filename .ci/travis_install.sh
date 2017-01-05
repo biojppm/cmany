@@ -17,7 +17,7 @@ if [ $TRAVIS_OS_NAME == 'linux' ] ; then
 elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
 
     brew update
-    brew install cmake
+    #brew install cmake
 
     brew install pyenv
     eval "$(pyenv init -)"
