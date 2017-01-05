@@ -351,8 +351,8 @@ def _is_installed_impl(ver):
 def _vs2017_get_instance_data(which_instance=None):
     i = _vs2017_resolve_instance(which_instance)
     if i is None and which_instance is not None:
-        err = "could not find a vs2017 instance named {} in {}"
-        raise Exception(err.format(which_instance, d))
+        err = "could not find a vs2017 instance named {}"
+        raise Exception(err.format(which_instance))
     def fn():
         instances = _vs2017_get_instances()
         with open(instances[i], encoding="utf8") as json_str:

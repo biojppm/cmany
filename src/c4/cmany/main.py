@@ -5,9 +5,10 @@ import pprint
 import argparse
 from collections import OrderedDict as odict
 
+from c4.cmany import cmany
+from c4.cmany import util
 from c4.cmany.util import cslist
-
-from c4.cmany import *
+from c4.cmany.cmany import cpu_count
 
 
 cmds = odict([
@@ -27,21 +28,24 @@ def cmany_main(in_args=None):
                                 description=__doc__,
                                 usage='%(prog)s [-h] subcommand [-h]',
                                 formatter_class=argparse.RawDescriptionHelpFormatter,
-                                epilog=examples)
+                                epilog=_help_epilog)
     sp = p.add_subparsers(help='')
     p.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
+    p.add_argument('--dump-help-topics', action='store_true', help=argparse.SUPPRESS)
     for cmd, aliases in cmds.items():
         cl = getattr(sys.modules[__name__], cmd)
         h = sp.add_parser(name=cmd, aliases=aliases, help=cl.__doc__)
         cl().add_args(h)
-        def exec_cmd(args, cmd_class = cl):
+        def exec_cmd(args, cmd_class=cl):
             obj = cmd_class()
             proj = obj.proj(args)
             obj._exec(proj, args)
         h.set_defaults(func=exec_cmd)
     args = p.parse_args(in_args)
     if args.show_args:
-        pprint.pprint(vars(args),indent=4)
+        pprint.pprint(vars(args), indent=4)
+    if args.dump_help_topics:
+        dump_help_topics()
     if not hasattr(args, 'func'):
         argerror('missing subcommand')
     args.func(args)
@@ -62,7 +66,7 @@ class cmdbase:
         pass
     def proj(self, args):
         '''create a project given the configuration.'''
-        return ProjectConfig(**vars(args))
+        return cmany.ProjectConfig(**vars(args))
     def _exec(self, proj, args):
         assert False, 'never call the base class method. Implement this in derived classes'
 
@@ -82,7 +86,7 @@ class projcmd(cmdbase):
         parser.add_argument("-j", "--jobs", default=cpu_count(),
                             help="""build with the given number of parallel jobs
                             (defaults to %(default)s on this machine).""")
-        parser.add_argument("-G", "--generator", default=Generator.default_str(),
+        parser.add_argument("-G", "--generator", default=cmany.Generator.default_str(),
                             help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
         parser.add_argument("-I", "--include-dirs", default=[], type=cslist,
                             help="add dirs to the include path of all builds")
@@ -102,19 +106,19 @@ class selectcmd(projcmd):
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        Defaults to \"%(default)s\".""")
         g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                       default=[Compiler.default_str()], type=cslist,
+                       default=[cmany.Compiler.default_str()], type=cslist,
                        help="""restrict actions to the given compilers.
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
         g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                       default=[System.default_str()], type=cslist,
+                       default=[cmany.System.default_str()], type=cslist,
                        help="""(WIP) restrict actions to the given operating systems.
                        Defaults to the current system, \"%(default)s\".
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        This feature requires os-specific toolchains and is currently a
                        work-in-progress.""")
         g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                       default=[Architecture.default_str()], type=cslist,
+                       default=[cmany.Architecture.default_str()], type=cslist,
                        help="""(WIP) restrict actions to the given processor architectures.
                        Defaults to CMake's default architecture, \"%(default)s\" on this system.
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
@@ -128,26 +132,35 @@ class selectcmd(projcmd):
 
 
 class help(cmdbase):
-    '''get help on a particular subcommand or topic'''
+    '''get help on a particular subcommand or topic. Available topics:
+    basic_examples, flags, visual_studio.'''
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
     def _exec(self, proj, args):
-        if not hasattr(args, 'subcommand_or_topic') or not args.subcommand_or_topic:
+        sct = args.subcommand_or_topic
+        if not sct:
             cmany_main(['-h'])
         else:
-            sc = cmds.get(args.subcommand_or_topic)
+            sc = cmds.get(sct)
+            # is it a subcommand?
             if sc is not None:
-                cmany_main([sc, '-h'])
+                print(args)
+                print(sc)
+                cmany_main([sct, '-h'])
             else:
+                # is it a topic?
                 subtopic = help_topics.get(args.subcommand_or_topic)
                 if subtopic is None:
-                    argerror("unknown subcommand:", args.subcommand_or_topic)
-                if isinstance(subtopic, str):
-                    print(subtopic)
+                    msg = ("{} is not a subcommand or topic.\n" +
+                           "Available subcommands are: {}\n" +
+                           "Available help topics are: {}\n")
+                    print(msg.format(args.subcommand_or_topic,
+                                     ', '.join(cmds.keys()),
+                                     ', '.join(help_topics.keys())))
+                    exit(1)
                 else:
-                    h = subtopic()
-                    print(h)
+                    print(subtopic.txt)
 
 
 class configure(selectcmd):
@@ -183,87 +196,226 @@ class showvars(selectcmd):
         proj.showvars(args.var_names)
 
 
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-help_topics = {
-    'variants':'''
-help on variants
-''',
+help_topics = odict()
 
-    'compiler_flags':'''
-help on preset compiler flags
-''',
+class HelpTopic:
 
-    'visual_studio':'''
-visual studio topic help
-''',
-}
+    keylen = 0
+    tablefmt = None
+
+    def __init__(self, id, title, doc, txt, disabled=False):
+        self.id = id
+        self.title = title
+        self.doc = doc
+        self.__doc__ = doc
+        self.txt = txt
+        HelpTopic.keylen = max(HelpTopic.keylen, len(id))
+        HelpTopic.tablefmt ='    {:' + str(HelpTopic.keylen) + '} {}'
+        if not disabled:
+            help_topics[id] = self
 
 
-# to update the examples in a Markdown file, pipe the help through sed:
-# sed 's:^#\ ::g' | sed 's:^\$\(\ .*\):\n```\n$ \1\n```:g'
-examples = '''
+def create_help_topic(id, title, doc, txt, disabled=False):
+    ht = HelpTopic(id, title, doc, txt, disabled)
+    setattr(sys.modules[__name__], 'help_' + id, ht)
 
-Help subtopics
---------------
 
-The help subcommand can be used for the following subtopics:
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+create_help_topic("basic_examples",
+    title = "Basic usage examples",
+    doc = "Basic usage examples",
+    txt = """Consider a directory with this layout::
 
-    ''' + '\n    '.join(sorted(help_topics.keys())) + '''
+    $ ls -1
+    CMakeLists.txt
+    main.cpp
 
-Some examples
--------------
+The following command invokes CMake to configure this project::
 
-Configure and build a CMakeLists.txt project located on the folder above
-the current one. The build trees will be placed in separate folders under
-a folder named "build" located on the current folder. Likewise, the installation
-prefix will be set to a sister folder named "install". A c++ compiler will
-be selected from the system, and the CMAKE_BUILD_TYPE will be set to Release::
+    $ cmany configure .
 
-    $ %(prog)s build ..
+When no compiler is specified, cmany chooses the compiler that CMake would
+default to (this is done by calling ``cmake --system-information``). cmany's
+default build type is Release, and it explicitly sets the build type even
+when it is not given. As an example, using g++ 6.1 in Linux x86_64, the
+result of the command above will be this::
 
-Same as above, but now look for CMakeLists.txt on the current dir::
+    $ tree -fi -L 2
+    build/
+    build/linux-x86_64-gcc6.1-release/
+    CMakeLists.txt
+    main.cpp
 
-    $ %(prog)s build .
+    $ ls build/*/CMakeCache.txt
+    build/linux-x86_64-gcc6.1-release/CMakeCache.txt
 
-Same as above: like with cmake, omitting the project dir defaults will cause
-searching for CMakeLists.txt on the current dir::
+The command-line behaviour of cmany is similar to that of CMake except
+that the resulting build tree is not placed directly at the current
+directory, but will instead be nested under ``./build``. To make it
+unique, the name for each build tree will be obtained from combining
+the names of the operating system, architecture, compiler+version and
+the CMake build type. Like with CMake, omitting the path to the
+project dir will cause searching for CMakeLists.txt on the current
+dir. Also, the configure command has an alias of ``c``. So the following
+has the same result as above::
 
-    $ %(prog)s build
+    $ cmany c
 
-Same as above: 'b' is an alias to 'install'::
+The ``cmany build`` command will configure AND build at once as if per
+``cmake --build``. This will invoke ``cmany configure`` if necessary::
 
-    $ %(prog)s b
+    $ cmany build
 
-Same as above, and additionally install. 'i' is an alias to 'install'::
+Same as above: ``b`` is an alias to ``build``::
 
-    $ %(prog)s i
+    $ cmany b
 
-Only configure; do not build, do not install. 'c' is an alias to 'configure'::
+The ``cmany install`` command does the same as above, and additionally
+installs. That is, configure AND build AND install. ``i`` is an alias to
+``install``::
 
-    $ %(prog)s c
+    $ cmany i
 
-Build only the Debug build type::
+The install root defaults to ``./install``. So assuming the project creates
+an executable named ``hello``, the following will result::
 
-    $ %(prog)s b -t Debug
+    $ ls -1
+    CMakeLists.txt
+    build/
+    install/
+    main.cpp
+    $ tree -fi install
+    install/
+    install/linux-x86_64-gcc6.1-release/
+    install/linux-x86_64-gcc6.1-release/bin/
+    install/linux-x86_64-gcc6.1-release/bin/hello
+
+To set the build types use ``-t`` or ``--build-types``. The following
+command chooses a build type of Debug instead of Release::
+
+    $ cmany b -t Debug
+    $ ls -1 build/*
+    build/linux-x86_64-gcc6.1-debug/
 
 Build both Debug and Release build types (resulting in 2 build trees)::
 
-    $ %(prog)s b -t Debug,Release
+    $ cmany b -t Debug,Release
+    $ ls -1 build/*
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-release/
 
-Build using both clang++ and g++ (2 build trees)::
+To set the compilers use ``-c`` or ``--compilers``. For example, build
+using both clang++ and g++; default build type (2 build trees)::
 
-    $ %(prog)s b -c clang++,g++
+    $ cmany b -c clang++,g++
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-release/
 
-Build using both clang++,g++ and in Debug,Release modes (4 build trees)::
+Build using both clang++,g++ for Debug,Release build types (4 build trees)::
 
-    $ %(prog)s b -c clang++,g++ -t Debug,Release
+    $ cmany b -c clang++,g++ -t Debug,Release
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-debug/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-release/
 
-Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees)::
+Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types
+(9 build trees)::
 
-    $ %(prog)s b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
-'''
+    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-debug/
+    build/linux-x86_64-clang3.9-relwithdebinfo/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-relwithdebinfo/
+    build/linux-x86_64-gcc6.1-release/
+    build/linux-x86_64-icc16.1-debug/
+    build/linux-x86_64-icc16.1-relwithdebinfo/
+    build/linux-x86_64-icc16.1-release/
 
+To get a list of available commands and help topics::
+
+    $ cmany help
+
+To get help on a particular command or topic (eg, ``build``), any
+of the following can be used::
+
+    $ cmany help build
+    $ cmany build -h
+    $ cmany build --help
+""")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+create_help_topic("dir_formats",
+    disabled=True,
+    title = "Specifying directory patterns",
+    doc = "help on dir formats",
+    txt = """
+    $ cmany -I "path/to/{system}-{architecture}-{compiler}-{build_type}{variant?-{variant}}"
+""")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+create_help_topic("flags",
+    title = "Preset compiler flags",
+    doc = "help on dir formats",
+    txt = """
+TODO: add help for compiler flags
+""")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+create_help_topic("variants",
+    title = "Build variants",
+    doc = "help on specifying variants",
+    txt = """
+    $ cmany b -v 'noexcept: cpp11 noexceptions','
+""")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+create_help_topic("visual_studio",
+    title = "Visual Studio versions and toolsets",
+    doc = "help on specifying Microsoft Visual Studio versions and toolsets",
+    txt = """
+TODO: add help for visual studio
+""")
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+_help_epilog = """
+
+list of help topics:
+""" + '\n'.join([HelpTopic.tablefmt.format(k, v.doc) for k, v in help_topics.items()])
+
+
+def dump_help_topics():
+    for t, _ in help_topics.items():
+        print(t)
+        txt = util.runsyscmd([sys.executable, sys.modules[__name__].__file__,
+                              'help', t], capture_output=True)
+        print(txt)
 
 # -----------------------------------------------------------------------------
 

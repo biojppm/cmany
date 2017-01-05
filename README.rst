@@ -12,7 +12,8 @@ Easily batch-build cmake projects!
 cmany is a command line tool and Python3 module to easily build several
 variations of a CMake C/C++ project. It combines different compilers, cmake
 build types, processor architectures (WIP), operating systems (also WIP), or
-compilation flags (WIP).
+compilation flags (WIP). cmany works and is continuously tested in Linux, Mac
+OS X and Windows.
 
 For example, to configure and build a project using clang++ and g++
 in both Debug and Release::
@@ -29,13 +30,10 @@ under a ``build`` folder which is under the current folder::
     build/linux-x86_64-gcc6.1-Debug
     build/linux-x86_64-gcc6.1-Release
 
-cmany is available and continuously tested in Linux, Mac OS X and Windows.
-
 
 Features
 --------
 
-* Works in Linux, Windows and OS X.
 * Saves the tedious work of dealing with many build trees by hand.
 * Useful for build comparisons.
 * Useful for cross-compiler validation.
@@ -77,7 +75,7 @@ result of the command above will be this::
 The command-line behaviour of cmany is similar to that of CMake except
 that the resulting build tree is not placed directly at the current
 directory, but will instead be nested under ``./build``. To make it
-unique, the name for the build tree will be obtained from combining
+unique, the name for each build tree will be obtained from combining
 the names of the operating system, architecture, compiler+version and
 the CMake build type. Like with CMake, omitting the path to the
 project dir will cause searching for CMakeLists.txt on the current
