@@ -41,25 +41,26 @@ matrix:
       python: 3.3
       env: PY=3.3
 
-    - os: osx
-      language: generic
-      env: PY=3.7 PYENV=3.7-dev
+    # OS X tests are *very* slow. enable only one.
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.7 PYENV=3.7-dev
 
-    - os: osx
-      language: generic
-      env: PY=3.6 PYENV=3.6.0
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.6 PYENV=3.6.0
 
     - os: osx
       language: generic
       env: PY=3.5 PYENV=3.5.0
 
-    - os: osx
-      language: generic
-      env: PY=3.4 PYENV=3.4.0
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.4 PYENV=3.4.0
 
-    - os: osx
-      language: generic
-      env: PY=3.3 PYENV=3.3.0
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.3 PYENV=3.3.0
 
 install:
   # command to install dependencies
