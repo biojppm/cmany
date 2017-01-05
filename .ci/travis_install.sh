@@ -25,7 +25,9 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
     #eval "$(pyenv init -)"
     v="${PY}.0"
     pyenv versions
-    #pyenv install $v
+    cat /Users/travis/.pyenv/version
+    pyenv install $v
+    pyenv shell $v
 
     PYTHON=python$PY
     PIP=pip$PY

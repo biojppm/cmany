@@ -10,6 +10,8 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     eval "$(pyenv init -)"
     PYTHON="python$PY"
+    v="${PY}.0"
+    pyenv shell $v
 
 else
     echo WTF
