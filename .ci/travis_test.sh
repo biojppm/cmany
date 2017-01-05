@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 cwd=$(cd $(dirname $0) ; pwd)
 

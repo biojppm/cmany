@@ -1,8 +1,9 @@
-#!/usr/bin/env bash -x
+#!/bin/bash
 
 # https://docs.travis-ci.com/user/multi-os/
 
 set -e
+set -x
 
 if [ $TRAVIS_OS_NAME == 'linux' ] ; then
 
@@ -36,6 +37,8 @@ which c++ && c++ --version
 which g++ && (g++ -dumpversion ; g++ --version)
 which clang++ && (clang++ -dumpversion ; clang++ --version)
 
+which $PYTHON
+which $PIP
 $PYTHON -V
 $PIP -V
 $PIP install -r requirements_test.txt .
