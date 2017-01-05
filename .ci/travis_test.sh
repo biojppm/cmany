@@ -1,6 +1,5 @@
 #!/bin/bash
 
-cwd=$(cd $(dirname $0) ; pwd)
 
 if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
 
@@ -10,14 +9,11 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     eval "$(pyenv init -)"
     PYTHON="python$PY"
-    v="${PY}.0"
-    pyenv shell $v
+    pyenv local $PYENV
 
-else
-    echo WTF
 fi
 
-
+cwd=$(cd $(dirname $0) ; pwd)
 export PYTHONPATH=$cwd/src
 $PYTHON -m nose -d -v --with-id --nocapture
 
