@@ -19,11 +19,11 @@ elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
     brew update
     #brew install cmake
 
-    brew install pyenv
-    eval "$(pyenv init -)"
+    #brew install pyenv
+    #eval "$(pyenv init -)"
     v="${PY}.0"
-    pyenv install $v
-    pyenv global $v
+    pyenv versions
+    #pyenv install $v
 
     PYTHON=python$PY
     PIP=pip$PY

@@ -36,9 +36,9 @@ matrix:
       python: 3.3
       env: PY=3.3
 
-    #- os: osx
-    #  language: generic
-    #  env: PY=3.7
+    - os: osx
+      language: generic
+      env: PY=3.7
 
     - os: osx
       language: generic
