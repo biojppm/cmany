@@ -5,7 +5,7 @@ import pprint
 import argparse
 from collections import OrderedDict as odict
 
-from .util import cslist
+from c4.cmany.util import cslist
 
 from c4.cmany import *
 

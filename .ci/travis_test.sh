@@ -2,8 +2,19 @@
 
 cwd=$(cd $(dirname $0) ; pwd)
 
-export PYTHONPATH=$cwd/src
+if [ $TRAVIS_OS_NAME == 'linux' ] ; then
 
-python3 -m nose -d -v --with-id --nocapture
+    PYTHON=python3
+
+elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+
+    eval "$(pyenv init -)"
+    PYTHON="python$PY"
+
+fi
+
+
+export PYTHONPATH=$cwd/src
+$PYTHON -m nose -d -v --with-id --nocapture
 
 exit $?

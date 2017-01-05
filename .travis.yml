@@ -7,37 +7,61 @@
 
 language: python
 
-sudo: required
+# need to use trusty because python3-pip requires 14.04+
+matrix:
+  include:
 
-dist: trusty # python3-pip requires 14.04+
+    - os: trusty
+      sudo: required
+      python: 3.7-dev
+      env: PY=3.7
 
-python:
-  - "3.7-dev"
-  - "3.6"
-  - "3.5"
-  - "3.4"
-  - "3.3"
-#  # PyPy versions
-#  - "pypy3"
+    - os: trusty
+      sudo: required
+      python: 3.6
+      env: PY=3.6
+
+    - os: trusty
+      sudo: required
+      python: 3.5
+      env: PY=3.5
+
+    - os: trusty
+      sudo: required
+      python: 3.4
+      env: PY=3.4
+
+    - os: trusty
+      sudo: required
+      python: 3.3
+      env: PY=3.3
+
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.7
+
+    - os: osx
+      language: generic
+      env: PY=3.6
+
+    - os: osx
+      language: generic
+      env: PY=3.5
+
+    - os: osx
+      language: generic
+      env: PY=3.4
+
+    - os: osx
+      language: generic
+      env: PY=3.3
 
 install:
   # command to install dependencies
-  - sudo apt-get update
-  - sudo apt-get install -y python3-pip python3-dev
-  - sudo apt-get install -y cmake build-essential
-  - python3 -V
-  - pip3 -V
-  - pip3 install -r requirements_test.txt .
-  - cmake --version
-  - cmake --help
-  - which cc && cc --version
-  - which c++ && c++ --version
-  - which g++ && (g++ -dumpversion ; g++ --version)
-  - which clang++ && (clang++ -dumpversion ; clang++ --version)
-  - ls -l ./.ci/travis_test.sh
+  - chmod a+x ./.ci/travis_install.sh ; ./.ci/travis_install.sh
 
 # command to run tests
 script: chmod a+x ./.ci/travis_test.sh ; ./.ci/travis_test.sh
 
-after_success:
-  codecov
+#after_success:
+#  codecov

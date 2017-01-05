@@ -9,11 +9,10 @@ cmany
 
 Easily batch-build cmake projects!
 
-cmany is a command line tool and Python3 module to easily build
-several variations of a CMake C/C++ project. These variations consist
-in combining different compilers, cmake build types, processor
-architectures (WIP), operating systems (also WIP), or compilation
-flags (WIP).
+cmany is a command line tool and Python3 module to easily build several
+variations of a CMake C/C++ project. It combines different compilers, cmake
+build types, processor architectures (WIP), operating systems (also WIP), or
+compilation flags (WIP).
 
 For example, to configure and build a project using clang++ and g++
 in both Debug and Release::
@@ -30,6 +29,8 @@ under a ``build`` folder which is under the current folder::
     build/linux-x86_64-gcc6.1-Debug
     build/linux-x86_64-gcc6.1-Release
 
+cmany is available and continuously tested in Linux, Mac OS X and Windows.
+
 
 Features
 --------
@@ -38,7 +39,7 @@ Features
 * Useful for build comparisons.
 * Useful for cross-compiler validation.
 * Avoids a full rebuild when the build type is changed. Although this feature
-  already exists in multi-configuration cmake generators such as Visual
+  already exists in multi-configuration cmake generators like Visual
   Studio, it is missing from mono-configuration generators like Unix
   Makefiles.
 * ... TODO
@@ -47,36 +48,39 @@ Features
 Basic usage examples
 --------------------
 
-Consider a directory with the following CMake project::
+Consider a directory with this layout::
 
-    $ tree -fi -L 2
-    ./CMakeLists.txt
-    ./main.cpp
+    $ ls -1
+    CMakeLists.txt
+    main.cpp
 
 The following command invokes CMake to configure this project::
 
     $ cmany configure .
 
-As an example, using g++ 6.1 in Linux x86_64, the result of the
-command above will be this::
+When no compiler is specified, cmany chooses the compiler that CMake would
+default to (this is done by calling ``cmake --system-information``). cmany's
+default build type is Release, and it explicitly sets the build type even
+when it is not given. As an example, using g++ 6.1 in Linux x86_64, the
+result of the command above will be this::
 
     $ tree -fi -L 2
-    ./build
-    ./build/linux-x86_64-gcc6.1-release
-    ./CMakeLists.txt
-    ./main.cpp
+    build
+    build/linux-x86_64-gcc6.1-release
+    CMakeLists.txt
+    main.cpp
      
     $ ls build/*/CMakeCache.txt
-    ./build/linux-x86_64-gcc6.1-release/CMakeCache.txt
+    build/linux-x86_64-gcc6.1-release/CMakeCache.txt
 
 The command-line behaviour of cmany is similar to that of CMake except
 that the resulting build tree is not placed directly at the current
 directory, but will instead be nested under ``./build``. To make it
 unique, the name for the build tree will be obtained from combining
 the names of the operating system, architecture, compiler+version and
-the CMake build type.  Like with CMake, omitting the path to the
+the CMake build type. Like with CMake, omitting the path to the
 project dir will cause searching for CMakeLists.txt on the current
-dir. Also, the configure command has an alias of 'c'. So the following
+dir. Also, the configure command has an alias of ``c``. So the following
 has the same result as above::
 
     $ cmany c
@@ -86,18 +90,36 @@ The ``cmany build`` command will configure AND build at once as if per
 
     $ cmany build
 
-Same as above: 'b' is an alias to 'build'::
+Same as above: ``b`` is an alias to ``build``::
 
     $ cmany b
 
-Same as above, and additionally install. That is, configure AND build
-AND install.  'i' is an alias to 'install'::
+The ``cmany install`` command does the same as above, and additionally
+installs. That is, configure AND build AND install. ``i`` is an alias to
+``install``::
 
     $ cmany i
 
-Choose a build type of Debug instead of Release::
+The install root defaults to ``./install``. So assuming the project creates
+an executable named ``hello``, the following will result::
+
+    $ ls -1
+    CMakeLists.txt
+    build
+    install
+    main.cpp
+    $ tree -fi install
+    install
+    install/linux-x86_64-gcc6.1-release
+    install/linux-x86_64-gcc6.1-release/bin
+    install/linux-x86_64-gcc6.1-release/bin/hello
+
+To set the build types use ``-t`` or ``--build-types``. The following
+command chooses a build type of Debug instead of Release::
 
     $ cmany b -t Debug
+    $ tree -fi -L 1 build/*
+    build/linux-x86_64-gcc6.1-debug
 
 Build both Debug and Release build types (resulting in 2 build trees)::
 
@@ -106,14 +128,15 @@ Build both Debug and Release build types (resulting in 2 build trees)::
     build/linux-x86_64-gcc6.1-debug
     build/linux-x86_64-gcc6.1-release
 
-Build using both clang++ and g++ (2 build trees)::
+To set the compilers use ``-c`` or ``--compilers``. For example, build
+using both clang++ and g++; default build type (2 build trees)::
 
     $ cmany b -c clang++,g++
     $ tree -fi -L 1 build/*
     build/linux-x86_64-clang3.9-release
     build/linux-x86_64-gcc6.1-release
 
-Build using both clang++,g++ and in Debug,Release modes (4 build trees)::
+Build using both clang++,g++ for Debug,Release build types (4 build trees)::
 
     $ cmany b -c clang++,g++ -t Debug,Release
     $ tree -fi -L 1 build/*
@@ -122,7 +145,7 @@ Build using both clang++,g++ and in Debug,Release modes (4 build trees)::
     build/linux-x86_64-gcc6.1-debug
     build/linux-x86_64-gcc6.1-release
 
-Build using clang++,g++,icpc in Debug,Release,MinSizeRel modes (9 build trees)::
+Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types (9 build trees)::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
     $ tree -fi -L 1 build/*
