@@ -41,25 +41,25 @@ matrix:
       python: 3.3
       env: PY=3.3
 
-    - os: osx
-      language: generic
-      env: PY=3.7
+    #- os: osx
+    #  language: generic
+    #  env: PY=3.7 PYENV=3.7.0
 
     - os: osx
       language: generic
-      env: PY=3.6
+      env: PY=3.6 PYENV=3.6.0b1
 
     - os: osx
       language: generic
-      env: PY=3.5
+      env: PY=3.5 PYENV=3.5.0
 
     - os: osx
       language: generic
-      env: PY=3.4
+      env: PY=3.4 PYENV=3.4.0
 
     - os: osx
       language: generic
-      env: PY=3.3
+      env: PY=3.3 PYENV=3.3.0
 
 install:
   # command to install dependencies

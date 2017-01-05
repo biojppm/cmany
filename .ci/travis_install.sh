@@ -23,13 +23,12 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     #brew install pyenv
     #eval "$(pyenv init -)"
-    v="${PY}.0"
     brew outdated && brew upgrade pyenv
     pyenv versions
     pyenv install --list
-    pyenv install $v
+    pyenv install $PYENV
     pyenv versions
-    pyenv shell $v
+    pyenv shell $PYENV
 
     PYTHON=python$PY
     PIP=pip$PY
