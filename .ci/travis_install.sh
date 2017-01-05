@@ -30,7 +30,7 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
     pyenv versions
     pyenv local $PYENV
 
-    PYTHON=python
+    PYTHON=python3
     PIP=pip
 
 fi
