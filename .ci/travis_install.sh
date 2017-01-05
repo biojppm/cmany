@@ -5,7 +5,9 @@
 set -e
 set -x
 
-if [ $TRAVIS_OS_NAME == 'linux' ] ; then
+echo "TRAVIS_OS_NAME=$TRAVIS_OS_NAME"
+
+if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
 
     sudo apt-get update
     sudo apt-get install -y python3-pip python3-dev
@@ -14,7 +16,7 @@ if [ $TRAVIS_OS_NAME == 'linux' ] ; then
     PYTHON=python3
     PIP=pip3
 
-elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     brew update
     #brew install cmake
@@ -28,6 +30,8 @@ elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
     PYTHON=python$PY
     PIP=pip$PY
 
+else
+    echo WTF
 fi
 
 cmake --version

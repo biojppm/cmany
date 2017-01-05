@@ -2,15 +2,17 @@
 
 cwd=$(cd $(dirname $0) ; pwd)
 
-if [ $TRAVIS_OS_NAME == 'linux' ] ; then
+if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
 
     PYTHON=python3
 
-elif [ $TRAVIS_OS_NAME == 'osx' ] ; then
+elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     eval "$(pyenv init -)"
     PYTHON="python$PY"
 
+else
+    echo WTF
 fi
 
 
