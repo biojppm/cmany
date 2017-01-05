@@ -35,6 +35,7 @@ cmany is available and continuously tested in Linux, Mac OS X and Windows.
 Features
 --------
 
+* Works in Linux, Windows and OS X.
 * Saves the tedious work of dealing with many build trees by hand.
 * Useful for build comparisons.
 * Useful for cross-compiler validation.
@@ -168,6 +169,7 @@ can be used::
 
     $ cmany help build
     $ cmany build -h
+    $ cmany build --help
 
 
 Status
