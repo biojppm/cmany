@@ -160,7 +160,9 @@ class Compiler(BuildItem):
     def get_c_compiler(shortname, cxx_compiler):
         # if cxx_compiler.endswith("c++") or cxx_compiler.endswith('c++.exe'):
         #     cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
-        if shortname == "icc":
+        if shortname.startswith('vs') or re.search(r'sual Studio', cxx_compiler):
+            cc = cxx_compiler
+        elif shortname == "icc":
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
         elif shortname == "gcc":
             cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
@@ -169,7 +171,7 @@ class Compiler(BuildItem):
         elif shortname == "c++":
             cc = "cc"
         else:
-            cc = cxx_compiler
+            cc = "cc"
         return cc
 
     def get_version(self, path):
