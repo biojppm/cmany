@@ -59,9 +59,31 @@ def splitesc(string, split_char, escape_char=r'\\'):
 
 
 def cslist(arg):
-    '''transform comma-separated arguments into a list of strings.
-    commas can be escaped with backslash, \\'''
+    """transform comma-separated arguments into a list of strings.
+    commas can be escaped with backslash, \\"""
     return splitesc(arg, ',')
+
+
+def chkf(*args):
+    """join the args as a path and check whether that path exists"""
+    f = os.path.join(*args)
+    if not os.path.exists(f):
+        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())  # nopep8
+    return f
+
+
+def touch(fname, times=None):
+    """change the modification and access times of a file.
+    http://stackoverflow.com/questions/1158076/implement-touch-using-python
+    """
+    with open(fname, 'a'):
+        os.utime(fname, times)
+
+
+def remove_if(fname):
+    """remove a file if it exists"""
+    if os.path.exists(fname):
+        os.remove(fname)
 
 
 def which(cmd):
@@ -75,14 +97,6 @@ def which(cmd):
             if os.path.exists(j):
                 return j
     return None
-
-
-def chkf(*args):
-    """join the args as a path and check whether that path exists"""
-    f = os.path.join(*args)
-    if not os.path.exists(f):
-        raise Exception("path does not exist: " + f + ". Current dir=" + os.getcwd())  # nopep8
-    return f
 
 
 def cacheattr(obj, name, function):
@@ -148,12 +162,20 @@ class setcwd:
 
 # -----------------------------------------------------------------------------
 
+
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
 # See http://stackoverflow.com/a/40590445
 if sys.version_info >= (3,5):
-    run_replacement = subprocess.run
+    sprun = subprocess.run
 else:
+
+
+    if sys.version_info < (3, 3):
+        msg = 'cmany requires at least Python 3.3. Current version is {}. Sorry.'
+        sys.exit(msg.format(sys.version_info))
+
+
     class CompletedProcess:
         def __init__(self, returncode, args, stdout, stderr):
             self.args = args
@@ -184,8 +206,8 @@ else:
         return CompletedProcess(args=process.args, returncode=retcode,
                                 stdout=stdout, stderr=stderr)
 
-    # point run_replacement to our implementation
-    run_replacement = subprocess_run_impl
+    # point sprun to our implementation
+    sprun = subprocess_run_impl
 
 
 def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
@@ -199,25 +221,25 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
 
     if as_bytes_string:
         if capture_output:
-            result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDERR)
+            result = sprun(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDERR)
             result.check_returncode()
             return result.stdout
         else:
-            result = run_replacement(cmd)
+            result = sprun(cmd)
             result.check_returncode()
     else:
         if not echo_output:
-            result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                     universal_newlines=True)
+            result = sprun(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           universal_newlines=True)
             result.check_returncode()
             if capture_output:
                 return str(result.stdout)
         elif echo_output:
             if capture_output:
-                result = run_replacement(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                        universal_newlines=True)
+                result = sprun(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               universal_newlines=True)
                 result.check_returncode()
                 return str(result.stdout)
             else:
-                result = run_replacement(cmd, universal_newlines=True)
+                result = sprun(cmd, universal_newlines=True)
                 result.check_returncode()
