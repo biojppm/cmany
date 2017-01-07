@@ -86,17 +86,18 @@ class projcmd(cmdbase):
         parser.add_argument("-j", "--jobs", default=cpu_count(),
                             help="""build with the given number of parallel jobs
                             (defaults to %(default)s on this machine).""")
-        parser.add_argument("-G", "--generator", default=cmany.Generator.default_str(),
-                            help="set the cmake generator (on this machine, defaults to \"%(default)s\")")
         parser.add_argument("-I", "--include-dirs", default=[], type=cslist,
                             help="add dirs to the include path of all builds")
         parser.add_argument("-L", "--link-dirs", default=[], type=cslist,
                             help="add dirs to the link path of all builds")
         parser.add_argument("--kflags", default=[], type=cslist,
-                            help="""cmake flags applying to all builds.
+                            help="""cmake variables+values applying to all builds.
+                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
+        parser.add_argument("--cxxflags", default=[], type=cslist,
+                            help="""add C++ compile flags applying to all builds.
                             Provide as a comma-separated list. To escape commas, use a backslash \\.""")
         parser.add_argument("--cflags", default=[], type=cslist,
-                            help="""compile flags applying to all builds.
+                            help="""add C compile flags applying to all builds.
                             Provide as a comma-separated list. To escape commas, use a backslash \\.""")
         parser.add_argument("--lflags", default=[], type=cslist,
                             help="""linker flags applying to all builds.

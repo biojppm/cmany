@@ -11,7 +11,7 @@ from multiprocessing import cpu_count as cpu_count
 from . import util
 from .cmake_sysinfo import CMakeSysInfo, CMakeCache, getcachevars
 from . import vsinfo
-from . import cflags
+from . import flags
 
 
 # -----------------------------------------------------------------------------
@@ -97,14 +97,16 @@ class CompileOptions:
         self.name = name
         self.cmake_flags = []
         self.cflags = []
+        self.cxxflags = []
         self.lflags = []
 
     def merge(self, other):
         """other will take precedence, ie, their options will come last"""
         c = CompileOptions()
-        c.name = self.name+"+"+other.name
+        c.name = self.name + "+" + other.name
         c.cmake_flags = self.cmake_flags + other.cmake_flags
         c.cflags = self.cflags + other.cflags
+        c.cxxflags = self.cxxflags + other.cxxflags
         c.lflags = self.lflags + other.lflags
         return c
 
@@ -376,7 +378,7 @@ class Build:
         # ... and this will overwrite (in memory) the vars with the input
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
-        self.gather_cache_vars()
+        self.gather_input_cache_vars()
 
     def __repr__(self):
         return self.tag
@@ -388,16 +390,20 @@ class Build:
             s += "{0}{1}".format(sep, self.variant)
         return s
 
-    def gather_cache_vars(self):
+    def gather_input_cache_vars(self):
         vc = self.varcache
-        vc.p('CMAKE_INSTALL_PREFIX', self.installdir, from_input=True)
+        def _set(pfn, pname, pval): pfn(pname, pval, from_input=True)
+        _set(vc.p, 'CMAKE_INSTALL_PREFIX', self.installdir)
         if not self.generator.is_msvc:
-            vc.f('CMAKE_CXX_COMPILER', self.compiler.path, from_input=True)
-            vc.f('CMAKE_C_COMPILER', self.compiler.c_compiler, from_input=True)
-        vc.s('CMAKE_BUILD_TYPE', str(self.buildtype), from_input=True)
-        flags = self._gather_flags('cflags')
-        if flags:
-            vc.s('CMAKE_CXX_FLAGS', ' '.join(flags), from_input=True)
+            _set(vc.f, 'CMAKE_CXX_COMPILER', self.compiler.path)
+            _set(vc.f, 'CMAKE_C_COMPILER', self.compiler.c_compiler)
+        _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
+        cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT')
+        if cxxflags:
+            _set(vc.s, 'CMAKE_CXX_FLAGS', ' '.join(cxxflags))
+        cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT')
+        if cflags:
+            _set(vc.s, 'CMAKE_C_FLAGS', ' '.join(cflags))
 
     def create_dir(self):
         if not os.path.exists(self.builddir):
@@ -455,6 +461,8 @@ class Build:
     def needs_build(self):
         if not os.path.exists(self.builddir):
             return True
+        if self.needs_cache_regeneration():
+            return True
         with util.setcwd(self.builddir):
             if not os.path.exists("cmany_build.done"):
                 return True
@@ -476,8 +484,10 @@ class Build:
             util.runsyscmd(cmd)
             os.remove("cmany_build.done")
 
-    def _gather_flags(self, which):
-        flags = [CMakeSysInfo.var('CMAKE_CXX_FLAGS_INIT', self.generator)]
+    def _gather_flags(self, which, append_to_sysinfo_var=None):
+        flags = []
+        if append_to_sysinfo_var:
+            flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
         for wf in getattr(self.flags, which):
             f = wf.get(self.compiler.shortname)
             if f:
@@ -543,8 +553,9 @@ class ProjectConfig:
         self.variants = _get('variants', None)
         self.flags = CompileOptions('all_builds')
         self.flags.cmake_flags = kwargs['kflags']
-        self.flags.cflags = cflags.asflags(kwargs['cflags'])
-        self.flags.lflags = cflags.asflags(kwargs['lflags'])
+        self.flags.cxxflags = flags.asflags(kwargs['cxxflags'])
+        self.flags.cflags = flags.asflags(kwargs['cflags'])
+        self.flags.lflags = flags.asflags(kwargs['lflags'])
 
         # self.generator = Generator(kwargs.get('generator'))
         self.num_jobs = kwargs.get('jobs')
