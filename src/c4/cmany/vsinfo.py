@@ -358,7 +358,6 @@ def _vs2017_get_instance_data(which_instance=None):
         with open(instances[i], encoding="utf8") as json_str:
             d = json.load(json_str)
             return d
-        raise Exception('could not load instance data: ' + instances[i])
     return cacheattr(sys.modules[__name__], "_vs2017_instance_data_" + i, fn)
 
 
