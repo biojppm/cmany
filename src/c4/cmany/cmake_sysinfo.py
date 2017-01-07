@@ -72,7 +72,7 @@ def loadvars(builddir):
 
 
 # -----------------------------------------------------------------------------
-class CMakeCache(dict):
+class CMakeCache(odict):
 
     def __init__(self, builddir=None):
         super().__init__(loadvars(builddir))
@@ -85,42 +85,39 @@ class CMakeCache(dict):
             out[n] = v
         return out
 
-    def b(self, name, val, force_dirty=False):
+    def b(self, name, val, **kwargs):
         """set a boolean"""
-        return self.setvar(name, val, "BOOL", force_dirty)
+        return self.setvar(name, val, "BOOL", **kwargs)
 
-    def s(self, name, val, force_dirty=False):
+    def s(self, name, val, **kwargs):
         """set a string"""
-        return self.setvar(name, val, "STRING", force_dirty)
+        return self.setvar(name, val, "STRING", **kwargs)
 
-    def p(self, name, val, force_dirty=False):
+    def p(self, name, val, **kwargs):
         """set a path to a dir"""
         if util.in_windows():
             val = re.sub(r'\\', r'/', val)
-        return self.setvar(name, val, "PATH", force_dirty)
+        return self.setvar(name, val, "PATH", **kwargs)
 
-    def f(self, name, val, force_dirty=False):
+    def f(self, name, val, **kwargs):
         """set a path to a file"""
         if util.in_windows():
             val = re.sub(r'\\', r'/', val)
-        return self.setvar(name, val, "FILEPATH", force_dirty)
+        return self.setvar(name, val, "FILEPATH", **kwargs)
 
-    def i(self, name, val, force_dirty=False):
+    def i(self, name, val, **kwargs):
         """set a cmake internal var"""
-        return self.setvar(name, val, "INTERNAL", force_dirty)
+        return self.setvar(name, val, "INTERNAL", **kwargs)
 
-    def setvar(self, name, val, vartype=None, force_dirty=False):
+    def setvar(self, name, val, vartype, **kwargs):
         v = self.get(name)
         if v is not None:
-            changed = v.reset(val, vartype)
+            changed = v.reset(val, vartype, **kwargs)
             self.dirty |= changed
-            if force_dirty:
-                self.dirty = True
-            return changed or force_dirty
+            return changed
         else:
             assert vartype is not None
-            v = CMakeCache.Var(name, val, vartype)
-            v.dirty = True
+            v = CMakeCache.Var(name, val, vartype, dirty=True)
             self[name] = v
             self.dirty = True
             return True
@@ -145,20 +142,41 @@ class CMakeCache(dict):
     # -------------------------------------------------------------------------
     class Var:
 
-        def __init__(self, name, val, vartype="STRING"):
+        def __init__(self, name, val, vartype="STRING", dirty=False, from_input=False):
             self.name = name
             self.val = val
             self.vartype = vartype
-            self.dirty = False
+            self.dirty = dirty
+            self.from_input = from_input
 
-        def reset(self, val, vartype):
+        def reset(self, val, vartype, **kwargs):
+            """
+
+            :param val:
+            :param vartype:
+            :param kwargs:
+                force_dirty, defaults to False
+                from_input, defaults to None
+            :return:
+            """
+            force_dirty = kwargs.get('force_dirty', False)
+            from_input = kwargs.get('from_input')
+            if from_input is not None:
+                self.from_input = from_input
             if val != self.val or vartype != self.vartype:
                 self.val = val
                 self.vartype = vartype
                 self.dirty = True
                 return True
-            return False
+            if force_dirty:
+                self.dirty = True
+            return force_dirty
 
+        def __repr__(self):
+            return self.name + ':' + self.vartype + '=' + self.val
+
+        def __str__(self):
+            return self.name + ':' + self.vartype + '=' + self.val
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

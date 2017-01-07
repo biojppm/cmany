@@ -390,14 +390,14 @@ class Build:
 
     def gather_cache_vars(self):
         vc = self.varcache
-        vc.p('CMAKE_INSTALL_PREFIX',  self.installdir, force_dirty=True)
+        vc.p('CMAKE_INSTALL_PREFIX', self.installdir, from_input=True)
         if not self.generator.is_msvc:
-            vc.f('CMAKE_CXX_COMPILER', self.compiler.path, force_dirty=True)
-            vc.f('CMAKE_C_COMPILER', self.compiler.c_compiler, force_dirty=True)
-        vc.s('CMAKE_BUILD_TYPE', str(self.buildtype), force_dirty=True)
+            vc.f('CMAKE_CXX_COMPILER', self.compiler.path, from_input=True)
+            vc.f('CMAKE_C_COMPILER', self.compiler.c_compiler, from_input=True)
+        vc.s('CMAKE_BUILD_TYPE', str(self.buildtype), from_input=True)
         flags = self._gather_flags('cflags')
         if flags:
-            vc.s('CMAKE_CXX_FLAGS', ' '.join(flags), force_dirty=True)
+            vc.s('CMAKE_CXX_FLAGS', ' '.join(flags), from_input=True)
 
     def create_dir(self):
         if not os.path.exists(self.builddir):
@@ -490,7 +490,7 @@ class Build:
         lines = []
         s = '_cmany_set({} "{}" {})'
         for _, v in self.varcache.items():
-            if v.dirty:
+            if v.from_input:
                 lines.append(s.format(v.name, v.val, v.vartype))
         if lines:
             tpl = __class__.preload_file_tpl
@@ -508,7 +508,7 @@ class Build:
 if(NOT _cmany_set_def)
     set(_cmany_set_def ON)
     function(_cmany_set var value type)
-        set(${{var}} "${{value}}" CACHE ${{type}} "" FORCE)
+        set(${{var}} "${{value}}" CACHE ${{type}} "")
         message(STATUS "cmany: ${{var}}=${{value}}")
     endfunction(_cmany_set)
 endif(NOT _cmany_set_def)
