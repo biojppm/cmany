@@ -2,6 +2,7 @@ build
 install
 .test/
 README.html
+__cmake_systeminformation
 
 # Editor/IDE files
 *~
@@ -19,4 +20,3 @@ __pycache__
 .eggs
 *.egg-info
 dist
-
