@@ -92,7 +92,15 @@ class projcmd(cmdbase):
                             help="add dirs to the include path of all builds")
         parser.add_argument("-L", "--link-dirs", default=[], type=cslist,
                             help="add dirs to the link path of all builds")
-        parser.add_argument("--cxxflags", default=[], type=cslist,)
+        parser.add_argument("--kflags", default=[], type=cslist,
+                            help="""cmake flags applying to all builds.
+                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
+        parser.add_argument("--cflags", default=[], type=cslist,
+                            help="""compile flags applying to all builds.
+                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
+        parser.add_argument("--lflags", default=[], type=cslist,
+                            help="""linker flags applying to all builds.
+                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
 
 
 class selectcmd(projcmd):
@@ -115,8 +123,7 @@ class selectcmd(projcmd):
                        help="""(WIP) restrict actions to the given operating systems.
                        Defaults to the current system, \"%(default)s\".
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
-                       This feature requires os-specific toolchains and is currently a
-                       work-in-progress.""")
+                       This feature is a stub only and is still to be implemented.""")
         g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
                        default=[cmany.Architecture.default_str()], type=cslist,
                        help="""(WIP) restrict actions to the given processor architectures.
@@ -137,6 +144,7 @@ class help(cmdbase):
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
+
     def _exec(self, proj, args):
         sct = args.subcommand_or_topic
         if not sct:
@@ -145,8 +153,6 @@ class help(cmdbase):
             sc = cmds.get(sct)
             # is it a subcommand?
             if sc is not None:
-                print(args)
-                print(sc)
                 cmany_main([sct, '-h'])
             else:
                 # is it a topic?
@@ -180,6 +186,7 @@ class install(selectcmd):
     def _exec(self, proj, args):
         proj.install()
 
+
 """
 class create(selectcmd):
     '''create a CMakeSettings.json file with the given combination of build parameters'''
@@ -187,11 +194,13 @@ class create(selectcmd):
         print("creating", os.path.join(proj.rootdir, "CMakeSettings.json"))
 """
 
+
 class showvars(selectcmd):
     '''show the value of certain CMake cache vars'''
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
+
     def _exec(self, proj, args):
         proj.showvars(args.var_names)
 
@@ -201,6 +210,7 @@ class showvars(selectcmd):
 # -----------------------------------------------------------------------------
 
 help_topics = odict()
+
 
 class HelpTopic:
 
@@ -214,7 +224,7 @@ class HelpTopic:
         self.__doc__ = doc
         self.txt = txt
         HelpTopic.keylen = max(HelpTopic.keylen, len(id))
-        HelpTopic.tablefmt ='    {:' + str(HelpTopic.keylen) + '} {}'
+        HelpTopic.tablefmt = '    {:' + str(HelpTopic.keylen) + '} {}'
         if not disabled:
             help_topics[id] = self
 
@@ -227,10 +237,11 @@ def create_help_topic(id, title, doc, txt, disabled=False):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-create_help_topic("basic_examples",
-    title = "Basic usage examples",
-    doc = "Basic usage examples",
-    txt = """Consider a directory with this layout::
+create_help_topic(
+    "basic_examples",
+    title="Basic usage examples",
+    doc="Basic usage examples",
+    txt="""Consider a directory with this layout::
 
     $ ls -1
     CMakeLists.txt
@@ -358,11 +369,12 @@ of the following can be used::
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-create_help_topic("dir_formats",
+create_help_topic(
+    "dir_formats",
     disabled=True,
-    title = "Specifying directory patterns",
-    doc = "help on dir formats",
-    txt = """
+    title="Specifying directory patterns",
+    doc="help on dir formats",
+    txt="""
     $ cmany -I "path/to/{system}-{architecture}-{compiler}-{build_type}{variant?-{variant}}"
 """)
 
@@ -370,10 +382,11 @@ create_help_topic("dir_formats",
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-create_help_topic("flags",
-    title = "Preset compiler flags",
-    doc = "help on dir formats",
-    txt = """
+create_help_topic(
+    "flags",
+    title="Preset compiler flags",
+    doc="help on dir formats",
+    txt="""
 TODO: add help for compiler flags
 """)
 
@@ -381,10 +394,11 @@ TODO: add help for compiler flags
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-create_help_topic("variants",
-    title = "Build variants",
-    doc = "help on specifying variants",
-    txt = """
+create_help_topic(
+    "variants",
+    title="Build variants",
+    doc="help on specifying variants",
+    txt="""
     $ cmany b -v 'noexcept: cpp11 noexceptions','
 """)
 
@@ -392,11 +406,17 @@ create_help_topic("variants",
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 
-create_help_topic("visual_studio",
-    title = "Visual Studio versions and toolsets",
-    doc = "help on specifying Microsoft Visual Studio versions and toolsets",
-    txt = """
+create_help_topic(
+    "visual_studio",
+    title="Visual Studio versions and toolsets",
+    doc="help on specifying Microsoft Visual Studio versions and toolsets",
+    txt="""
 TODO: add help for visual studio
+
+Visual Studio aliases example:
+    vs2013: use the bitness of the current system
+    vs2013_32: use 32bit version
+    vs2013_64: use 64bit version
 """)
 
 # -----------------------------------------------------------------------------
@@ -414,7 +434,7 @@ def dump_help_topics():
     for t, _ in help_topics.items():
         print(t)
         txt = util.runsyscmd([sys.executable, sys.modules[__name__].__file__,
-                              'help', t], capture_output=True)
+                              'help', t], echo_cmd=False, capture_output=True)
         print(txt)
 
 # -----------------------------------------------------------------------------

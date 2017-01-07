@@ -112,6 +112,7 @@ class TestBuild:
         self.compiler = compiler
         self.buildtype = buildtype
         self.numbuilds = numbuilds
+        self.flags = cmany.CompileOptions()
         self.build_obj = cmany.Build(proj_root=self.proj.root,
                                      build_root=os.path.join(self.proj.root, self.buildroot),
                                      install_root=os.path.join(self.proj.root, self.installroot),
@@ -120,6 +121,7 @@ class TestBuild:
                                      buildtype=buildtype,
                                      compiler=compiler,
                                      variant="",
+                                     flags=self.flags,
                                      num_jobs=cmany.cpu_count()
                                      )
 
