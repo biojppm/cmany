@@ -38,13 +38,14 @@ class Test01runsyscmd(ut.TestCase):
 # -----------------------------------------------------------------------------
 echo_args = None
 def invoke_and_compare(tester, cmd_args):
+    # print("invoke_and_compare: in=", cmd_args)
     cmd = [sys.executable, sys.modules[__name__].__file__, 'echo'] + cmd_args
-    out = util.runsyscmd(cmd, echo_cmd=False, capture_output=True)
+    out = util.runsyscmd(cmd, echo_cmd=False, capture_output=True).strip()
     # print("invoke_and_compare: out=", out)
     # this doesn't work...:
     # code = "echo_args={}".format(out)
     # ... but this does:
-    code = "tmp = out; setattr(sys.modules[__name__], 'echo_args', tmp)"
+    code = "tmp = " + out + "; setattr(sys.modules[__name__], 'echo_args', tmp)"
     code = code.format(out)
     # print("invoke_and_compare: code=", code)
     exec(code)
