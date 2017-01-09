@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import re
 import glob
 from datetime import datetime
@@ -93,22 +92,27 @@ class Architecture(BuildItem):
 # -----------------------------------------------------------------------------
 class CompileOptions:
 
-    def __init__(self, name=""):
+    def __init__(self, compiler, name="", **kwargs):
         self.name = name
-        self.cmake_flags = []
-        self.cflags = []
-        self.cxxflags = []
-        self.lflags = []
+        self.cmake_vars = kwargs['vars']
+        self.defines = flags.as_defines(kwargs['define'], compiler)
+        self.cxxflags = flags.as_flags(kwargs['cxxflags'], compiler)
+        self.cflags = flags.as_flags(kwargs['cflags'], compiler)
+        # self.include_dirs = kwargs['include_dirs']
+        # self.link_dirs = kwargs['link_dirs']
 
     def merge(self, other):
         """other will take precedence, ie, their options will come last"""
         c = CompileOptions()
         c.name = self.name + "+" + other.name
-        c.cmake_flags = self.cmake_flags + other.cmake_flags
+        c.cmake_vars = self.cmake_vars + other.cmake_flags
+        c.defines = self.defines + other.defines
         c.cflags = self.cflags + other.cflags
         c.cxxflags = self.cxxflags + other.cxxflags
-        c.lflags = self.lflags + other.lflags
+        # c.include_dirs = self.include_dirs + other.include_dirs
+        # c.link_dirs = self.link_dirs + other.link_dirs
         return c
+
 
 # -----------------------------------------------------------------------------
 class Compiler(BuildItem):
@@ -214,7 +218,7 @@ class Variant(BuildItem):
 
     def __init__(self, name):
         super().__init__(name)
-        self.options = CompileOptions(name)
+        self.options = None  # CompileOptions(name)
 
 
 # -----------------------------------------------------------------------------
@@ -258,11 +262,12 @@ class Generator(BuildItem):
         self.is_msvc = name.startswith("Visual Studio")
         self.build = build
         #
-        self.full_name = self.name
+        self.sysinfo_name = self.name
         if self.is_msvc:
             ts = build.compiler.vs.toolset
-            self.full_name += ts if ts is not None else ""
-        self.full_name += " ".join(self.build.flags.cmake_flags)
+            self.sysinfo_name += (' ' + ts) if ts is not None else ""
+        # these vars would not change cmake --system-information
+        # self.full_name += " ".join(self.build.flags.cmake_vars)
 
     def configure_args(self):
         if self.name != "":
@@ -272,7 +277,8 @@ class Generator(BuildItem):
                 args = ['-G', self.name]
         else:
             args = []
-        args += self.build.flags.cmake_flags
+        # cmake vars are explicitly set in the preload file
+        # args += self.build.flags.cmake_flags
         return args
 
     def cmd(self, targets):
@@ -390,21 +396,6 @@ class Build:
             s += "{0}{1}".format(sep, self.variant)
         return s
 
-    def gather_input_cache_vars(self):
-        vc = self.varcache
-        def _set(pfn, pname, pval): pfn(pname, pval, from_input=True)
-        _set(vc.p, 'CMAKE_INSTALL_PREFIX', self.installdir)
-        if not self.generator.is_msvc:
-            _set(vc.f, 'CMAKE_CXX_COMPILER', self.compiler.path)
-            _set(vc.f, 'CMAKE_C_COMPILER', self.compiler.c_compiler)
-        _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
-        cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT')
-        if cxxflags:
-            _set(vc.s, 'CMAKE_CXX_FLAGS', ' '.join(cxxflags))
-        cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT')
-        if cflags:
-            _set(vc.s, 'CMAKE_C_FLAGS', ' '.join(cflags))
-
     def create_dir(self):
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
@@ -461,10 +452,10 @@ class Build:
     def needs_build(self):
         if not os.path.exists(self.builddir):
             return True
-        if self.needs_cache_regeneration():
-            return True
         with util.setcwd(self.builddir):
             if not os.path.exists("cmany_build.done"):
+                return True
+            if self.needs_cache_regeneration():
                 return True
         return False
 
@@ -488,11 +479,46 @@ class Build:
         flags = []
         if append_to_sysinfo_var:
             flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
-        for wf in getattr(self.flags, which):
-            f = wf.get(self.compiler.shortname)
-            if f:
-                flags.append(f)
-        return flags
+        wf = getattr(self.flags, which)
+        out = self.flags.defines
+        for f in wf:
+            out.append(f.get(self.compiler.shortname))
+        return out
+
+    def gather_input_cache_vars(self):
+        vc = self.varcache
+        for v in self.flags.cmake_vars:
+            spl = v.split('=')
+            vval = ''.join(spl[1:]) if len(spl) > 1 else ''
+            nspl = spl[0].split(':')
+            if len(nspl) == 1:
+                vc.setvar(nspl[0], vval, from_input=True)
+            elif len(nspl) == 2:
+                vc.setvar(nspl[0], vval, nspl[1], from_input=True)
+            else:
+                raise Exception('could not parse variable value: ' + v)
+        #
+        def _set(pfn, pname, pval): pfn(pname, pval, from_input=True)
+        if not self.generator.is_msvc:
+            _set(vc.f, 'CMAKE_C_COMPILER', self.compiler.c_compiler)
+            _set(vc.f, 'CMAKE_CXX_COMPILER', self.compiler.path)
+        _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
+        _set(vc.p, 'CMAKE_INSTALL_PREFIX', self.installdir)
+        #
+        cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT')
+        if cflags:
+            _set(vc.s, 'CMAKE_C_FLAGS', ' '.join(cflags))
+        #
+        cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT')
+        print("cxxflags:", cxxflags)
+        if cxxflags:
+            _set(vc.s, 'CMAKE_CXX_FLAGS', ' '.join(cxxflags))
+        #
+        # if self.flags.include_dirs:
+        #     _set(vc.s, 'CMANY_INCLUDE_DIRECTORIES', ';'.join(self.flags.include_dirs))
+        #
+        # if self.flags.link_dirs:
+        #     _set(vc.s, 'CMAKE_LINK_DIRECTORIES', ';'.join(self.flags.link_dirs))
 
     def create_preload_file(self):
         # http://stackoverflow.com/questions/17597673/cmake-preload-script-for-cache
@@ -512,7 +538,7 @@ class Build:
             f.write(txt)
         return self.preload_file
 
-    preload_file_tpl = """# Do not edit. Will be overwritten.
+    preload_file_tpl = ("""# Do not edit. Will be overwritten.
 # Generated by cmany on {date}
 
 if(NOT _cmany_set_def)
@@ -526,15 +552,26 @@ endif(NOT _cmany_set_def)
 message(STATUS "cmany:preload----------------------")
 {vars}
 message(STATUS "cmany:preload----------------------")
-
+""" +
+# """
+# if(CMANY_INCLUDE_DIRECTORIES)
+#     include_directories(${{CMANY_INCLUDE_DIRECTORIES}})
+# endif()
+#
+# if(CMANY_LINK_DIRECTORIES)
+#     link_directories(${{CMANY_LINK_DIRECTORIES}})
+# endif()
+# """ +
+"""
 # Do not edit. Will be overwritten.
 # Generated by cmany on {date}
-"""
+""")
     preload_file_tpl_empty = """# Do not edit. Will be overwritten.
 # Generated by cmany on {date}
 
 message(STATUS "cmany: nothing to preload...")
 """
+
 
 # -----------------------------------------------------------------------------
 class ProjectConfig:
@@ -542,6 +579,7 @@ class ProjectConfig:
     def __init__(self, **kwargs):
         _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
         projdir = kwargs.get('proj_dir', os.getcwd())
+        self.kwargs = kwargs
         self.rootdir = os.getcwd() if projdir == "." else projdir
         self.cmakelists = util.chkf(self.rootdir, "CMakeLists.txt")
         self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
@@ -551,11 +589,7 @@ class ProjectConfig:
         self.buildtypes = _get('build_types', BuildType)
         self.compilers = _get('compilers', Compiler)
         self.variants = _get('variants', None)
-        self.flags = CompileOptions('all_builds')
-        self.flags.cmake_flags = kwargs['kflags']
-        self.flags.cxxflags = flags.asflags(kwargs['cxxflags'])
-        self.flags.cflags = flags.asflags(kwargs['cflags'])
-        self.flags.lflags = flags.asflags(kwargs['lflags'])
+        #self.flags = CompileOptions('all_builds', **kwargs)
 
         # self.generator = Generator(kwargs.get('generator'))
         self.num_jobs = kwargs.get('jobs')
@@ -580,8 +614,10 @@ class ProjectConfig:
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
+        flags = CompileOptions(compiler, 'all_builds', **self.kwargs)
+        print("flags:", flags)
         b = Build(self.rootdir, self.builddir, self.installdir,
-                  system, arch, buildtype, compiler, variant, self.flags,
+                  system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs)
         self.builds.append(b)
         return True

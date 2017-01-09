@@ -57,6 +57,16 @@ def argerror(*msg_args):
     cmany_main(['-h'])
     exit(1)
 
+def repeatedcslist(input):
+    out = cslist(input)
+    out2 = []
+    for o in out:
+        if isinstance(o, list):
+            out2 += o
+        else:
+            out2.append(o)
+    print(input, type(input), out2)
+    return out
 
 # -----------------------------------------------------------------------------
 class cmdbase:
@@ -86,22 +96,28 @@ class projcmd(cmdbase):
         parser.add_argument("-j", "--jobs", default=cpu_count(),
                             help="""build with the given number of parallel jobs
                             (defaults to %(default)s on this machine).""")
-        parser.add_argument("-I", "--include-dirs", default=[], type=cslist,
-                            help="add dirs to the include path of all builds")
-        parser.add_argument("-L", "--link-dirs", default=[], type=cslist,
-                            help="add dirs to the link path of all builds")
-        parser.add_argument("--kflags", default=[], type=cslist,
+        parser.add_argument("--vars", default=[], type=cslist,
                             help="""cmake variables+values applying to all builds.
                             Provide as a comma-separated list. To escape commas, use a backslash \\.""")
         parser.add_argument("--cxxflags", default=[], type=cslist,
                             help="""add C++ compile flags applying to all builds.
+                            These will be passed to cmake by appending to the
+                            default initial value of CMAKE_CXX_FLAGS.
                             Provide as a comma-separated list. To escape commas, use a backslash \\.""")
         parser.add_argument("--cflags", default=[], type=cslist,
                             help="""add C compile flags applying to all builds.
+                            These will be passed to cmake by appending to the
+                            default initial value of CMAKE_C_FLAGS.
                             Provide as a comma-separated list. To escape commas, use a backslash \\.""")
-        parser.add_argument("--lflags", default=[], type=cslist,
-                            help="""linker flags applying to all builds.
-                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
+        parser.add_argument("-D", "--define", default=[], action='append',
+                            help="""add a preprocessor symbol definition to all builds.
+                                 Use as with a compiler, by multiple invokations of -D.""")
+        # parser.add_argument("-I", "--include-dirs", default=[], action='append',
+        #                     help="""add dirs to the include path of all builds
+        #                          Use as with a compiler, by multiple invokations of -I.""")
+        # parser.add_argument("-L", "--link-dirs", default=[], action='append',
+        #                     help="""add dirs to the link path of all builds
+        #                          Use as with a compiler, by multiple invokations of -L.""")
 
 
 class selectcmd(projcmd):
@@ -209,6 +225,7 @@ class showvars(selectcmd):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+
 
 help_topics = odict()
 

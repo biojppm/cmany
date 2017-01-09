@@ -33,17 +33,6 @@ class CFlag:
         return (self.name, self.gcc, self.clang, self.icc, self.vs)
 
 
-def asflags(spec):
-    out = []
-    for s in spec:
-        f = known_flags.get(s)
-        if f is not None:
-            out.append(f)
-        else:
-            out.append(CFlag(s, s, s, s, s, ''))
-    return out
-
-
 def get(name, compiler=None):
     opt = known_flags.get(name)
     if opt is None:
@@ -51,6 +40,26 @@ def get(name, compiler=None):
     if compiler is not None:
         return opt.get(compiler.shortname)
     return opt
+
+
+def as_flags(spec, compiler=None):
+    out = []
+    for s in spec:
+        f = known_flags.get(s, compiler)
+        if f is not None:
+            out.append(f)
+        else:
+            out.append(CFlag(s, s, s, s, s, ''))
+    return out
+
+
+def as_defines(spec, compiler=None):
+    out = []
+    wf = '/D' if compiler.is_msvc else '-D'
+    for s in spec:
+        out.append(wf)
+        out.append(s)
+    return out
 
 
 # -----------------------------------------------------------------------------

@@ -109,15 +109,14 @@ class CMakeCache(odict):
         """set a cmake internal var"""
         return self.setvar(name, val, "INTERNAL", **kwargs)
 
-    def setvar(self, name, val, vartype, **kwargs):
+    def setvar(self, name, val, vartype=None, **kwargs):
         v = self.get(name)
         if v is not None:
             changed = v.reset(val, vartype, **kwargs)
             self.dirty |= changed
             return changed
         else:
-            assert vartype is not None
-            v = CMakeCache.Var(name, val, vartype, dirty=True)
+            v = CMakeCache.Var(name, val, vartype, dirty=True, **kwargs)
             self[name] = v
             self.dirty = True
             return True
@@ -142,14 +141,14 @@ class CMakeCache(odict):
     # -------------------------------------------------------------------------
     class Var:
 
-        def __init__(self, name, val, vartype="STRING", dirty=False, from_input=False):
+        def __init__(self, name, val, vartype=None, dirty=False, from_input=False):
             self.name = name
             self.val = val
-            self.vartype = vartype
+            self.vartype = 'STRING' if vartype is None else vartype
             self.dirty = dirty
             self.from_input = from_input
 
-        def reset(self, val, vartype, **kwargs):
+        def reset(self, val, vartype='', **kwargs):
             """
 
             :param val:
@@ -165,7 +164,7 @@ class CMakeCache(odict):
                 self.from_input = from_input
             if val != self.val or vartype != self.vartype:
                 self.val = val
-                self.vartype = vartype
+                self.vartype = vartype if vartype is not None else self.vartype
                 self.dirty = True
                 return True
             if force_dirty:
@@ -177,6 +176,7 @@ class CMakeCache(odict):
 
         def __str__(self):
             return self.name + ':' + self.vartype + '=' + self.val
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -268,11 +268,12 @@ class CMakeSysInfo:
             i = out.split("\n")
         return i
 
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def _genid(gen):
     from .cmany import Generator
-    p = gen.full_name if isinstance(gen, Generator) else gen
+    p = gen.sysinfo_name if isinstance(gen, Generator) else gen
     p = re.sub(r'[() ]', '_', p)
     return p
