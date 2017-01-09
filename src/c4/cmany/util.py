@@ -61,7 +61,12 @@ def splitesc(string, split_char, escape_char=r'\\'):
 def cslist(arg):
     """transform comma-separated arguments into a list of strings.
     commas can be escaped with backslash, \\"""
-    return splitesc(arg, ',')
+    s = splitesc(arg, ',')
+    l = []
+    for elm in s:
+        elm = re.sub(r'\\,', r',', elm)
+        l.append(elm)
+    return l
 
 
 def chkf(*args):
