@@ -230,7 +230,8 @@ class CMakeSysInfo:
                     s = re.sub(regex, r'\1', l)
                     # print(var_name, "result: '" + s + "'")
                     return s
-        err = "could not find variable {} in the output of `cmake --system-information` for generator " + which_generator
+        err = "could not find variable {} in the output of `cmake --system-information` for generator {}"
+        err = err.format(var_name, which_generator)
         raise Exception(err.format(var_name))
 
     @staticmethod
