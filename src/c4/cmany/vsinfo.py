@@ -27,6 +27,7 @@ class VisualStudioInfo:
         self.ver = ver
         self.year = int(re.sub(r'^vs(....).*', r'\1', name))
         self.gen = to_gen(cn)
+        self.architecture = parse_architecture(self.gen)
         self.dir = vsdir(ver)
         self.msbuild = msbuild(ver)
         self.vcvarsall = vcvarsall(ver)
@@ -106,6 +107,28 @@ _names = {
     'vs2005_64'   : 'Visual Studio 8 2005 Win64'   , 'Visual Studio 8 2005 Win64'   : 'vs2005_64'   ,  # nopep8
 }
 
+_architectures = {
+    'Visual Studio 15 2017'        : 'x86'    ,
+    'Visual Studio 15 2017 Win64'  : 'x86_64' ,
+    'Visual Studio 15 2017 ARM'    : 'arm'    ,
+    'Visual Studio 14 2015'        : 'x86'    ,
+    'Visual Studio 14 2015 Win64'  : 'x86_64' ,
+    'Visual Studio 14 2015 ARM'    : 'arm'    ,
+    'Visual Studio 12 2013'        : 'x86'    ,
+    'Visual Studio 12 2013 Win64'  : '_64'    ,
+    'Visual Studio 12 2013 ARM'    : 'arm'    ,
+    'Visual Studio 11 2012'        : 'x86'    ,
+    'Visual Studio 11 2012 Win64'  : '_64'    ,
+    'Visual Studio 11 2012 ARM'    : 'arm'    ,
+    'Visual Studio 10 2010'        : 'x86'    ,
+    'Visual Studio 10 2010 Win64'  : 'x86_64' ,
+    'Visual Studio 10 2010 IA64'   : 'ia64'   ,
+    'Visual Studio 9 2008'         : 'x86'    ,
+    'Visual Studio 9 2008 Win64'   : 'x86_64' ,
+    'Visual Studio 9 2008 IA64'    : 'ia64'   ,
+    'Visual Studio 8 2005'         : 'x86'    ,
+    'Visual Studio 8 2005 Win64'   : 'x86_64' ,
+}
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -203,6 +226,11 @@ def parse_toolset(name, canonize=True):
     _, toolset = sep_name_toolset(name, canonize)
     return toolset
 
+
+def parse_architecture(name_or_gen_or_ver):
+    gen = to_gen(name_or_gen_or_ver)
+    a = _architectures[gen]
+    return a
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
