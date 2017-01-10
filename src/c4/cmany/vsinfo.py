@@ -34,6 +34,10 @@ class VisualStudioInfo:
         self.is_installed = is_installed(ver)
         self.cxx_compiler = cxx_compiler(ver)
         self.c_compiler = c_compiler(ver)
+        if self.toolset is not None:
+            self.is_clang = re.search(r'clang', self.toolset) is not None
+        else:
+            self.is_clang = False
 
     def cmd(self, cmd_args, *runsyscmd_args):
         if isinstance(cmd_args, list):

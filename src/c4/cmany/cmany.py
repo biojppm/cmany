@@ -246,7 +246,7 @@ class Generator(BuildItem):
         if build.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(build.compiler.name)
             g = Generator(vsi.gen, build, num_jobs)
-            build.generator_imposes_architecture(vsi.architecture)
+            build.generator_imposes(architecture=vsi.architecture)
             return g
         else:
             if str(build.system) == "windows":
@@ -399,9 +399,10 @@ class Build:
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
 
-    def generator_imposes_architecture(self, arch):
+    def generator_imposes(self, **kwargs):
+        self.architecture = kwargs.get('architecture', self.architecture)
+        self.compiler = kwargs.get('compiler', self.compiler)
         self.adjusted = True
-        self.architecture = arch
         self._set_paths()
 
     def __repr__(self):
@@ -502,7 +503,7 @@ class Build:
                 pass
         wf = getattr(self.flags, which)
         for f in wf:
-            flags.append(f.get(self.compiler.shortname))
+            flags.append(f.get(self.compiler))
         flags += self.flags.defines
         return flags
 
@@ -627,6 +628,21 @@ class ProjectConfig:
                         for v in self.variants:
                             self.add_build_if_valid(s, a, m, c, v)
 
+        # add new build params as needed to deal with adjusted builds
+        def _addnew(b, name):
+            a = getattr(b, name)
+            ali = getattr(self, name + 's')
+            if not [elm for elm in ali if str(elm) == str(a)]:
+                ali.append(a)
+        for b in self.builds:
+            if not b.adjusted:
+                continue
+            _addnew(b, 'system')
+            _addnew(b, 'architecture')
+            _addnew(b, 'buildtype')
+            _addnew(b, 'compiler')
+            _addnew(b, 'variant')
+
     # def parse_file(self, configfile):
     #     raise Exception("not implemented")
 
@@ -643,17 +659,6 @@ class ProjectConfig:
             # drop this build if an equal one already exists
             if [ob for ob in self.builds if ob.tag == b.tag]:
                 return False
-            # otherwise, add new build params to the list as needed
-            def _chkpres(name):
-                a = getattr(b, name)
-                ali = getattr(self, name + 's')
-                if not [elm for elm in ali if str(elm) == str(a)]:
-                    ali.append(a)
-            _chkpres('system')
-            _chkpres('architecture')
-            _chkpres('buildtype')
-            _chkpres('compiler')
-            _chkpres('variant')
         self.builds.append(b)
         return True
 

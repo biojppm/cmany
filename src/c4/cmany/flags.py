@@ -3,6 +3,16 @@ from collections import OrderedDict as odict
 
 from . import util
 
+def _getrealsn(compiler):
+    sn = compiler.shortname
+    if compiler.is_msvc:
+        if compiler.vs.is_clang:
+            sn = 'clang'
+        else:
+            sn = 'vs'
+    return sn
+
+
 class CFlag:
 
     def __init__(self, name, gcc, clang, icc, vs, expl):
@@ -19,14 +29,13 @@ class CFlag:
     def __str__(self):
         return self.name
 
-    def get(self, compiler_shortname):
-        if hasattr(self, compiler_shortname):
-            s = getattr(self, compiler_shortname)
-        elif compiler_shortname.startswith('vs'):
-            s = self.vs
+    def get(self, compiler):
+        sn = _getrealsn(compiler)
+        if hasattr(self, sn):
+            s = getattr(self, sn)
         else:
             s = ''
-        print(self, compiler_shortname, s)
+        # print(self, sn, s)
         return s
 
     def values(self):
@@ -38,7 +47,7 @@ def get(name, compiler=None):
     if opt is None:
         raise Exception("could not find compile option preset: " + name)
     if compiler is not None:
-        return opt.get(compiler.shortname)
+        return opt.get(compiler)
     return opt
 
 
@@ -55,7 +64,7 @@ def as_flags(spec, compiler=None):
 
 def as_defines(spec, compiler=None):
     out = []
-    wf = '/D' if compiler.is_msvc else '-D'
+    wf = '/D' if _getrealsn(compiler) == 'vs' else '-D'
     for s in spec:
         out.append(wf)
         out.append(s)
@@ -101,4 +110,3 @@ known_flags = odict([
 ])
 
 del f
-
