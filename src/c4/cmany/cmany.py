@@ -96,8 +96,8 @@ class CompileOptions:
         self.name = name
         self.cmake_vars = kwargs['vars']
         self.defines = flags.as_defines(kwargs['define'], compiler)
-        self.cxxflags = flags.as_flags(kwargs['cxxflags'], compiler)
         self.cflags = flags.as_flags(kwargs['cflags'], compiler)
+        self.cxxflags = flags.as_flags(kwargs['cxxflags'], compiler)
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
 
@@ -242,9 +242,12 @@ class Generator(BuildItem):
 
     @staticmethod
     def create(build, num_jobs, fallback_generator="Unix Makefiles"):
-        """create a compiler """
+        """create a generator"""
         if build.compiler.is_msvc:
-            return Generator(build.compiler.name, build, num_jobs)
+            vsi = vsinfo.VisualStudioInfo(build.compiler.name)
+            g = Generator(vsi.gen, build, num_jobs)
+            build.generator_imposes_architecture(vsi.architecture)
+            return g
         else:
             if str(build.system) == "windows":
                 return Generator(fallback_generator, build, num_jobs)
@@ -358,8 +361,12 @@ class Build:
     pfile = "cmany_preload.cmake"
 
     def __init__(self, proj_root, build_root, install_root,
-                 system, arch, buildtype, compiler, variant, flags,
-                 num_jobs):
+               system, arch, buildtype, compiler, variant, flags,
+               num_jobs):
+        self.projdir = util.chkf(proj_root)
+        self.buildroot = os.path.abspath(build_root)
+        self.installroot = os.path.abspath(install_root)
+        #
         self.system = system
         self.architecture = arch
         self.buildtype = buildtype
@@ -368,23 +375,34 @@ class Build:
         self.flags = flags
         # self.crosscompile = (system != System.default())
         # self.toolchain = None
-        self.tag = self._cat('-')
-        self.projdir = util.chkf(proj_root)
-        self.buildroot = os.path.abspath(build_root)
-        self.buildtag = self.tag
-        self.builddir = os.path.abspath(os.path.join(build_root, self.buildtag))
-        self.installroot = os.path.abspath(install_root)
-        self.installtag = self.tag
-        self.installdir = os.path.join(self.installroot, self.installtag)
-        self.preload_file = os.path.join(self.builddir, Build.pfile)
+
+        self.adjusted = False
+
+        self._set_paths()
+        # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
-        # this will load the vars from the builddir cache, if it exists
-        self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
+
+        # This will load the vars from the builddir cache, if it exists.
+        # It should be done only after creating the generator.
         self.varcache = CMakeCache(self.builddir)
         # ... and this will overwrite (in memory) the vars with the input
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
         self.gather_input_cache_vars()
+
+    def _set_paths(self):
+        self.tag = self._cat('-')
+        self.buildtag = self.tag
+        self.builddir = os.path.abspath(os.path.join(self.buildroot, self.buildtag))
+        self.installtag = self.tag
+        self.installdir = os.path.join(self.installroot, self.installtag)
+        self.preload_file = os.path.join(self.builddir, Build.pfile)
+        self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
+
+    def generator_imposes_architecture(self, arch):
+        self.adjusted = True
+        self.architecture = arch
+        self._set_paths()
 
     def __repr__(self):
         return self.tag
@@ -478,12 +496,15 @@ class Build:
     def _gather_flags(self, which, append_to_sysinfo_var=None):
         flags = []
         if append_to_sysinfo_var:
-            flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
+            try:
+                flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
+            except:
+                pass
         wf = getattr(self.flags, which)
-        out = self.flags.defines
         for f in wf:
-            out.append(f.get(self.compiler.shortname))
-        return out
+            flags.append(f.get(self.compiler.shortname))
+        flags += self.flags.defines
+        return flags
 
     def gather_input_cache_vars(self):
         vc = self.varcache
@@ -510,7 +531,6 @@ class Build:
             _set(vc.s, 'CMAKE_C_FLAGS', ' '.join(cflags))
         #
         cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT')
-        print("cxxflags:", cxxflags)
         if cxxflags:
             _set(vc.s, 'CMAKE_CXX_FLAGS', ' '.join(cxxflags))
         #
@@ -577,28 +597,27 @@ message(STATUS "cmany: nothing to preload...")
 class ProjectConfig:
 
     def __init__(self, **kwargs):
-        _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
+
+        # configfile = os.path.join(projdir, "cmany.json")
+        # self.configfile = None
+        # if os.path.exists(configfile):
+        #     self.parse_file(configfile)
+        #     self.configfile = configfile
+
         projdir = kwargs.get('proj_dir', os.getcwd())
         self.kwargs = kwargs
         self.rootdir = os.getcwd() if projdir == "." else projdir
         self.cmakelists = util.chkf(self.rootdir, "CMakeLists.txt")
         self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
         self.installdir = kwargs.get('install_dir', os.path.join(os.getcwd(), "install"))
+        self.num_jobs = kwargs.get('jobs')
+
+        _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
         self.systems = _get('systems', System)
         self.architectures = _get('architectures', Architecture)
         self.buildtypes = _get('build_types', BuildType)
         self.compilers = _get('compilers', Compiler)
         self.variants = _get('variants', None)
-        #self.flags = CompileOptions('all_builds', **kwargs)
-
-        # self.generator = Generator(kwargs.get('generator'))
-        self.num_jobs = kwargs.get('jobs')
-
-        configfile = os.path.join(projdir, "cmany.json")
-        self.configfile = None
-        if os.path.exists(configfile):
-            self.parse_file(configfile)
-            self.configfile = configfile
 
         self.builds = []
         for s in self.systems:
@@ -608,17 +627,33 @@ class ProjectConfig:
                         for v in self.variants:
                             self.add_build_if_valid(s, a, m, c, v)
 
-    def parse_file(self, configfile):
-        raise Exception("not implemented")
+    # def parse_file(self, configfile):
+    #     raise Exception("not implemented")
 
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
         flags = CompileOptions(compiler, 'all_builds', **self.kwargs)
-        print("flags:", flags)
         b = Build(self.rootdir, self.builddir, self.installdir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs)
+        # when creating the build, its architecture may have been
+        # adjusted because of an incompatible generator specification.
+        if b.adjusted:
+            # drop this build if an equal one already exists
+            if [ob for ob in self.builds if ob.tag == b.tag]:
+                return False
+            # otherwise, add new build params to the list as needed
+            def _chkpres(name):
+                a = getattr(b, name)
+                ali = getattr(self, name + 's')
+                if not [elm for elm in ali if str(elm) == str(a)]:
+                    ali.append(a)
+            _chkpres('system')
+            _chkpres('architecture')
+            _chkpres('buildtype')
+            _chkpres('compiler')
+            _chkpres('variant')
         self.builds.append(b)
         return True
 
