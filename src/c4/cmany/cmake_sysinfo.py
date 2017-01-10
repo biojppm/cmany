@@ -162,7 +162,16 @@ class CMakeCache(odict):
             from_input = kwargs.get('from_input')
             if from_input is not None:
                 self.from_input = from_input
-            if val != self.val or vartype != self.vartype:
+            if vartype == 'STRING' or (vartype is None and self.vartype == 'STRING'):
+                candidates = (val, val.strip("'"), val.strip('"'))
+                equal = False
+                for c in candidates:
+                    if c == self.val:
+                        equal = True
+                        break
+            else:
+                equal = (self.val == val)
+            if not equal or (vartype is not None and vartype != self.vartype):
                 self.val = val
                 self.vartype = vartype if vartype is not None else self.vartype
                 self.dirty = True
