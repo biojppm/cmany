@@ -26,6 +26,21 @@ def in_unix():
     return sys.platform in ("linux", "linux2", "darwin")
 
 
+def set_executable(filename):
+    import stat
+    st = os.stat(filename)
+    os.chmod(filename, st.st_mode | stat.S_IEXEC)
+    # if in_unix():
+    #     with open(n[0], 'r') as f:
+    #        mode = os.fstat(f.fileno()).st_mode
+    #         mode |= 0o111
+    #         os.fchmod(f.fileno(), mode & 0o7777)
+    # elif in_windows():
+    #     import stat
+    #     st = os.stat('somefile')
+    #     os.chmod('somefile', st.st_mode | stat.S_IEXEC)
+
+
 def in_64bit():
     """return True if in a 64-bit architecture"""
     # http://stackoverflow.com/a/12578715/5875572
@@ -171,7 +186,7 @@ class setcwd:
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
 # See http://stackoverflow.com/a/40590445
-if sys.version_info >= (3,5):
+if sys.version_info >= (3, 5):
     sprun = subprocess.run
 else:
 
