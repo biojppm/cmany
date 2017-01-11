@@ -54,7 +54,7 @@ def get(name, compiler=None):
 def as_flags(spec, compiler=None):
     out = []
     for s in spec:
-        f = known_flags.get(s, compiler)
+        f = known_flags.get(s)
         if f is not None:
             out.append(f)
         else:
