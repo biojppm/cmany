@@ -400,9 +400,14 @@ class Build:
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
 
     def generator_imposes(self, **kwargs):
-        self.architecture = kwargs.get('architecture', self.architecture)
-        self.compiler = kwargs.get('compiler', self.compiler)
-        self.adjusted = True
+        a = kwargs.get('architecture')
+        if a:
+            self.adjusted = True
+            self.architecture = a
+        c = kwargs.get('compiler')
+        if c:
+            self.adjusted = True
+            self.compiler = c
         self._set_paths()
 
     def __repr__(self):
@@ -696,16 +701,16 @@ class ProjectConfig:
     def configure(self, **restrict_to):
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
-        self._execute(Build.configure, "Configuring", silent=False, **restrict_to)
+        self._execute(Build.configure, "Configure", silent=False, **restrict_to)
 
     def build(self, **restrict_to):
-        self._execute(Build.build, "Building", silent=False, **restrict_to)
+        self._execute(Build.build, "Build", silent=False, **restrict_to)
 
     def clean(self, **restrict_to):
-        self._execute(Build.clean, "Cleaning", silent=False, **restrict_to)
+        self._execute(Build.clean, "Clean", silent=False, **restrict_to)
 
     def install(self, **restrict_to):
-        self._execute(Build.install, "Installing", silent=False, **restrict_to)
+        self._execute(Build.install, "Install", silent=False, **restrict_to)
 
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)
@@ -739,7 +744,9 @@ class ProjectConfig:
         if not silent:
             if num > 1:
                 print("-----------------------------------------------")
-                print(msg + ": finished", num, "builds")
+                print(msg + ": finished", num, "builds:")
+                for b in builds:
+                    print(b)
             print("===============================================")
 
     @staticmethod
