@@ -2,6 +2,6 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello." << std::endl;
+    std::cout << (8 * sizeof(void*)) << std::endl;
     return 0;
 }

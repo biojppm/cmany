@@ -90,31 +90,6 @@ class Architecture(BuildItem):
 
 
 # -----------------------------------------------------------------------------
-class CompileOptions:
-
-    def __init__(self, compiler, name="", **kwargs):
-        self.name = name
-        self.cmake_vars = kwargs['vars']
-        self.defines = flags.as_defines(kwargs['define'], compiler)
-        self.cflags = flags.as_flags(kwargs['cflags'], compiler)
-        self.cxxflags = flags.as_flags(kwargs['cxxflags'], compiler)
-        # self.include_dirs = kwargs['include_dirs']
-        # self.link_dirs = kwargs['link_dirs']
-
-    def merge(self, other):
-        """other will take precedence, ie, their options will come last"""
-        c = CompileOptions()
-        c.name = self.name + "+" + other.name
-        c.cmake_vars = self.cmake_vars + other.cmake_flags
-        c.defines = self.defines + other.defines
-        c.cflags = self.cflags + other.cflags
-        c.cxxflags = self.cxxflags + other.cxxflags
-        # c.include_dirs = self.include_dirs + other.include_dirs
-        # c.link_dirs = self.link_dirs + other.link_dirs
-        return c
-
-
-# -----------------------------------------------------------------------------
 class Compiler(BuildItem):
     """Specifies a compiler"""
 
@@ -174,13 +149,11 @@ class Compiler(BuildItem):
         return cc
 
     def get_version(self, path):
-
         def slntout(cmd):
             out = util.runsyscmd(cmd, echo_cmd=False,
                                  echo_output=False, capture_output=True)
             out = out.strip("\n")
             return out
-
         # is this visual studio?
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name
@@ -211,14 +184,78 @@ class Compiler(BuildItem):
         #
         return name, version, version_full
 
+    def create_32bit_version(self, here):
+        cxx = os.path.splitext(os.path.basename(self.path))[0]
+        cc = os.path.splitext(os.path.basename(self.c_compiler))[0]
+        if util.in_windows():
+            cxxpath = os.path.join(here, cxx + "-32.bat")
+            ccpath = os.path.join(here, cc + "-32.bat")
+            fmt = """
+@echo OFF
+{path} {flag32} %*
+exit /b %ERRORLEVEL%
+"""
+        else:
+            cxxpath = os.path.join(here, cxx + "-32")
+            ccpath = os.path.join(here, cc + "-32")
+            fmt = """#!/bin/bash
+{path} {flag32} $*
+exit $?
+"""
+        if self.gcclike:
+            for n in ((cxxpath, self.path), (ccpath, self.c_compiler)):
+                txt = fmt.format(path=n[1], flag32='-m32')
+                with open(n[0], 'w') as f:
+                    f.write(txt)
+                util.set_executable(n[0])
+        result = Compiler(cxxpath)
+        return result
+
 
 # -----------------------------------------------------------------------------
-class Variant(BuildItem):
+class BuildFlags(BuildItem):
+
+    def __init__(self, name, compiler=None, **kwargs):
+        super().__init__(name)
+        self.cmake_vars = kwargs['vars']
+        self.defines = kwargs['define']
+        self.cflags = kwargs['cflags']
+        self.cxxflags = kwargs['cxxflags']
+        # self.include_dirs = kwargs['include_dirs']
+        # self.link_dirs = kwargs['link_dirs']
+        if compiler is not None:
+            self.resolve(compiler)
+
+    def resolve(self, compiler):
+        """resolve flag aliases"""
+        self.defines = flags.as_defines(self.defines, compiler)
+        self.cflags = flags.as_flags(self.cflags, compiler)
+        self.cxxflags = flags.as_flags(self.cxxflags, compiler)
+
+    def append(self, other):
+        """other will take precedence, ie, their options will come last"""
+        c = BuildFlags()
+        c.name = self.name + "+" + other.name
+        c.cmake_vars = self.cmake_vars + other.cmake_flags
+        c.defines = self.defines + other.defines
+        c.cflags = self.cflags + other.cflags
+        c.cxxflags = self.cxxflags + other.cxxflags
+        # c.include_dirs = self.include_dirs + other.include_dirs
+        # c.link_dirs = self.link_dirs + other.link_dirs
+        return c
+
+
+# -----------------------------------------------------------------------------
+class Variant(BuildFlags):
     """for variations in compile options"""
+
+    @staticmethod
+    def default():
+        return None
 
     def __init__(self, name):
         super().__init__(name)
-        self.options = None  # CompileOptions(name)
+        self.options = None  # BuildFlags(name)
 
 
 # -----------------------------------------------------------------------------
@@ -246,9 +283,12 @@ class Generator(BuildItem):
         if build.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(build.compiler.name)
             g = Generator(vsi.gen, build, num_jobs)
-            build.generator_imposes(architecture=vsi.architecture)
+            build.adjust(architecture=Architecture(vsi.architecture))
             return g
         else:
+            if build.architecture.is32:
+                c = build.compiler.create_32bit_version(build.buildroot)
+                build.adjust(compiler=c)
             if str(build.system) == "windows":
                 return Generator(fallback_generator, build, num_jobs)
             else:
@@ -399,13 +439,13 @@ class Build:
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
 
-    def generator_imposes(self, **kwargs):
+    def adjust(self, **kwargs):
         a = kwargs.get('architecture')
-        if a:
+        if a and a != self.architecture:
             self.adjusted = True
             self.architecture = a
         c = kwargs.get('compiler')
-        if c:
+        if c and c != self.compiler:
             self.adjusted = True
             self.compiler = c
         self._set_paths()
@@ -623,7 +663,7 @@ class ProjectConfig:
         self.architectures = _get('architectures', Architecture)
         self.buildtypes = _get('build_types', BuildType)
         self.compilers = _get('compilers', Compiler)
-        self.variants = _get('variants', None)
+        self.variants = _get('variants', Variant)
 
         self.builds = []
         for s in self.systems:
@@ -648,24 +688,40 @@ class ProjectConfig:
             _addnew(b, 'compiler')
             _addnew(b, 'variant')
 
+    @staticmethod
+    def _getarglist(name, class_, **kwargs):
+        g = kwargs.get(name)
+        if g is None or not g:
+            g = [class_.default()]
+            return g
+        l = []
+        for i in g:
+            l.append(class_(i))
+        return l
+
     # def parse_file(self, configfile):
     #     raise Exception("not implemented")
 
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
-        flags = CompileOptions(compiler, 'all_builds', **self.kwargs)
+        flags = BuildFlags('all_builds', compiler, **self.kwargs)
         b = Build(self.rootdir, self.builddir, self.installdir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs)
-        # when creating the build, its architecture may have been
-        # adjusted because of an incompatible generator specification.
-        if b.adjusted:
-            # drop this build if an equal one already exists
-            if [ob for ob in self.builds if ob.tag == b.tag]:
-                return False
+        # when a build is created, its parameters may be adjusted
+        # because of an incompatible generator specification.
+        # So drop this build if an equal one already exists
+        if b.adjusted and self.exists(b):
+            return False
         self.builds.append(b)
         return True
+
+    def exists(self, build):
+        for b in self.builds:
+            if str(b.tag) == str(build.tag):
+                return True
+        return False
 
     def is_valid(self, sys, arch, mode, compiler, variant):
         # TODO
@@ -673,22 +729,19 @@ class ProjectConfig:
 
     def select(self, **kwargs):
         out = [b for b in self.builds]
-
-        def _h(li, kw, attr):
+        def _h(kw, attr):
             g = kwargs.get(kw)
-            if g is None:
-                return li
-            else:
+            if g is not None:
                 lo = []
-                for b in li:
-                    if str(getattr(b, attr)) == g:
+                for b in out:
+                    if str(getattr(b, attr)) == str(g):
                         lo.append(b)
-            return lo
-        out = _h(out, "sys", "system")
-        out = _h(out, "arch", "architecture")
-        out = _h(out, "buildtype", "buildtype")
-        out = _h(out, "compiler", "compiler")
-        out = _h(out, "variant", "variant")
+                out = lo
+        _h("sys", "system")
+        _h("arch", "architecture")
+        _h("compiler", "compiler")
+        _h("buildtype", "buildtype")
+        _h("variant", "variant")
         return out
 
     def create_tree(self, **restrict_to):
@@ -716,11 +769,7 @@ class ProjectConfig:
         builds = self.select(**restrict_to)
         num = len(builds)
         if not silent:
-            if num > 0:
-                print("selected builds:")
-                for b in builds:
-                    print(b)
-            else:
+            if num == 0:
                 print("no builds selected")
         if num == 0:
             return
@@ -728,7 +777,9 @@ class ProjectConfig:
             print("")
             print("===============================================")
             if num > 1:
-                print(msg + ": start", num, "builds")
+                print(msg + ": start", num, "builds:")
+                for b in builds:
+                    print(b)
                 print("===============================================")
         for i, b in enumerate(builds):
             if not silent:
@@ -748,17 +799,6 @@ class ProjectConfig:
                 for b in builds:
                     print(b)
             print("===============================================")
-
-    @staticmethod
-    def _getarglist(name, class_, **kwargs):
-        g = kwargs.get(name)
-        if g is None or not g:
-            g = [class_.default()] if class_ is not None else [None]
-            return g
-        l = []
-        for i in g:
-            l.append(class_(i))
-        return l
 
     def showvars(self, varlist):
         varv = odict()
