@@ -64,11 +64,11 @@ when it is not given. As an example, using g++ 6.1 in Linux x86_64, the
 result of the command above will be this::
 
     $ tree -fi -L 2
-    build
-    build/linux-x86_64-gcc6.1-release
+    build/
+    build/linux-x86_64-gcc6.1-release/
     CMakeLists.txt
     main.cpp
-     
+
     $ ls build/*/CMakeCache.txt
     build/linux-x86_64-gcc6.1-release/CMakeCache.txt
 
@@ -104,66 +104,73 @@ an executable named ``hello``, the following will result::
 
     $ ls -1
     CMakeLists.txt
-    build
-    install
+    build/
+    install/
     main.cpp
     $ tree -fi install
-    install
-    install/linux-x86_64-gcc6.1-release
-    install/linux-x86_64-gcc6.1-release/bin
+    install/
+    install/linux-x86_64-gcc6.1-release/
+    install/linux-x86_64-gcc6.1-release/bin/
     install/linux-x86_64-gcc6.1-release/bin/hello
 
-To set the build types use ``-t`` or ``--build-types``. The following
-command chooses a build type of Debug instead of Release::
+To set the build types use ``-t`` or ``--build-types``. The following command
+chooses a build type of Debug instead of Release. If the directory is
+initially empty, this will be the result::
 
     $ cmany b -t Debug
-    $ tree -fi -L 1 build/*
-    build/linux-x86_64-gcc6.1-debug
+    $ ls -1 build/*
+    build/linux-x86_64-gcc6.1-debug/
 
-Build both Debug and Release build types (resulting in 2 build trees)::
+The commands shown up to this point were only fancy wrappers for CMake. Since
+defaults were being used, or single arguments were given, the result was a
+single build tree. But as its name attests to, cmany will build many trees at
+once by combining the build parameters. For example, to build both Debug and
+Release build types while using defaults for the remaining parameters, you
+can do the following (resulting in 2 build trees)::
 
     $ cmany b -t Debug,Release
-    $ tree -fi -L 1 build/*
-    build/linux-x86_64-gcc6.1-debug
-    build/linux-x86_64-gcc6.1-release
+    $ ls -1 build/*
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-release/
 
 To set the compilers use ``-c`` or ``--compilers``. For example, build
-using both clang++ and g++; default build type (2 build trees)::
+using both clang++ and g++; with the default build type (2 build trees)::
 
     $ cmany b -c clang++,g++
-    $ tree -fi -L 1 build/*
-    build/linux-x86_64-clang3.9-release
-    build/linux-x86_64-gcc6.1-release
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-release/
 
 Build using both clang++,g++ for Debug,Release build types (4 build trees)::
 
     $ cmany b -c clang++,g++ -t Debug,Release
-    $ tree -fi -L 1 build/*
-    build/linux-x86_64-clang3.9-debug
-    build/linux-x86_64-clang3.9-release
-    build/linux-x86_64-gcc6.1-debug
-    build/linux-x86_64-gcc6.1-release
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-debug/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-release/
 
-Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types (9 build trees)::
+Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types
+(9 build trees)::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
-    $ tree -fi -L 1 build/*
-    build/linux-x86_64-clang3.9-debug
-    build/linux-x86_64-clang3.9-relwithdebinfo
-    build/linux-x86_64-clang3.9-release
-    build/linux-x86_64-gcc6.1-debug
-    build/linux-x86_64-gcc6.1-relwithdebinfo
-    build/linux-x86_64-gcc6.1-release
-    build/linux-x86_64-icc16.1-debug
-    build/linux-x86_64-icc16.1-relwithdebinfo
-    build/linux-x86_64-icc16.1-release
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-debug/
+    build/linux-x86_64-clang3.9-minsizerel/
+    build/linux-x86_64-clang3.9-release/
+    build/linux-x86_64-gcc6.1-debug/
+    build/linux-x86_64-gcc6.1-minsizerel/
+    build/linux-x86_64-gcc6.1-release/
+    build/linux-x86_64-icc16.1-debug/
+    build/linux-x86_64-icc16.1-minsizerel/
+    build/linux-x86_64-icc16.1-release/
 
-To get a list of available commands::
+To get a list of available commands and help topics::
 
     $ cmany help
 
-To get help on a particular command (eg, ``build``), either of the following
-can be used::
+To get help on a particular command or topic (eg, ``build``), any
+of the following can be used::
 
     $ cmany help build
     $ cmany build -h

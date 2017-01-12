@@ -403,13 +403,13 @@ Build using clang++,g++,icpc for Debug,Release,MinSizeRel build types
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
     $ ls -1 build/
     build/linux-x86_64-clang3.9-debug/
-    build/linux-x86_64-clang3.9-relwithdebinfo/
+    build/linux-x86_64-clang3.9-minsizerel/
     build/linux-x86_64-clang3.9-release/
     build/linux-x86_64-gcc6.1-debug/
-    build/linux-x86_64-gcc6.1-relwithdebinfo/
+    build/linux-x86_64-gcc6.1-minsizerel/
     build/linux-x86_64-gcc6.1-release/
     build/linux-x86_64-icc16.1-debug/
-    build/linux-x86_64-icc16.1-relwithdebinfo/
+    build/linux-x86_64-icc16.1-minsizerel/
     build/linux-x86_64-icc16.1-release/
 
 To get a list of available commands and help topics::
