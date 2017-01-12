@@ -65,6 +65,59 @@ def in_32bit():
     # return (struct.calcsize('P') * 8) == 32
 
 
+def splitspaces_quoted(string):
+    """split a string at spaces, but respect (and preserve) quotes/
+    double-quotes, including escaped quotes/double-quotes between
+    enclosing ones."""
+    out = []
+    begin = 0
+    i = 0
+    l = len(string)
+    prev = 0
+    while i < l:
+        c = string[i]
+        # consume at once everything between quotes
+        if c == '"' or c == "'":
+            j = i+1  # start counting only on the next position
+            closes_quotes = False
+            while j < l:
+                d = string[j]
+                if d == c:  # found the matching quote
+                    if j > 0:
+                        if string[j-1] != '\\':  # ... unless it was escaped
+                            j += 1
+                            closes_quotes = True
+                            break
+                j += 1
+            # but defend against unbalanced quotes,
+            # treating them as regular characters
+            if not closes_quotes:
+                i += 1
+            else:
+                s = string[prev:j]
+                if s:
+                    out.append(s)
+                prev = j+1
+                i = prev
+        # when a space is found, append to the list
+        elif c == ' ':
+            if i > 0 and i < l and i > prev:
+                s = string[prev:i]
+                if s:
+                    out.append(s)
+            prev = i+1
+            i += 1
+        # this is a regular character, just go on scanning
+        else:
+            i += 1
+    if prev < l:
+        s = string[prev:l]
+        if s:
+            out.append(s)
+    return out
+
+
+
 def splitesc(string, split_char, escape_char=r'\\'):
     """split a string at the given character, allowing for escaped characters
     http://stackoverflow.com/a/21107911"""
