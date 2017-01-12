@@ -76,8 +76,8 @@ class FlagArgument(argparse.Action):
             li.append(l)
         setattr(namespace, self.dest, li)
 
-# -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
 def add_flag_opts(parser):
     g = parser.add_argument_group('CMake variables, build flags and defines')
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",

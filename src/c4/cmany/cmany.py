@@ -218,7 +218,7 @@ class BuildFlags(BuildItem):
     def __init__(self, name, compiler=None, **kwargs):
         super().__init__(name)
         self.cmake_vars = kwargs.get('vars', [])
-        self.defines = kwargs.get('define', [])
+        self.defines = kwargs.get('defines', [])
         self.cflags = kwargs.get('cflags', [])
         self.cxxflags = kwargs.get('cxxflags', [])
         # self.include_dirs = kwargs['include_dirs']
@@ -232,18 +232,16 @@ class BuildFlags(BuildItem):
         self.cflags = flags.as_flags(self.cflags, compiler)
         self.cxxflags = flags.as_flags(self.cxxflags, compiler)
 
-    def append(self, other):
+    def append(self, other, append_to_name=True):
         """other will take precedence, ie, their options will come last"""
-        name = self.name + '_' + other.name
-        c = BuildFlags(name)
-        c.name = self.name + "+" + other.name
-        c.cmake_vars = self.cmake_vars + other.cmake_flags
-        c.defines = self.defines + other.defines
-        c.cflags = self.cflags + other.cflags
-        c.cxxflags = self.cxxflags + other.cxxflags
-        # c.include_dirs = self.include_dirs + other.include_dirs
-        # c.link_dirs = self.link_dirs + other.link_dirs
-        return c
+        if append_to_name and other.name:
+            self.name += '_' + other.name
+        self.cmake_vars += other.cmake_vars
+        self.defines += other.defines
+        self.cflags += other.cflags
+        self.cxxflags += other.cxxflags
+        # self.include_dirs += other.include_dirs
+        # self.link_dirs += other.link_dirs
 
 
 # -----------------------------------------------------------------------------
@@ -254,18 +252,73 @@ class Variant(BuildFlags):
     def default():
         return None
 
+    @staticmethod
+    def create(spec_list):
+        variants = []
+        for s in spec_list:
+            v = Variant(s)
+            variants.append(v)
+        for s in variants:
+            s.resolve_refs(variants)
+        return variants
+
     def __init__(self, spec):
         spl = spec.split(':')
         if len(spl) == 1:
             name = spec
             super().__init__(name)
             return
+        self.specs = []
+        self.refs = []
         name = spl[0]
-        flags = util.splitesc(spl[1], ' ')
+        rest = spl[1]
+        super().__init__(name)
+        rxref = r'@[a-zA-Z0-9_]+ .*'
+        if re.search(rxref, rest):
+            while re.search(rxref, rest) is not None:
+                rx = r'(.*?) (@[a-zA-Z0-9_]+) (.*)'
+                lhs = re.sub(rx, r'\1', rest)
+                ref = re.sub(rx, r'\2', rest)
+                rhs = re.sub(rx, r'\3', rest)
+                if lhs: self.specs.append(lhs)
+                self.specs.append(ref)
+                self.refs.append(ref[1:])
+                if rhs: self.specs.append(rhs)
+                rest = rhs
+        else:
+            if rest:
+                self.specs.append(rest)
+        self._refs_resolved = False
 
-
-    def resolve_variants(self, variants):
-        pass
+    def resolve_refs(self, variants):
+        if self._refs_resolved:
+            return
+        import argparse
+        from . import main
+        def _find(name):
+            for v in variants:
+                if v.name == name:
+                    return v
+            raise Exception("variant '{}' not found".format(name))
+        for s_ in self.specs:
+            s = s_.lstrip()
+            if s[0] == '@':
+                refname = s[1:]
+                r = _find(refname)
+                if self.name in r.refs:
+                    msg = "circular reference found in variant definition: '{}'x'{}'"
+                    raise Exception(msg.format(self.name, r.name))
+                if not r._refs_resolved:
+                    r.resolve_refs(variants)
+                self.append(r, append_to_name=False)
+            else:
+                parser = argparse.ArgumentParser()
+                main.add_flag_opts(parser)
+                ss = util.splitspaces_quoted(s)
+                args = parser.parse_args(ss)
+                tmp = BuildFlags('', None, **vars(args))
+                self.append(tmp, append_to_name=False)
+        self._refs_resolved = True
 
 
 # -----------------------------------------------------------------------------
