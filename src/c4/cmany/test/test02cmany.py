@@ -285,12 +285,12 @@ class Test10Flags(ut.TestCase):
         self.check_many('-X "-Wall" -D VARIANT2,VARIANT_TYPE=2', vars=[], cxxflags=['-Wall'], cflags=[], defines=['VARIANT2', 'VARIANT_TYPE=2'])
         self.check_many('-X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3', vars=[], cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
-    def test11_mixed1(self):
+    def test12_mixed2(self):
         self.check_many('-X "-fPIC" -D VARIANT1,"VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[], defines=['VARIANT1', 'VARIANT_TYPE=1'])
         self.check_many('-X "-Wall" -D VARIANT2,"VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[], defines=['VARIANT2', 'VARIANT_TYPE=2'])
         self.check_many('-X nortti,c++14 -D VARIANT3,"VARIANT_TYPE=3"', vars=[], cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
-    def test12_mixed2(self):
+    def test13_mixed3(self):
         self.check_many('-X "-fPIC" -D "VARIANT1,VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[], defines=['VARIANT1', 'VARIANT_TYPE=1'])
         self.check_many('-X "-Wall" -D "VARIANT2,VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[], defines=['VARIANT2', 'VARIANT_TYPE=2'])
         self.check_many('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', vars=[], cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
@@ -355,6 +355,7 @@ class Test11VariantSpec(ut.TestCase):
         self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
         self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
         self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
