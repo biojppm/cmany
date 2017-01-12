@@ -273,13 +273,25 @@ class Variant(BuildFlags):
         name = spl[0]
         rest = spl[1]
         super().__init__(name)
-        rxref = r'@[a-zA-Z0-9_]+ .*'
+        rxref = r'@[a-zA-Z0-9_-]+' # the regexpr for a reference
         if re.search(rxref, rest):
             while re.search(rxref, rest) is not None:
-                rx = r'(.*?) (@[a-zA-Z0-9_]+) (.*)'
-                lhs = re.sub(rx, r'\1', rest)
-                ref = re.sub(rx, r'\2', rest)
-                rhs = re.sub(rx, r'\3', rest)
+                # this is crappy... surely there's a better way to do this
+                rxleft = r'({}) (.*)'.format(rxref)
+                rxmid = r'(.*?) ({}) (.*)'.format(rxref)
+                rxright = r'(.*?) ({})'.format(rxref)
+                if re.search(rxmid, rest):
+                    lhs = re.sub(rxmid, r'\1', rest)
+                    ref = re.sub(rxmid, r'\2', rest)
+                    rhs = re.sub(rxmid, r'\3', rest)
+                elif re.search(rxleft, rest):
+                    lhs = ''
+                    ref = re.sub(rxleft, r'\1', rest)
+                    rhs = re.sub(rxleft, r'\2', rest)
+                elif re.search(rxright, rest):
+                    lhs = re.sub(rxright, r'\1', rest)
+                    ref = re.sub(rxright, r'\2', rest)
+                    rhs = ''
                 if lhs: self.specs.append(lhs)
                 self.specs.append(ref)
                 self.refs.append(ref[1:])

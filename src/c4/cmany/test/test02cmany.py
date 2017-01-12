@@ -19,7 +19,6 @@ build_types = os.environ.get('CMANY_TEST_BUILDTYPES', 'Debug,Release')
 test_projs = os.environ.get('CMANY_TEST_PROJS', 'hello')
 
 
-"""
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -199,7 +198,6 @@ class Test03Install(ut.TestCase):
         run_projs(self, ['i'], lambda tb: tb.checki(self))
 
 
-"""
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -325,7 +323,7 @@ class Test11VariantSpec(ut.TestCase):
         self.check_variant('variant1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall'])
         self.check_variant('variant2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14'])
 
-    def test12_refs_beginning(self):
+    def test10_refs_beginning(self):
         out = cmany.Variant.create([
             'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
             'var1: @var0 -X "-Wall" -D VARIANT2,VARIANT_TYPE=2',
@@ -336,6 +334,27 @@ class Test11VariantSpec(ut.TestCase):
         self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
         self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['-fPIC', '-Wall', 'nortti', 'c++14'])
 
+    def test11_refs_middle(self):
+        out = cmany.Variant.create([
+            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
+            'var1: -X "-Wall" @var0 -D VARIANT2,VARIANT_TYPE=2',
+            'var2: -X nortti,c++14 @var1 -D VARIANT3,VARIANT_TYPE=3',
+        ])
+        self.assertEquals(len(out), 3)
+        self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+        self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+
+    def test12_refs_end(self):
+        out = cmany.Variant.create([
+            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
+            'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2 @var0',
+            'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3 @var1',
+        ])
+        self.assertEquals(len(out), 3)
+        self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+        self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
