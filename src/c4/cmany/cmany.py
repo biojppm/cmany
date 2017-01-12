@@ -217,16 +217,16 @@ class BuildFlags(BuildItem):
 
     def __init__(self, name, compiler=None, **kwargs):
         super().__init__(name)
-        self.cmake_vars = kwargs['vars']
-        self.defines = kwargs['define']
-        self.cflags = kwargs['cflags']
-        self.cxxflags = kwargs['cxxflags']
+        self.cmake_vars = kwargs.get('vars', [])
+        self.defines = kwargs.get('define', [])
+        self.cflags = kwargs.get('cflags', [])
+        self.cxxflags = kwargs.get('cxxflags', [])
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
         if compiler is not None:
-            self.resolve(compiler)
+            self.resolve_flags(compiler)
 
-    def resolve(self, compiler):
+    def resolve_flags(self, compiler):
         """resolve flag aliases"""
         self.defines = flags.as_defines(self.defines, compiler)
         self.cflags = flags.as_flags(self.cflags, compiler)
@@ -234,7 +234,8 @@ class BuildFlags(BuildItem):
 
     def append(self, other):
         """other will take precedence, ie, their options will come last"""
-        c = BuildFlags()
+        name = self.name + '_' + other.name
+        c = BuildFlags(name)
         c.name = self.name + "+" + other.name
         c.cmake_vars = self.cmake_vars + other.cmake_flags
         c.defines = self.defines + other.defines
@@ -247,15 +248,24 @@ class BuildFlags(BuildItem):
 
 # -----------------------------------------------------------------------------
 class Variant(BuildFlags):
-    """for variations in compile options"""
+    """for variations in build flags"""
 
     @staticmethod
     def default():
         return None
 
-    def __init__(self, name):
-        super().__init__(name)
-        self.options = None  # BuildFlags(name)
+    def __init__(self, spec):
+        spl = spec.split(':')
+        if len(spl) == 1:
+            name = spec
+            super().__init__(name)
+            return
+        name = spl[0]
+        flags = util.splitesc(spl[1], ' ')
+
+
+    def resolve_variants(self, variants):
+        pass
 
 
 # -----------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 import sys
 import pprint
 import argparse
+import re
 from collections import OrderedDict as odict
 
 from c4.cmany import cmany
@@ -57,18 +58,73 @@ def argerror(*msg_args):
     cmany_main(['-h'])
     exit(1)
 
-def repeatedcslist(input):
-    out = cslist(input)
-    out2 = []
-    for o in out:
-        if isinstance(o, list):
-            out2 += o
-        else:
-            out2.append(o)
-    print(input, type(input), out2)
-    return out
+
+class FlagArgument(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        def isquoted(s):
+            return (s[0] == "'" and s[-1] == "'") or (s[0] == '"' and s[-1] == '"')
+        li = getattr(namespace, self.dest)
+        v = values
+        if isquoted(v):
+            if not (re.search(r'","', v) or re.search(r"','", v)):
+                v = v[1:-1]
+        livals = cslist(v)
+        for l in livals:
+            if isquoted(l):
+                l = l[1:-1]
+            li.append(l)
+        setattr(namespace, self.dest, li)
 
 # -----------------------------------------------------------------------------
+
+def add_flag_opts(parser):
+    g = parser.add_argument_group('CMake variables, build flags and defines')
+    g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
+                   default=[], action=FlagArgument,
+                   help="""Add cmake variables to all builds.
+                   Multiple invokations of -K are possible, in which case
+                   arguments will be appended and not overwritten.
+                   Can also be given as a comma-separated list.
+                   To escape commas, use a backslash \\.""")
+    g.add_argument("-D", "--defines", default=[], action=FlagArgument,
+                   help="""add a preprocessor symbol definition to all builds.
+                   Multiple invokations of -D are possible, in which case
+                   arguments will be appended and not overwritten.
+                   Can also be given as a comma-separated list.
+                   To escape commas, use a backslash \\.""")
+    g.add_argument("-X", "--cxxflags", default=[], action=FlagArgument,
+                   help="""add C++ compiler flags applying to all builds.
+                   These will be passed to cmake by appending to the
+                   default initial value of CMAKE_CXX_FLAGS (taken from
+                   CMAKE_CXX_FLAGS_INIT). cmany has flag aliases mapping
+                   to several common compilers. Type `cmany help flags`
+                   to get help about this.
+                   Multiple invokations of -X are possible, in which case
+                   arguments will be appended and not overwritten.
+                   Can also be given as a comma-separated list.
+                   To escape commas, use a backslash \\.""")
+    g.add_argument("-C", "--cflags", default=[], action=FlagArgument,
+                   help="""add C compiler flags applying to all builds.
+                   These will be passed to cmake by appending to the
+                   default initial value of CMAKE_C_FLAGS (taken from
+                   CMAKE_C_FLAGS_INIT). cmany has flag aliases mapping
+                   to several common compilers. Type `cmany help flags`
+                   to get help about this.
+                   Multiple invokations of -X are possible, in which case
+                   arguments will be appended and not overwritten.
+                   Can also be given as a comma-separated list.
+                   To escape commas, use a backslash \\.""")
+    # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
+    #                help="""add dirs to the include path of all builds
+    #                Multiple invokations of -I are possible, in which case arguments will be appended and not overwritten.
+    #                Can also be given as a comma-separated list. To escape commas, use a backslash \\.""")
+    # g.add_argument("-L", "--link-dirs", default=[], action=FlagArgument,
+    #                help="""add dirs to the link path of all builds
+    #                Multiple invokations of -L are possible, in which case arguments will be appended and not overwritten.
+    #                Can also be given as a comma-separated list. To escape commas, use a backslash \\.""")
+
+
 class cmdbase:
     '''base class for commands'''
     def add_args(self, parser):
@@ -86,7 +142,7 @@ class projcmd(cmdbase):
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument("proj-dir", nargs="?", default=".",
-                            help="""the directory where CMakeLists.txt is located. An empty argument
+                            help="""the directory where the project's CMakeLists.txt is located. An empty argument
                             will default to the current directory ie, \".\". Passing a directory
                             which does not contain a CMakeLists.txt will cause an error.""")
         parser.add_argument("--build-dir", default="./build",
@@ -96,28 +152,7 @@ class projcmd(cmdbase):
         parser.add_argument("-j", "--jobs", default=cpu_count(),
                             help="""build with the given number of parallel jobs
                             (defaults to %(default)s on this machine).""")
-        parser.add_argument("--vars", default=[], type=cslist,
-                            help="""cmake variables+values applying to all builds.
-                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
-        parser.add_argument("--cxxflags", default=[], type=cslist,
-                            help="""add C++ compile flags applying to all builds.
-                            These will be passed to cmake by appending to the
-                            default initial value of CMAKE_CXX_FLAGS.
-                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
-        parser.add_argument("--cflags", default=[], type=cslist,
-                            help="""add C compile flags applying to all builds.
-                            These will be passed to cmake by appending to the
-                            default initial value of CMAKE_C_FLAGS.
-                            Provide as a comma-separated list. To escape commas, use a backslash \\.""")
-        parser.add_argument("-D", "--define", default=[], action='append',
-                            help="""add a preprocessor symbol definition to all builds.
-                                 Use as with a compiler, by multiple invokations of -D.""")
-        # parser.add_argument("-I", "--include-dirs", default=[], action='append',
-        #                     help="""add dirs to the include path of all builds
-        #                          Use as with a compiler, by multiple invokations of -I.""")
-        # parser.add_argument("-L", "--link-dirs", default=[], action='append',
-        #                     help="""add dirs to the link path of all builds
-        #                          Use as with a compiler, by multiple invokations of -L.""")
+        add_flag_opts(parser)
 
 
 class selectcmd(projcmd):
@@ -125,16 +160,6 @@ class selectcmd(projcmd):
     def add_args(self, parser):
         super().add_args(parser)
         g = parser.add_argument_group(title="Selecting the builds")
-        g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                       default=["Release"], type=cslist,
-                       help="""restrict actions to the given build types.
-                       Provide as a comma-separated list. To escape commas, use a backslash \\.
-                       Defaults to \"%(default)s\".""")
-        g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                       default=[cmany.Compiler.default_str()], type=cslist,
-                       help="""restrict actions to the given compilers.
-                       Provide as a comma-separated list. To escape commas, use a backslash \\.
-                       Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
         g.add_argument("-s", "--systems", metavar="os1,os2,...",
                        default=[cmany.System.default_str()], type=cslist,
                        help="""(WIP) restrict actions to the given operating systems.
@@ -148,6 +173,16 @@ class selectcmd(projcmd):
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        This feature requires os-specific toolchains and is currently a
                        work-in-progress.""")
+        g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
+                       default=[cmany.Compiler.default_str()], type=cslist,
+                       help="""restrict actions to the given compilers.
+                       Provide as a comma-separated list. To escape commas, use a backslash \\.
+                       Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
+        g.add_argument("-t", "--build-types", metavar="type1,type2,...",
+                       default=["Release"], type=cslist,
+                       help="""restrict actions to the given build types.
+                       Provide as a comma-separated list. To escape commas, use a backslash \\.
+                       Defaults to \"%(default)s\".""")
         g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
                        default=[], type=cslist,
                        help="""(WIP) restrict actions to the given variants.
@@ -325,14 +360,20 @@ an executable named ``hello``, the following will result::
     install/linux-x86_64-gcc6.1-release/bin/
     install/linux-x86_64-gcc6.1-release/bin/hello
 
-To set the build types use ``-t`` or ``--build-types``. The following
-command chooses a build type of Debug instead of Release::
+To set the build types use ``-t`` or ``--build-types``. The following command
+chooses a build type of Debug instead of Release. If the directory is
+initially empty, this will be the result::
 
     $ cmany b -t Debug
     $ ls -1 build/*
     build/linux-x86_64-gcc6.1-debug/
 
-Build both Debug and Release build types (resulting in 2 build trees)::
+The commands shown up to this point were only fancy wrappers for CMake. Since
+defaults were being used, or single arguments were given, the result was a
+single build tree. But as its name attests to, cmany will build many trees at
+once by combining the build parameters. For example, to build both Debug and
+Release build types while using defaults for the remaining parameters, you
+can do the following (resulting in 2 build trees)::
 
     $ cmany b -t Debug,Release
     $ ls -1 build/*
@@ -340,7 +381,7 @@ Build both Debug and Release build types (resulting in 2 build trees)::
     build/linux-x86_64-gcc6.1-release/
 
 To set the compilers use ``-c`` or ``--compilers``. For example, build
-using both clang++ and g++; default build type (2 build trees)::
+using both clang++ and g++; with the default build type (2 build trees)::
 
     $ cmany b -c clang++,g++
     $ ls -1 build/
@@ -417,7 +458,7 @@ create_help_topic(
     title="Build variants",
     doc="help on specifying variants",
     txt="""
-    $ cmany b -v none,'noexcept: @none c++14 noexceptions -DV_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
+    $ cmany b -v none,'noexcept: @none --cxxflags c++14,noexceptions --define V_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
 """)
 
 
