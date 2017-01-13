@@ -82,7 +82,7 @@ def add_flag_opts(parser):
     g = parser.add_argument_group('CMake variables, build flags and defines')
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
-                   help="""Add cmake variables to all builds.
+                   help="""Add CMake cache variables to all builds.
                    Multiple invokations of -K are possible, in which case
                    arguments will be appended and not overwritten.
                    Can also be given as a comma-separated list.

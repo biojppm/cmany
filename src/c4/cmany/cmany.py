@@ -745,6 +745,7 @@ message(STATUS "cmany: nothing to preload...")
             # ('variables', []),  # this is not needed since the vars are set in the preload file
         ])
 
+
 # -----------------------------------------------------------------------------
 class ProjectConfig:
 
@@ -913,7 +914,7 @@ class ProjectConfig:
             confs.append(b.json_data())
         jd = odict([('configurations', confs)])
         with open(self.configfile, 'w') as f:
-            json.dump(jd, f, indent=4)
+            json.dump(jd, f, indent=2)
 
     def showvars(self, varlist):
         varv = odict()
