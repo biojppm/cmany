@@ -3,6 +3,7 @@
 import os
 import re
 import glob
+import json
 from datetime import datetime
 from collections import OrderedDict as odict
 from multiprocessing import cpu_count as cpu_count
@@ -387,14 +388,23 @@ class Generator(BuildItem):
         # these vars would not change cmake --system-information
         # self.full_name += " ".join(self.build.flags.cmake_vars)
 
-    def configure_args(self):
+    def configure_args(self, for_json=False):
         if self.name != "":
             if self.is_msvc and self.build.compiler.vs.toolset is not None:
-                args = ['-G', self.name, '-T', self.build.compiler.vs.toolset]
+                if for_json:
+                    args = '-T ' + self.build.compiler.vs.toolset
+                else:
+                    args = ['-G', self.name, '-T', self.build.compiler.vs.toolset]
             else:
-                args = ['-G', self.name]
+                if for_json:
+                    args = ''
+                else:
+                    args = ['-G', self.name]
         else:
-            args = []
+            if for_json:
+                args = ''
+            else:
+                args = []
         # cmake vars are explicitly set in the preload file
         # args += self.build.flags.cmake_flags
         return args
@@ -539,16 +549,22 @@ class Build:
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
 
+    def configure_cmd(self, for_json=False):
+        if for_json:
+            return ('-C ' + os.path.basename(self.preload_file)
+                    + ' ' + self.generator.configure_args(for_json))
+        return (['cmake', '-C', os.path.basename(self.preload_file)]
+                + self.generator.configure_args() +
+                [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
+                self.projdir])
+
     def configure(self):
         self.create_dir()
         self.create_preload_file()
         if self.needs_cache_regeneration():
             self.varcache.commit(self.builddir)
         with util.setcwd(self.builddir):
-            cmd = (['cmake', '-C', os.path.basename(self.preload_file)]
-                   + self.generator.configure_args() +
-                   [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
-                   self.projdir])
+            cmd = self.configure_cmd()
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
 
@@ -713,19 +729,35 @@ message(STATUS "cmany:preload----------------------")
 message(STATUS "cmany: nothing to preload...")
 """
 
+    def json_data(self):
+        """
+        https://blogs.msdn.microsoft.com/vcblog/2016/11/16/cmake-support-in-visual-studio-the-visual-studio-2017-rc-update/
+        https://blogs.msdn.microsoft.com/vcblog/2016/12/20/cmake-support-in-visual-studio-2017-whats-new-in-the-rc-update/
+        """
+        builddir = self.builddir.replace(self.projdir, '${projectDir}')
+        builddir = re.sub(r'\\', r'/', builddir)
+        return odict([
+            ('name', self.tag),
+            ('generator', self.generator.name),
+            ('configurationType', self.buildtype.name),
+            ('buildRoot', builddir),
+            ('cmakeCommandArgs', self.configure_cmd(for_json=True)),
+            # ('variables', []),  # this is not needed since the vars are set in the preload file
+        ])
 
 # -----------------------------------------------------------------------------
 class ProjectConfig:
 
     def __init__(self, **kwargs):
 
-        # configfile = os.path.join(projdir, "cmany.json")
+        projdir = kwargs.get('proj_dir', os.getcwd())
+
+        self.configfile = os.path.join(projdir, "CMakeSettings.json")
         # self.configfile = None
         # if os.path.exists(configfile):
         #     self.parse_file(configfile)
         #     self.configfile = configfile
 
-        projdir = kwargs.get('proj_dir', os.getcwd())
         self.kwargs = kwargs
         self.rootdir = os.getcwd() if projdir == "." else projdir
         self.cmakelists = util.chkf(self.rootdir, "CMakeLists.txt")
@@ -874,6 +906,14 @@ class ProjectConfig:
                 for b in builds:
                     print(b)
             print("===============================================")
+
+    def create_projfile(self):
+        confs = []
+        for b in self.builds:
+            confs.append(b.json_data())
+        jd = odict([('configurations', confs)])
+        with open(self.configfile, 'w') as f:
+            json.dump(jd, f, indent=4)
 
     def showvars(self, varlist):
         varv = odict()

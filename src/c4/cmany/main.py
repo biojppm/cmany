@@ -17,7 +17,7 @@ cmds = odict([
     ('configure', ['c']),
     ('build', ['b']),
     ('install', ['i']),
-#    ('create', []),
+    ('create', []),
     ('showvars', []),
 ])
 
@@ -255,6 +255,14 @@ class showvars(selectcmd):
 
     def _exec(self, proj, args):
         proj.showvars(args.var_names)
+
+
+class create(selectcmd):
+    '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
+    outlining the project builds
+    '''
+    def _exec(self, proj, args):
+        proj.create_projfile()
 
 
 # -----------------------------------------------------------------------------
