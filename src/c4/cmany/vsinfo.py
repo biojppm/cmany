@@ -10,7 +10,7 @@ from collections import OrderedDict as odict
 
 from . import util
 from .util import runsyscmd, cacheattr, nested_lookup
-from .cmake_sysinfo import CMakeSysInfo
+from .cmake import CMakeSysInfo
 
 
 class VisualStudioInfo:
