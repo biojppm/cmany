@@ -9,7 +9,7 @@ import argparse
 import c4.cmany.util as util
 import c4.cmany.main as main
 import c4.cmany.cmany as cmany
-import c4.cmany.cmake_sysinfo as cmake
+import c4.cmany.cmake as cmake
 
 maincmd = [sys.executable, '-m', 'c4.cmany.main']
 
@@ -28,10 +28,19 @@ class CMakeTestProj:
         self.proj = proj
         self.root = os.path.join(projdir, proj)
 
-    def _run(self, args):
-        with util.setcwd(self.root):
+    def _run(self, args, custom_root=None):
+        root = self.root
+        if custom_root is not None:
+            with util.setcwd(self.root):
+                root = os.path.abspath(custom_root)
+                if not os.path.exists(root):
+                    os.makedirs(root)
+                projdir = os.path.abspath('.')
+                args.append(projdir)
+        with util.setcwd(root, False):
             args = maincmd + args
             util.runsyscmd(args)
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -68,12 +77,22 @@ def run_projs(testobj, args, check_fn=None):
                            numbuilds=1)
             check_fn(tb)
 
+        # run in a non root dir
+        rd = '.test/1--non_root_dir'
+        p._run(args, custom_root=rd)
+        if check_fn:
+            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                           compiler=cmany.Compiler.default(),
+                           buildtype=cmany.BuildType.default(),
+                           numbuilds=1)
+            check_fn(tb)
+
         if numbuilds == 1:
             continue
 
         # run all combinations at once
-        bd = '.test/1--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
-        id = '.test/1--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
+        bd = '.test/2--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
+        id = '.test/2--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
         p._run(args + ['--build-dir', bd,
                        '--install-dir', id,
                        '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
@@ -89,8 +108,8 @@ def run_projs(testobj, args, check_fn=None):
         # run combinations individually
         for c in compiler_set:
             for t in build_types:
-                bd = '.test/2--{}--{}--build'.format(c, t)
-                id = '.test/2--{}--{}--install'.format(c, t)
+                bd = '.test/3--{}--{}--build'.format(c, t)
+                id = '.test/3--{}--{}--install'.format(c, t)
                 p._run(args + ['--build-dir', bd,
                          '--install-dir', id,
                          '-c', c.name if c.is_msvc else c.path,
@@ -100,6 +119,7 @@ def run_projs(testobj, args, check_fn=None):
                                    compiler=c, buildtype=t,
                                    numbuilds=1)
                     check_fn(tb)
+
 
 
 # -----------------------------------------------------------------------------
@@ -201,7 +221,7 @@ class Test03Install(ut.TestCase):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class Test10Flags(ut.TestCase):
+class Test20Flags(ut.TestCase):
 
     def test01_cmake_vars(self):
         self._do_separate_test('-V', '--vars')
@@ -279,6 +299,7 @@ class Test10Flags(ut.TestCase):
         self.check_many('-X "-fPIC" -D VARIANT1', vars=[], cxxflags=['-fPIC'], cflags=[], defines=['VARIANT1'])
         self.check_many('-X "-Wall" -D VARIANT2', vars=[], cxxflags=['-Wall'], cflags=[], defines=['VARIANT2'])
         self.check_many('-X nortti,c++14 -D VARIANT3', vars=[], cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3'])
+        self.check_many('-X "-fPIC,-Wl\,-rpath" -D VARIANT1', vars=[], cxxflags=['-fPIC','-Wl,-rpath'], cflags=[], defines=['VARIANT1'])
 
     def test11_mixed1(self):
         self.check_many('-X "-fPIC" -D VARIANT1,VARIANT_TYPE=1', vars=[], cxxflags=['-fPIC'], cflags=[], defines=['VARIANT1', 'VARIANT_TYPE=1'])
@@ -299,9 +320,9 @@ class Test10Flags(ut.TestCase):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class Test11VariantSpec(ut.TestCase):
+class Test21VariantSpec(ut.TestCase):
 
-    def check_variant(self, name, var, **ref):
+    def c(self, name, var, **ref):
         self.assertEqual(var.name, name)
         for k, refval in ref.items():
             result = getattr(var, k)
@@ -310,18 +331,18 @@ class Test11VariantSpec(ut.TestCase):
     def test01_simple(self):
         v = cmany.Variant("somevariant: -X '-fPIC'")
         v.resolve_refs([v])
-        self.check_variant('somevariant', v, cmake_vars=[], defines=[], cflags=[], cxxflags=['-fPIC'])
+        self.c('somevariant', v, cmake_vars=[], defines=[], cflags=[], cxxflags=['-fPIC'])
 
-    def test02_multiple_norefs(self):
+    def test02_norefs(self):
         out = cmany.Variant.create([
-            'variant0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
-            'variant1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2',
-            'variant2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3',
+            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
+            'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2',
+            'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3',
         ])
         self.assertEquals(len(out), 3)
-        self.check_variant('variant0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.check_variant('variant1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall'])
-        self.check_variant('variant2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14'])
+        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall'])
+        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14'])
 
     def test10_refs_beginning(self):
         out = cmany.Variant.create([
@@ -330,9 +351,9 @@ class Test11VariantSpec(ut.TestCase):
             'var2: @var1 -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3',
         ])
         self.assertEquals(len(out), 3)
-        self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
-        self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['-fPIC', '-Wall', 'nortti', 'c++14'])
+        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
+        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['-fPIC', '-Wall', 'nortti', 'c++14'])
 
     def test11_refs_middle(self):
         out = cmany.Variant.create([
@@ -341,9 +362,9 @@ class Test11VariantSpec(ut.TestCase):
             'var2: -X nortti,c++14 @var1 -D VARIANT3,VARIANT_TYPE=3',
         ])
         self.assertEquals(len(out), 3)
-        self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
-        self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
 
     def test12_refs_end(self):
         out = cmany.Variant.create([
@@ -352,9 +373,10 @@ class Test11VariantSpec(ut.TestCase):
             'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3 @var1',
         ])
         self.assertEquals(len(out), 3)
-        self.check_variant('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.check_variant('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
-        self.check_variant('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+
 
 
 # -----------------------------------------------------------------------------

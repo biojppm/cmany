@@ -141,7 +141,7 @@ class projcmd(cmdbase):
     '''a command which refers to a project'''
     def add_args(self, parser):
         super().add_args(parser)
-        parser.add_argument("proj-dir", nargs="?", default=".",
+        parser.add_argument("proj_dir", nargs="?", default=".",
                             help="""the directory where the project's CMakeLists.txt is located. An empty argument
                             will default to the current directory ie, \".\". Passing a directory
                             which does not contain a CMakeLists.txt will cause an error.""")

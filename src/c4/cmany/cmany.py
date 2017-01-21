@@ -9,7 +9,7 @@ from collections import OrderedDict as odict
 from multiprocessing import cpu_count as cpu_count
 
 from . import util
-from .cmake_sysinfo import CMakeSysInfo, CMakeCache, getcachevars
+from .cmake import CMakeSysInfo, CMakeCache, getcachevars
 from . import vsinfo
 from . import flags
 
@@ -563,7 +563,7 @@ class Build:
         self.create_preload_file()
         if self.needs_cache_regeneration():
             self.varcache.commit(self.builddir)
-        with util.setcwd(self.builddir):
+        with util.setcwd(self.builddir, silent=False):
             cmd = self.configure_cmd()
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
@@ -590,7 +590,7 @@ class Build:
 
     def build(self, targets=[]):
         self.create_dir()
-        with util.setcwd(self.builddir):
+        with util.setcwd(self.builddir, silent=False):
             if self.needs_configure():
                 self.configure()
             if self.compiler.is_msvc and len(targets) == 0:
@@ -616,7 +616,7 @@ class Build:
 
     def install(self):
         self.create_dir()
-        with util.setcwd(self.builddir):
+        with util.setcwd(self.builddir, silent=False):
             if self.needs_build():
                 self.build()
             cmd = self.generator.install()
@@ -751,20 +751,33 @@ class ProjectConfig:
 
     def __init__(self, **kwargs):
 
-        projdir = kwargs.get('proj_dir', os.getcwd())
+        self.kwargs = kwargs
 
-        self.configfile = os.path.join(projdir, "CMakeSettings.json")
+        proj_dir = kwargs.get('proj_dir', os.getcwd())
+        proj_dir = os.getcwd() if proj_dir == "." else proj_dir
+        if not os.path.isabs(proj_dir):
+            proj_dir = os.path.abspath(proj_dir)
+        self.root_dir = proj_dir
+
+        def _getdir(attr_name, default):
+            d = kwargs.get(attr_name)
+            if d is None:
+                d = os.path.join(os.getcwd(), default)
+            else:
+                if not os.path.isabs(d):
+                    d = os.path.join(os.getcwd(), d)
+            return d
+        self.build_dir = _getdir('build_dir', 'build')
+        self.install_dir = _getdir('install_dir', 'install')
+
+        self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
+        self.num_jobs = kwargs.get('jobs')
+
+        self.configfile = os.path.join(proj_dir, "CMakeSettings.json")
         # self.configfile = None
         # if os.path.exists(configfile):
         #     self.parse_file(configfile)
         #     self.configfile = configfile
-
-        self.kwargs = kwargs
-        self.rootdir = os.getcwd() if projdir == "." else projdir
-        self.cmakelists = util.chkf(self.rootdir, "CMakeLists.txt")
-        self.builddir = kwargs.get('build_dir', os.path.join(os.getcwd(), "build"))
-        self.installdir = kwargs.get('install_dir', os.path.join(os.getcwd(), "install"))
-        self.num_jobs = kwargs.get('jobs')
 
         _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
         self.systems = _get('systems', System)
@@ -814,7 +827,7 @@ class ProjectConfig:
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
         flags = BuildFlags('all_builds', compiler, **self.kwargs)
-        b = Build(self.rootdir, self.builddir, self.installdir,
+        b = Build(self.root_dir, self.build_dir, self.install_dir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs)
         # when a build is created, its parameters may be adjusted
@@ -860,8 +873,8 @@ class ProjectConfig:
             # print(b, ":", d)
 
     def configure(self, **restrict_to):
-        if not os.path.exists(self.builddir):
-            os.makedirs(self.builddir)
+        if not os.path.exists(self.build_dir):
+            os.makedirs(self.build_dir)
         self._execute(Build.configure, "Configure", silent=False, **restrict_to)
 
     def build(self, **restrict_to):
@@ -918,7 +931,7 @@ class ProjectConfig:
 
     def showvars(self, varlist):
         varv = odict()
-        pat = os.path.join(self.builddir, '*', 'CMakeCache.txt')
+        pat = os.path.join(self.build_dir, '*', 'CMakeCache.txt')
         g = glob.glob(pat)
         md = 0
         mv = 0
