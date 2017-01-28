@@ -32,7 +32,7 @@ class Test01Dump(ut.TestCase):
 #------------------------------------------------------------------------------
 class Test02Load(ut.TestCase):
 
-    def test(self):
+    def test00RunTestCases(self):
         for tcn, (rcomps, rflags, yml) in test_cases.items():
             with self.subTest(test_case=tcn):
                 (comps, cflags) = flags.load_yml(yml)
@@ -46,6 +46,23 @@ class Test02Load(ut.TestCase):
                 #        print(tcn, "comp", c1, c2)
                 self.assertEqual(comps, rcomps, tcn)
                 self.assertTrue(same_flags(cflags, rflags), tcn)
+
+    def test01DoCommasWork(self):
+        yml = """compilers: [gcc, clang, icc, vs]
+---
+c++11:
+    gcc,clang,icc: -std=c++11
+    vs: ''
+"""
+        c, f = flags.load_yml(yml)
+        self.assertTrue('c++11' in f)
+        f11 = f['c++11']
+        self.assertTrue(hasattr(f11, 'gcc'))
+        self.assertTrue(hasattr(f11, 'icc'))
+        self.assertTrue(hasattr(f11, 'clang'))
+        self.assertEqual(f11.gcc, '-std=c++11')
+        self.assertEqual(f11.icc, '-std=c++11')
+        self.assertEqual(f11.clang, '-std=c++11')
 
 
 #------------------------------------------------------------------------------
@@ -71,42 +88,52 @@ class Test03Merge(ut.TestCase):
 #------------------------------------------------------------------------------
 class Test04FlagsIO(ut.TestCase):
 
+    def setUp(self):
+        flags.load_known_flags()
+
     def test00SavedIsSameAsOriginal(self):
-        fh, fn = tmpfile()
-        flags.save(flags.known_compilers, flags.known_flags, fn)
-        c, f = flags.load(fn)
-        self.assertEqual(c, flags.known_compilers)
-        self.assertEqual(len(flags.known_flags), len(f))
-        self.assertEqual(list(flags.known_flags), list(f))
-        for (rname, rf), (vname, vf) in zip(flags.known_flags.items(), f.items()):
-            self.assertEqual(flags.known_compilers, vf.compilers)
-            for c in flags.known_compilers:
-                #print(rname, c, rf.get(c), vf.get(c))
-                self.assertEqual(rf.get(c), vf.get(c))
-        del fh
+        for tcn, (rcomps, rflags, yml) in test_cases.items():
+            with self.subTest(test_case=tcn):
+                fh_, fn = tmpfile()
+                fh = os.fdopen(fh_)
+                flags.save(rcomps, rflags, fn)
+                c, f = flags.load(fn)
+                self.assertEqual(c, rcomps)
+                self.assertEqual(len(f), len(rflags))
+                self.assertEqual(list(f.keys()), list(rflags.keys()))
+                for (rname, rf), (vname, vf) in zip(rflags.items(), f.items()):
+                    self.assertEqual(rcomps, vf.compilers)
+                    for kc in flags.known_compilers:
+                        #print(rname, c, rf.get(c), vf.get(c))
+                        self.assertEqual(rf.get(kc), vf.get(kc))
+                fh.close()
+                os.remove(fn)
+                del fh
 
     def test01WriteReadWriteIsSame(self):
-        frefh, fn = tmpfile()
-        fvalh, fn_out = tmpfile()
-        fref = os.fdopen(frefh)
-        fval = os.fdopen(fvalh)
-        flags.save(flags.known_compilers, flags.known_flags, fn)
-        c, f = flags.load(fn)
-        flags.save(c, f, fn_out)
-        ref = list(fref.readlines())
-        val = list(fval.readlines())
-        lr = len(ref)
-        lv = len(val)
-        self.assertEqual(lr, lv)
-        for i in range(0, max(lr, lv)):
-            if i < lr and i < lv:
-                self.assertEqual(ref[i], val[i])
-            else:
-                break
-        del fref, frefh
-        del fval, fvalh
-        os.remove(fn)
-        os.remove(fn_out)
+        for tcn, (rcomps, rflags, yml) in test_cases.items():
+            with self.subTest(test_case=tcn):
+                frefh, fn = tmpfile()
+                fvalh, fn_out = tmpfile()
+                fref = os.fdopen(frefh)
+                fval = os.fdopen(fvalh)
+                flags.save(rcomps, rflags, fn)
+                c, f = flags.load(fn)
+                flags.save(c, f, fn_out)
+                ref = list(fref.readlines())
+                val = list(fval.readlines())
+                lr = len(ref)
+                lv = len(val)
+                self.assertEqual(lr, lv)
+                for i in range(0, max(lr, lv)):
+                    if i < lr and i < lv:
+                        self.assertEqual(ref[i], val[i])
+                    else:
+                        break
+                del fref, frefh
+                del fval, fvalh
+                os.remove(fn)
+                os.remove(fn_out)
 
 
 #------------------------------------------------------------------------------
@@ -138,58 +165,58 @@ def same_flags(f1, f2):
 
 
 #------------------------------------------------------------------------------
-def d(*args):
-    #print(*args)
-    d_ = odict()
-    for k, v in args:
-        #print(k, v)
-        d_[k] = v
+
+def tc(name, comps, flags, **kwargs):
+    yml = kwargs['yml']
+    d_ = (name, (comps, flags, yml))
     return d_
 
-def tc(name, comps, *flags, **kwargs):
-    yml = kwargs['yml']
-    d_ = (name, (comps, d(*flags), yml))
-    return d_
+def d(*args):
+    return odict([*args])
 
 def f(name, *args, **kwargs):
     return name, flags.CFlag(name, *args, **kwargs)
 
+from c4.cmany import conf
+kc, kf = flags.load(conf.KNOWN_FLAGS_FILE)
+kyml = flags.dump_yml(kc, kf)
+
 test_cases = d(
 
-    tc('gcc-g', ['gcc'], f('g', gcc='-g'),
+    tc('gcc-g', ['gcc'], d(f('g', gcc='-g')),
 yml="""compilers: [gcc]
 ---
 g:
     gcc: -g
 """),
 
-    tc('gcc-g3', ['gcc'], f('g3', gcc='-g3'),
+    tc('gcc-g3', ['gcc'], d(f('g3', gcc='-g3')),
 yml="""compilers: [gcc]
 ---
 g3:
     gcc: -g3
 """),
 
-    tc('clang-g3', ['clang'], f('g3', clang='-g3'),
+    tc('clang-g3', ['clang'], d(f('g3', clang='-g3')),
        yml="""compilers: [clang]
 ---
 g3:
     clang: -g3
 """),
 
-    tc('gcc, clang-g3', ['gcc', 'clang'], f('g3', gcc='-g3', clang='-g3'),
+    tc('gcc, clang-g3', ['gcc', 'clang'], d(f('g3', gcc='-g3', clang='-g3')),
        yml="""compilers: [gcc, clang]
 ---
 g3:
-    gcc: -g3
-    clang: -g3
+    gcc,clang: -g3
 """),
 
-    tc('clang, gcc-g3', ['clang', 'gcc'], f('g3', clang='-g3', gcc='-g3'),
+    tc('clang, gcc-g3', ['clang', 'gcc'], d(f('g3', clang='-g3', gcc='-g3')),
        yml="""compilers: [clang, gcc]
 ---
 g3:
-    clang: -g3
-    gcc: -g3
+    clang,gcc: -g3
 """),
+
+    tc('known_flags', kc, kf, yml=kyml)
 )

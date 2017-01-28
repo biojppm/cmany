@@ -100,10 +100,33 @@ def dump_yml(comps, flags):
         txt += n + ':\n'
         if f.desc:
             txt += '    desc: ' + f.desc + '\n'
+        # join equal flag values into comma-separated keys:
+        # eg compiler1,compiler2,compiler3: flag value
+        rd = odict()
+        dr = odict()
+        done = odict()
+        # store reverse information: flag: compiler1,compiler2,compiler3
         for comp in comps:
-            a = getattr(f, comp)
-            a = a if a else "''"
-            txt += '    ' + comp + ': ' + a + '\n'
+            v = getattr(f, comp)
+            if not rd.get(v):
+                rd[v] = ''
+            else:
+                rd[v] += ','
+            rd[v] += comp
+            dr[comp] = v
+        # make sure compilers are not repeated
+        for comp in comps:
+            done[comp] = False
+        # now lookup, write and mark
+        for comp in comps:
+            if done[comp]:
+                continue
+            val = dr[comp]
+            key = rd[val]
+            if val:
+                txt += '    ' + key + ': ' + val + '\n'
+            for ccomp in key.split(','):
+                done[ccomp] = True
     return txt
 
 
@@ -121,13 +144,16 @@ def load_yml(txt):
     flags0 = odict(fs)
     for n, yf in flags0.items():
         f = CFlag(n)
+        for c in comps:
+            f.add_compiler(c)
         #print("load yml: flag compilers=", f.compilers)
-        for comp, val in yf.items():
-            if comp == 'desc':
-                f.desc = val
-            else:
-                f.set(comp, val)
-            #print("load yml: flag value for", comp, ":", val, "--------->", f.get(comp))
+        for comp_, val in yf.items():
+            for comp in comp_.split(','):
+                if comp == 'desc':
+                    f.desc = val
+                else:
+                    f.set(comp, val)
+                #print("load yml: flag value for", comp, ":", val, "--------->", f.get(comp))
         flags[n] = f
     return comps, flags
 
@@ -183,7 +209,7 @@ known_flags = odict()
 def load_known_flags(additional_flag_files=[], read_defaults=True):
     """reads first the package's known flags file, then the user's
     known flags file, then the given flag files first to last.
-    Latter files will prevail over earlier files."""
+    Flags given in latter files will prevail over those of earlier files."""
     import os.path
     global known_compilers, known_flags
     comps = known_compilers if read_defaults else []

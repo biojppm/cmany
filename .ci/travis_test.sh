@@ -3,12 +3,12 @@
 
 if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
 
-    PYTHON=python3
+    export PYTHON=python3
 
 elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     eval "$(pyenv init -)"
-    PYTHON="python$PY"
+    export PYTHON="python$PY"
     pyenv local $PYENV
 
 fi

@@ -312,7 +312,7 @@ def create_help_topic(id, title, doc, txt, disabled=False):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 create_help_topic(
-    "basic_examples",
+    "examples",
     title="Basic usage examples",
     doc="Basic usage examples",
     txt="""Consider a directory with this layout::
@@ -450,11 +450,11 @@ of the following can be used::
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 create_help_topic(
-    "flags",
-    title="Preset compiler flags",
-    doc="help on dir formats",
+    "variants",
+    title="Build variants",
+    doc="help on specifying variants",
     txt="""
-TODO: add help for compiler flags
+    $ cmany b -v none,'noexcept: @none --cxxflags c++14,noexceptions --define V_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
 """)
 
 
@@ -462,11 +462,21 @@ TODO: add help for compiler flags
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 create_help_topic(
-    "variants",
-    title="Build variants",
-    doc="help on specifying variants",
+    "flags",
+    title="Preset compiler flag aliases",
+    doc="help on compiler flag aliases",
     txt="""
-    $ cmany b -v none,'noexcept: @none --cxxflags c++14,noexceptions --define V_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
+cmany provides built-in flag aliases to simplify working with different
+compilers at the same time (eg, gcc and Visual Studio). The last
+
+Project-scope flag aliases
+--------------------------
+
+Save a flags aliases file named 'cmany_flags.yml'. Use the same format as
+
+List of built-in aliases
+------------------------
+
 """)
 
 
