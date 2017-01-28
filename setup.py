@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 import os.path
 import sys
+import re
 
 
 if sys.version_info < (3, 3):
@@ -15,6 +16,15 @@ if sys.version_info < (3, 3):
 def read(*rnames):
     with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
         return f.read()
+
+
+def read_manifest():
+    thisd = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(thisd, 'MANIFEST.in')) as f:
+        lines = [ re.sub(r'include (.*)$', r'\1', l) for l in f.readlines() ]
+        lines = [ os.path.join(thisd, l) for l in lines ]
+        print(lines)
+        return lines
 
 
 def readreqs(*rnames):
@@ -55,6 +65,6 @@ setup(name="cmany",
       entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
       install_requires=readreqs('requirements.txt'),
       tests_require=readreqs('requirements_test.txt'),
-      # include_package_data=True,
-      # package_data={'c4.cmany':['test/*','test/*/*']}
+      include_package_data=True,
+      package_data={'c4.cmany':read_manifest()}
 )

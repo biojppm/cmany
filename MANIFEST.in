@@ -1,3 +1,5 @@
+include LICENSE.txt
+include README.rst
 include requirements.txt
 include requirements_test.txt
-include flags.yml
+include src/c4/cmany/flags.yml

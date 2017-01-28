@@ -2,10 +2,7 @@ from collections import OrderedDict as odict
 from ruamel import yaml
 import copy
 
-from . import util
-
-known_compilers = ['gcc', 'clang', 'icc', 'vs']
-
+from . import conf
 
 def _getrealsn(compiler):
     if isinstance(compiler, str):
@@ -94,41 +91,6 @@ def as_defines(spec, compiler=None):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-
-def f(name, gcc=None, clang=None, icc=None, vs=None, desc=None):
-    return name, CFlag(name, desc, gcc=gcc, clang=clang, icc=icc, vs=vs)
-
-known_flags = odict([
-    #    name                   gcc                                  clang                                icc                                  vs                                  desc
-    f('c++11'              , '-std=c++11'                       , '-std=c++11'                       , '-std=c++11'                       , ''                                , 'enable C++11 mode'),  # nopep8
-    f('c++14'              , '-std=c++14'                       , '-std=c++14'                       , '-std=c++14'                       , ''                                , 'enable C++14 mode'),  # nopep8
-    f('c++1z'              , '-std=c++1z'                       , '-std=c++1z'                       , '-std=c++1z'                       , ''                                , 'enable C++1z mode'),  # nopep8
-    f('thread'             , '-pthread'                         , '-pthread'                         , '-pthread'                         , ''                                , 'enable threads'),  # nopep8
-    f('wall'               , '-Wall'                            , '-Wall'                            , '-Wall'                            , '/Wall'                           , 'enable full warnings'),  # nopep8
-    f('pedantic'           , '-Wpedantic'                       , '-Wpedantic'                       , '-Wpedantic'                       , '/W4'                             , 'compile in pedantic mode'),  # nopep8
-    f('strict_aliasing'    , '-fstrict-aliasing'                , '-fstrict-aliasing'                , '-fstrict-aliasing'                , ''                                , 'enable strict aliasing'),  # nopep8
-    f('no_strict_aliasing' , '-fno-strict-aliasing'             , '-fno-strict-aliasing'             , '-fno-strict-aliasing'             , ''                                , 'disable strict aliasing'),  # nopep8
-    f('fast_math'          , '-ffast-math'                      , '-ffast-math'                      , '-ffast-math'                      , '/fp:fast /Qfast_transcendentals' , 'enable fast math http://stackoverflow.com/a/22135559'),  # nopep8
-    f('no_rtti'            , '-fno-rtti'                        , '-fno-rtti'                        , '-fno-rtti'                        , '/GR-'                            , 'disable run-time type information'),  # nopep8
-    f('no_exceptions'      , '-fno-exceptions'                  , '-fno-exceptions'                  , '-fno-exceptions'                  , '/EHsc-'                          , 'disable exceptions'),  # nopep8
-    f('no_stdlib'          , '-fnostdlib'                       , '-fnostdlib'                       , '-fnostdlib'                       , '/NODEFAULTLIB'                   , 'disable standard library'),  # nopep8
-    f('static_stdlib'      , '-static-libstdc++ -static-libgcc' , '-static-libstdc++ -static-libgcc' , '-static-libstdc++ -static-libgcc' , '/MD'                             , 'link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas'),  # nopep8
-    f('lto'                , '-flto'                            , '-flto'                            , '-flto'                            , '/GL'                             , 'enable whole program optimization'),  # nopep8
-    f('g'                  , '-g'                               , '-g'                               , '-g'                               , '/Zi'                             , 'add debug information'),  # nopep8
-    f('g3'                 , '-g3'                              , '-g3'                              , '-g3'                              , '/Zi'                             , 'add full debug information'),  # nopep8
-    f('no_bufsec'          , ''                                 , ''                                 , ''                                 , '/GS-'                            , 'disable buffer security checks'),  # nopep8
-    f('O2'                 , '-O2'                              , '-O2'                              , '-O2'                              , '/O2'                             , 'optimize level 2'), # nopep8
-    f('O3'                 , '-O3'                              , '-O3'                              , '-O3'                              , '/Ox'                             , 'optimize level 3'), # nopep8
-    f('Os'                 , '-Os'                              , '-Os'                              , '-Os'                              , '/Os'                             , 'optimize for size'),  # nopep8
-    f('Ofast'              , '-Ofast'                           , '-Ofast'                           , '-Ofast'                           , '/Ot'                             , 'optimize for speed'), # nopep8
-    f('Onative'            , '-march=native'                    , '-march=native'                    , '-march=native'                    , ''                                , 'optimize for native architecture'), # nopep8
-    f('sse'                , '-msse'                            , '-msse'                            , '-msse'                            , '/arch:sse'                       , 'enable SSE instructions'), # nopep8
-    f('sse2'               , '-msse2'                           , '-msse2'                           , '-msse2'                           , '/arch:sse2'                      , 'enable SSE2 instructions'), # nopep8
-    f('avx'                , '-mavx'                            , '-mavx'                            , '-mavx'                            , '/arch:avx'                       , 'enable AVX instructions'), # nopep8
-    f('avx2'               , '-mavx2'                           , '-mavx2'                           , '-mavx2'                           , '/arch:avx2'                      , 'enable AVX2 instructions'), # nopep8
-])
-
-
 def dump_yml(comps, flags):
     """dump the given compilers and flags pair into a yml string"""
     txt = ""
@@ -210,3 +172,28 @@ def merge(comps=None, flags=None, into_comps=None, into_flags=None):
 def load_and_merge(filename, into_comps=None, into_flags=None):
     comps, flags = load(filename)
     return merge(comps, flags, into_comps, into_flags)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+known_compilers = []
+known_flags = odict()
+
+def load_known_flags(additional_flag_files=[], read_defaults=True):
+    """reads first the package's known flags file, then the user's
+    known flags file, then the given flag files first to last.
+    Latter files will prevail over earlier files."""
+    import os.path
+    global known_compilers, known_flags
+    comps = known_compilers if read_defaults else []
+    flags = known_flags if read_defaults else odict()
+    filenames = [conf.KNOWN_FLAGS_FILE, conf.USER_FLAGS_FILE] if read_defaults else []
+    filenames += additional_flag_files
+    for f in filenames:
+        if os.path.exists(f):
+            c, f = load(conf.KNOWN_FLAGS_FILE)
+            comps, flags = merge(c, f, comps, flags)
+    known_compilers, known_flags = comps, flags
+    #for _, v in known_flags.items():
+    #    print(v, v.desc, v.gcc, v.vs)

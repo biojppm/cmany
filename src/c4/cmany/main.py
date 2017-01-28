@@ -59,8 +59,9 @@ def argerror(*msg_args):
     exit(1)
 
 
+# -----------------------------------------------------------------------------
 class FlagArgument(argparse.Action):
-
+    """a class to be used by argparse when parsing arguments which are compiler flags"""
     def __call__(self, parser, namespace, values, option_string=None):
         def isquoted(s):
             return (s[0] == "'" and s[-1] == "'") or (s[0] == '"' and s[-1] == '"')
@@ -98,7 +99,7 @@ def add_flag_opts(parser):
                    These will be passed to cmake by appending to the
                    default initial value of CMAKE_CXX_FLAGS (taken from
                    CMAKE_CXX_FLAGS_INIT). cmany has flag aliases mapping
-                   to several common compilers. Type `cmany help flags`
+                   to several common compilers. Run `cmany help flags`
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
@@ -109,12 +110,22 @@ def add_flag_opts(parser):
                    These will be passed to cmake by appending to the
                    default initial value of CMAKE_C_FLAGS (taken from
                    CMAKE_C_FLAGS_INIT). cmany has flag aliases mapping
-                   to several common compilers. Type `cmany help flags`
+                   to several common compilers. Run `cmany help flags`
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
                    Can also be given as a comma-separated list.
                    To escape commas, use a backslash \\.""")
+    g.add_argument("--flags-file", default=['cmany_flags.yml'], action="append",
+                   help="""Specify a file containing flag aliases. Relative
+                   paths are assumed from the top level CMakeLists.txt file.
+                   Run `cmany help flags` to get help about flag aliases.
+                   Multiple invokations are possible, in which case flags
+                   given in latter files will prevail over those of earlier
+                   files.""")
+    g.add_argument("--no-default-flags", default=False, action="store_true",
+                   help="""Do not read the default cmany flag alias file. Run
+                   `cmany help flags` to get help about this.""")
     # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
     #                help="""add dirs to the include path of all builds
     #                Multiple invokations of -I are possible, in which case arguments will be appended and not overwritten.
@@ -131,14 +142,47 @@ class cmdbase:
         '''add arguments to a command parser'''
         pass
     def proj(self, args):
-        '''create a project given the configuration.'''
-        return cmany.ProjectConfig(**vars(args))
+        return None
     def _exec(self, proj, args):
         assert False, 'never call the base class method. Implement this in derived classes'
 
 
+class help(cmdbase):
+    '''get help on a particular subcommand or topic. Available topics:
+    basic_examples, flags, visual_studio.'''
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('subcommand_or_topic', default="", nargs='?')
+
+    def _exec(self, proj, args):
+        sct = args.subcommand_or_topic
+        if not sct:
+            cmany_main(['-h'])
+        else:
+            sc = cmds.get(sct)
+            # is it a subcommand?
+            if sc is not None:
+                cmany_main([sct, '-h'])
+            else:
+                # is it a topic?
+                subtopic = help_topics.get(args.subcommand_or_topic)
+                if subtopic is None:
+                    msg = ("{} is not a subcommand or topic.\n" +
+                           "Available subcommands are: {}\n" +
+                           "Available help topics are: {}\n")
+                    print(msg.format(args.subcommand_or_topic,
+                                     ', '.join(cmds.keys()),
+                                     ', '.join(help_topics.keys())))
+                    exit(1)
+                else:
+                    print(subtopic.txt)
+
+
 class projcmd(cmdbase):
     '''a command which refers to a project'''
+    def proj(self, args):
+        '''create a project given the configuration.'''
+        return cmany.ProjectConfig(**vars(args))
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument("proj_dir", nargs="?", default=".",
@@ -188,37 +232,6 @@ class selectcmd(projcmd):
                        help="""(WIP) restrict actions to the given variants.
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        This feature is currently a work-in-progress.""")
-
-
-class help(cmdbase):
-    '''get help on a particular subcommand or topic. Available topics:
-    basic_examples, flags, visual_studio.'''
-    def add_args(self, parser):
-        super().add_args(parser)
-        parser.add_argument('subcommand_or_topic', default="", nargs='?')
-
-    def _exec(self, proj, args):
-        sct = args.subcommand_or_topic
-        if not sct:
-            cmany_main(['-h'])
-        else:
-            sc = cmds.get(sct)
-            # is it a subcommand?
-            if sc is not None:
-                cmany_main([sct, '-h'])
-            else:
-                # is it a topic?
-                subtopic = help_topics.get(args.subcommand_or_topic)
-                if subtopic is None:
-                    msg = ("{} is not a subcommand or topic.\n" +
-                           "Available subcommands are: {}\n" +
-                           "Available help topics are: {}\n")
-                    print(msg.format(args.subcommand_or_topic,
-                                     ', '.join(cmds.keys()),
-                                     ', '.join(help_topics.keys())))
-                    exit(1)
-                else:
-                    print(subtopic.txt)
 
 
 class configure(selectcmd):
@@ -437,19 +450,6 @@ of the following can be used::
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 create_help_topic(
-    "dir_formats",
-    disabled=True,
-    title="Specifying directory patterns",
-    doc="help on dir formats",
-    txt="""
-    $ cmany -I "path/to/{system}-{architecture}-{compiler}-{build_type}{variant?-{variant}}"
-""")
-
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-create_help_topic(
     "flags",
     title="Preset compiler flags",
     doc="help on dir formats",
@@ -481,9 +481,10 @@ create_help_topic(
 TODO: add help for visual studio
 
 Visual Studio aliases example:
-    vs2013: use the bitness of the current system
-    vs2013_32: use 32bit version
-    vs2013_64: use 64bit version
+    vs2015_32: use 32bit version
+    vs2015_64: use 64bit version
+    vs2015:    use the bitness of the current system; will resolve into
+               either vs2015_32 or vs2015_64
 """)
 
 # -----------------------------------------------------------------------------

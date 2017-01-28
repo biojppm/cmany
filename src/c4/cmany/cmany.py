@@ -793,6 +793,13 @@ class ProjectConfig:
         self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
         self.num_jobs = kwargs.get('jobs')
 
+        flag_files = []
+        for f in kwargs['flags_file']:
+            if not os.path.isabs(f):
+                f = os.path.join(self.root_dir, f)
+            flag_files.append(f)
+        flags.load_known_flags(flag_files, not kwargs['no_default_flags'])
+
         self.configfile = os.path.join(proj_dir, "CMakeSettings.json")
         # self.configfile = None
         # if os.path.exists(configfile):
