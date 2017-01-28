@@ -30,6 +30,7 @@ class VisualStudioInfo:
         self.architecture = parse_architecture(self.gen)
         self.dir = vsdir(ver)
         self.msbuild = msbuild(ver)
+        self.devenv = devenv(ver)
         self.vcvarsall = vcvarsall(ver)
         self.is_installed = is_installed(ver)
         self.cxx_compiler = cxx_compiler(ver)
@@ -236,6 +237,7 @@ def parse_architecture(name_or_gen_or_ver):
     a = _architectures[gen]
     return a
 
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -268,13 +270,27 @@ def vsdir(name_or_gen_or_ver):
     return d
 
 
+def devenv(name_or_gen_or_ver):
+    """get the path to vcvarsall.bat"""
+    ver = to_ver(name_or_gen_or_ver)
+    d = vsdir(ver)
+    # devenv can have different names:
+    # see http://stackoverflow.com/questions/7818543/no-devenv-file-in-microsoft-visual-express-10
+    for n in ('devenv.exe', 'WDExpress.exe', 'VSWinExpress.exe'):
+        s = os.path.join(d, 'Common7', 'IDE', n)
+        if os.path.exists(s):
+            return s
+    return None
+
+
 def vcvarsall(name_or_gen_or_ver):
     """get the path to vcvarsall.bat"""
     ver = to_ver(name_or_gen_or_ver)
+    d = vsdir(ver)
     if ver < 15:
-        s = os.path.join(vsdir(ver), 'VC', 'vcvarsall.bat')
+        s = os.path.join(d, 'VC', 'vcvarsall.bat')
     elif ver == 15:
-        s = os.path.join(vsdir(ver), 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')
+        s = os.path.join(d, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
     return s
@@ -307,11 +323,6 @@ def msbuild(name_or_gen_or_ver):
         val = '{}\\MSBuild\\{}.0\\bin\\{}MSBuild.exe'
         msbuild = val.format(root, ver, 'amd64\\' if util.in_64bit() else '')
     return msbuild
-
-
-def devenv(name_or_gen_or_ver):
-    """get path to devenv"""
-    raise Exception("not implemented")
 
 
 def cxx_compiler(name_or_gen_or_ver):

@@ -412,20 +412,40 @@ class Generator(BuildItem):
     def cmd(self, targets):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
-        elif self.is_msvc:
-            if not hasattr(self, "sln"):
-                sln_files = glob.glob("*.sln")
-                if len(sln_files) != 1:
-                    raise Exception("there's more than one solution file in the project folder")
-                self.sln = sln_files[0]
-            return [self.build.compiler.vs.msbuild, self.sln,
-                    '/maxcpucount:' + str(self.num_jobs),
-                    '/property:Configuration=' + str(self.build.buildtype),
-                    '/target:' + ';'.join(targets)]
         else:
             bt = str(self.build.buildtype)
-            return (['cmake', '--build', '.', '--config', bt] +
-                    ['--target ' + t for t in targets])
+            targets_safe = []
+            for t in targets:
+                targets_safe.append('--target')
+                targets_safe.append(t)
+            if self.is_msvc:
+                # if a target has a . in the name, it must be substituted for _
+                targets_safe = [re.sub(r'\.', r'_', t) for t in targets_safe]
+                cmd = (['cmake', '--build', '.', '--config', bt] + targets_safe +
+                       ['--', '/maxcpucount:' + str(self.num_jobs)])
+                return cmd
+                # find the solution file name
+                #if not hasattr(self, "sln"):
+                #    sln_files = glob.glob("*.sln")
+                #    if len(sln_files) != 1:
+                #        raise Exception("there's more than one solution file in the project folder")
+                #    self.sln = sln_files[0]
+                #
+                #targets_safe = ['/project ' + t for t in targets_safe]
+                #cmd = [self.build.compiler.vs.devenv, self.sln,
+                #        '/Build',
+                #        str(self.build.buildtype),
+                #] + targets_safe
+                #return cmd
+                #
+                #return [self.build.compiler.vs.msbuild, self.sln,
+                #        '/target:' + ';'.join(targets_safe),
+                #        '/maxcpucount:' + str(self.num_jobs),
+                #        '/property:Configuration=' + str(self.build.buildtype),
+                #]
+            else:
+                return (['cmake', '--build', '.', '--config', bt] +
+                        ['--target ' + t for t in targets])
 
     def install(self):
         bt = str(self.build.buildtype)
