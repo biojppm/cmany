@@ -5,6 +5,8 @@ import re
 import sys
 import subprocess
 import platform
+import collections
+import copy
 
 
 def sys_str():
@@ -192,6 +194,7 @@ def ctor(cls, args):
     return l
 
 
+# -----------------------------------------------------------------------------
 def nested_lookup(dictionary, *entry):
     """get a nested entry from a dictionary"""
     try:
@@ -206,6 +209,19 @@ def nested_lookup(dictionary, *entry):
         raise Exception("could not find entry '" +
                         "/".join(list(entry)) + "' in the dictionary")
     return v
+
+
+def nested_merge(into_dct, from_dct, into_dct_is_const=True):
+    """ adapted from Copied from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
+    """
+    out = copy.deepcopy(into_dct) if into_dct_is_const else into_dct
+    for k, v in from_dct.items():
+        if (k in out and isinstance(out[k], collections.Mapping)
+                and isinstance(from_dct[k], collections.Mapping)):
+            nested_merge(out[k], from_dct[k], False)
+        else:
+            out[k] = from_dct[k]
+    return out
 
 
 # -----------------------------------------------------------------------------

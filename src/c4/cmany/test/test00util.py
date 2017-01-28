@@ -3,6 +3,9 @@
 import unittest as ut
 import c4.cmany.util as util
 import sys
+import copy
+
+from collections import OrderedDict as odict
 
 
 # -----------------------------------------------------------------------------
@@ -83,7 +86,6 @@ class Test00splitspaces(ut.TestCase):
         self.t('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', ['-X', 'nortti,c++14', '-D', '"VARIANT3,VARIANT_TYPE=3"'])
 
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -93,6 +95,64 @@ class Test01splitesc(ut.TestCase):
         self.assertEqual(
             util.splitesc('hello\,world,yet\,another', ','),
             ['hello\,world', 'yet\,another'])
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test02nested_merge(ut.TestCase):
+
+    def test00reqs(self):
+        import collections
+        self.assertTrue(isinstance(dict(), collections.Mapping))
+        self.assertTrue(isinstance(collections.OrderedDict(), collections.Mapping))
+
+    def test01do_it(self):
+        for fname in ('tc1', 'tc2', 'tc3'):
+            fn = getattr(__class__, fname)
+            for cls in (dict, odict):
+                name, a, b, rab, rba = fn(self, cls)
+                with self.subTest(cls=cls.__name__, fn=fname, case=name):
+                    vab = util.nested_merge(a, b)
+                    self.assertEqual(rab, vab)
+                    vab = copy.deepcopy(a)
+                    util.nested_merge(vab, b, False)
+                    self.assertEqual(rab, vab)
+                    #
+                    vba = util.nested_merge(b, a)
+                    self.assertEqual(rba, vba)
+                    vba = copy.deepcopy(b)
+                    util.nested_merge(vba, a, False)
+                    self.assertEqual(rba, vba)
+
+    def tc1(self, cls):
+        return 'empty+empty=empty', cls(), cls(), cls(), cls()
+    def tc2(self, cls):
+        a = self.someval(cls)
+        b = cls()
+        return 'flat+empty=flat', a, b, a, a
+    def tc3(self, cls):
+        a = self.nested(cls, 'c')
+        b = cls()
+        return 'nested_after+empty=nested_after', a, b, a, a
+    def tc3(self, cls):
+        a = self.nested(cls, '0')
+        b = cls()
+        return 'nested_before+empty=nested', a, b, a, a
+
+    def flat(self, cls):
+        return self.someval(cls)
+    def nested(self, cls, char):
+        a = self.someval(cls)
+        a[char] = self.someval(cls)
+        a[char][char] = self.someval(cls)
+        a[char][char][char] = self.someval(cls)
+        return a
+    def someval(self, cls):
+        d = cls()
+        d['a'] = 0
+        d['b'] = 1
+        return d
 
 
 # -----------------------------------------------------------------------------

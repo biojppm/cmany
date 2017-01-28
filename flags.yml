@@ -1,0 +1,158 @@
+compilers: [gcc, clang, icc, vs]
+---
+c++11:
+    desc: enable C++11 mode
+    gcc: -std=c++11
+    clang: -std=c++11
+    icc: -std=c++11
+    vs: ''
+c++14:
+    desc: enable C++14 mode
+    gcc: -std=c++14
+    clang: -std=c++14
+    icc: -std=c++14
+    vs: ''
+c++1z:
+    desc: enable C++1z mode
+    gcc: -std=c++1z
+    clang: -std=c++1z
+    icc: -std=c++1z
+    vs: ''
+thread:
+    desc: enable threads
+    gcc: -pthread
+    clang: -pthread
+    icc: -pthread
+    vs: ''
+wall:
+    desc: enable full warnings
+    gcc: -Wall
+    clang: -Wall
+    icc: -Wall
+    vs: /Wall
+pedantic:
+    desc: compile in pedantic mode
+    gcc: -Wpedantic
+    clang: -Wpedantic
+    icc: -Wpedantic
+    vs: /W4
+strict_aliasing:
+    desc: enable strict aliasing
+    gcc: -fstrict-aliasing
+    clang: -fstrict-aliasing
+    icc: -fstrict-aliasing
+    vs: ''
+no_strict_aliasing:
+    desc: disable strict aliasing
+    gcc: -fno-strict-aliasing
+    clang: -fno-strict-aliasing
+    icc: -fno-strict-aliasing
+    vs: ''
+fast_math:
+    desc: enable fast math http://stackoverflow.com/a/22135559
+    gcc: -ffast-math
+    clang: -ffast-math
+    icc: -ffast-math
+    vs: /fp:fast /Qfast_transcendentals
+no_rtti:
+    desc: disable run-time type information
+    gcc: -fno-rtti
+    clang: -fno-rtti
+    icc: -fno-rtti
+    vs: /GR-
+no_exceptions:
+    desc: disable exceptions
+    gcc: -fno-exceptions
+    clang: -fno-exceptions
+    icc: -fno-exceptions
+    vs: /EHsc-
+no_stdlib:
+    desc: disable standard library
+    gcc: -fnostdlib
+    clang: -fnostdlib
+    icc: -fnostdlib
+    vs: /NODEFAULTLIB
+static_stdlib:
+    desc: link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas
+    gcc: -static-libstdc++ -static-libgcc
+    clang: -static-libstdc++ -static-libgcc
+    icc: -static-libstdc++ -static-libgcc
+    vs: /MD
+lto:
+    desc: enable whole program optimization
+    gcc: -flto
+    clang: -flto
+    icc: -flto
+    vs: /GL
+g:
+    desc: add debug information
+    gcc: -g
+    clang: -g
+    icc: -g
+    vs: /Zi
+g3:
+    desc: add full debug information
+    gcc: -g3
+    clang: -g3
+    icc: -g3
+    vs: /Zi
+no_bufsec:
+    desc: disable buffer security checks
+    gcc: ''
+    clang: ''
+    icc: ''
+    vs: /GS-
+O2:
+    desc: optimize level 2
+    gcc: -O2
+    clang: -O2
+    icc: -O2
+    vs: /O2
+O3:
+    desc: optimize level 3
+    gcc: -O3
+    clang: -O3
+    icc: -O3
+    vs: /Ox
+Os:
+    desc: optimize for size
+    gcc: -Os
+    clang: -Os
+    icc: -Os
+    vs: /Os
+Ofast:
+    desc: optimize for speed
+    gcc: -Ofast
+    clang: -Ofast
+    icc: -Ofast
+    vs: /Ot
+Onative:
+    desc: optimize for native architecture
+    gcc: -march=native
+    clang: -march=native
+    icc: -march=native
+    vs: ''
+sse:
+    desc: enable SSE instructions
+    gcc: -msse
+    clang: -msse
+    icc: -msse
+    vs: /arch:sse
+sse2:
+    desc: enable SSE2 instructions
+    gcc: -msse2
+    clang: -msse2
+    icc: -msse2
+    vs: /arch:sse2
+avx:
+    desc: enable AVX instructions
+    gcc: -mavx
+    clang: -mavx
+    icc: -mavx
+    vs: /arch:avx
+avx2:
+    desc: enable AVX2 instructions
+    gcc: -mavx2
+    clang: -mavx2
+    icc: -mavx2
+    vs: /arch:avx2
