@@ -87,13 +87,15 @@ def add_flag_opts(parser):
                    help="""Add CMake cache variables to all builds.
                    Multiple invokations of -K are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list.
+                   Can also be given as a comma-separated list, including in
+                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-D", "--defines", default=[], action=FlagArgument,
                    help="""add a preprocessor symbol definition to all builds.
                    Multiple invokations of -D are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list.
+                   Can also be given as a comma-separated list, including in
+                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-X", "--cxxflags", default=[], action=FlagArgument,
                    help="""add C++ compiler flags applying to all builds.
@@ -104,7 +106,8 @@ def add_flag_opts(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list.
+                   Can also be given as a comma-separated list, including in
+                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-C", "--cflags", default=[], action=FlagArgument,
                    help="""add C compiler flags applying to all builds.
@@ -115,7 +118,8 @@ def add_flag_opts(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list.
+                   Can also be given as a comma-separated list, including in
+                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("--flags-file", default=['cmany_flags.yml'], action="append",
                    help="""Specify a file containing flag aliases. Relative
@@ -229,7 +233,7 @@ class selectcmd(projcmd):
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        Defaults to \"%(default)s\".""")
         g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                       default=[], type=cslist,
+                       default=[], action=FlagArgument,
                        help="""(WIP) restrict actions to the given variants.
                        Provide as a comma-separated list. To escape commas, use a backslash \\.
                        This feature is currently a work-in-progress.""")
@@ -243,6 +247,10 @@ class configure(selectcmd):
 
 class build(selectcmd):
     '''build the selected builds, configuring before if necessary'''
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', default=[], nargs='*',
+                            help="""specify a subset of targets to build""")
     def _exec(self, proj, args):
         proj.build()
 
@@ -466,6 +474,13 @@ create_help_topic(
     title="Preset compiler flag aliases",
     doc="help on compiler flag aliases",
     txt="""
+Specifying flags on the command line
+------------------------------------
+
+
+Built-in aliases
+----------------
+
 cmany provides built-in flag aliases to simplify working with different
 compilers at the same time (eg, gcc and Visual Studio). The last
 
@@ -473,10 +488,6 @@ Project-scope flag aliases
 --------------------------
 
 Save a flags aliases file named 'cmany_flags.yml'. Use the same format as
-
-Built-in aliases
-----------------
-
 
 
 """)

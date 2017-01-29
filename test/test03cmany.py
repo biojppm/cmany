@@ -118,7 +118,7 @@ def run_projs(testobj, args, check_fn=None):
     if numbuilds == 1:
         return
 
-    # run all combinations at once
+    # run all sys,arch,compiler,buildtype combinations at once
     bd = '.test/2--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
     id = '.test/2--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
     for p in projs:
@@ -135,7 +135,7 @@ def run_projs(testobj, args, check_fn=None):
                                        numbuilds=numbuilds)
                         check_fn(tb)
 
-    # run combinations individually
+    # run sys,arch,compiler,buildtype combinations individually
     for p in projs:
         with testobj.subTest(msg="run all combinations individually", proj=p.proj):
             for c in compiler_set:

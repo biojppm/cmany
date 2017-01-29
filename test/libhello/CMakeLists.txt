@@ -5,7 +5,11 @@ add_library(hello SHARED hello.hpp hello.cpp)
 add_library(hello_static STATIC hello.hpp hello.cpp)
 
 target_compile_definitions(hello PRIVATE HELLO_EXPORT)
-set_target_properties(hello_static PROPERTIES OUTPUT_NAME hello)
+if(WIN32)
+    set_target_properties(hello_static PROPERTIES OUTPUT_NAME hello_s)
+else()
+    set_target_properties(hello_static PROPERTIES OUTPUT_NAME hello)
+endif()
 
 set_target_properties(hello_static hello PROPERTIES
     PUBLIC_HEADER hello.hpp)
@@ -22,9 +26,8 @@ install(FILES hello.hpp DESTINATION include/hello)
 install(TARGETS hello hello_static
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib/static
+        ARCHIVE DESTINATION lib
         PUBLIC_HEADER DESTINATION include/hello)
-
 
 add_executable(test_hello main.cpp)
 target_link_libraries(test_hello hello)

@@ -414,38 +414,25 @@ class Generator(BuildItem):
             return ['make', '-j', str(self.num_jobs)] + targets
         else:
             bt = str(self.build.buildtype)
+            cmd = ['cmake', '--build', '.', '--config', bt]
             targets_safe = []
-            for t in targets:
-                targets_safe.append('--target')
-                targets_safe.append(t)
+            if len(targets) <= 1:
+                for t in targets:
+                    targets_safe.append('--target')
+                    targets_safe.append(t)
+            else:
+                msg = ("Building multiple targets with this generator is not implemented. "
+                       "cmake --build cannot handle multiple --target " +
+                       "invokations. A generator-specific command must be "
+                       "written to handle multiple targets with this "
+                       "generator " + '("{}")'.format(self.name))
+                raise Exception(msg)
             if self.is_msvc:
                 # if a target has a . in the name, it must be substituted for _
                 targets_safe = [re.sub(r'\.', r'_', t) for t in targets_safe]
-                cmd = (['cmake', '--build', '.', '--config', bt] + targets_safe +
+                cmd = (cmd + targets_safe +
                        ['--', '/maxcpucount:' + str(self.num_jobs)])
-                return cmd
-                # find the solution file name
-                #if not hasattr(self, "sln"):
-                #    sln_files = glob.glob("*.sln")
-                #    if len(sln_files) != 1:
-                #        raise Exception("there's more than one solution file in the project folder")
-                #    self.sln = sln_files[0]
-                #
-                #targets_safe = ['/project ' + t for t in targets_safe]
-                #cmd = [self.build.compiler.vs.devenv, self.sln,
-                #        '/Build',
-                #        str(self.build.buildtype),
-                #] + targets_safe
-                #return cmd
-                #
-                #return [self.build.compiler.vs.msbuild, self.sln,
-                #        '/target:' + ';'.join(targets_safe),
-                #        '/maxcpucount:' + str(self.num_jobs),
-                #        '/property:Configuration=' + str(self.build.buildtype),
-                #]
-            else:
-                return (['cmake', '--build', '.', '--config', bt] +
-                        ['--target ' + t for t in targets])
+            return cmd
 
     def install(self):
         bt = str(self.build.buildtype)
@@ -792,6 +779,7 @@ class ProjectConfig:
 
         self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
         self.num_jobs = kwargs.get('jobs')
+        self.targets = kwargs.get('target')
 
         flag_files = []
         for f in kwargs['flags_file']:
@@ -905,7 +893,9 @@ class ProjectConfig:
         self._execute(Build.configure, "Configure", silent=False, **restrict_to)
 
     def build(self, **restrict_to):
-        self._execute(Build.build, "Build", silent=False, **restrict_to)
+        def do_build(build):
+            build.build(self.targets)
+        self._execute(do_build, "Build", silent=False, **restrict_to)
 
     def clean(self, **restrict_to):
         self._execute(Build.clean, "Clean", silent=False, **restrict_to)
