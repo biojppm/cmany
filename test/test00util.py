@@ -11,11 +11,22 @@ from collections import OrderedDict as odict
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class Test00splitspaces(ut.TestCase):
+class Test00splitesc(ut.TestCase):
+    def test(self):
+        self.assertEqual(
+            util.splitesc('hello\,world,yet\,another', ','),
+            ['hello\,world', 'yet\,another'])
 
-    def t(self, input, output):
-        comp = util.splitspaces_quoted(input)
-        self.assertEqual(comp, output)
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test01splitesc_quoted(ut.TestCase):
+
+    def t(self, input, expected, split_char=' '):
+        with self.subTest(input=input):
+            output = util.splitesc_quoted(input, split_char)
+            self.assertEqual(output, expected)
 
     def _run(self, fn):
         fn('{} {}')
@@ -55,46 +66,54 @@ class Test00splitspaces(ut.TestCase):
         res = lhs.split(' ') + rhs.split(' ')
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), res))
 
+
     def test10_multiletters_quoted(self):
         lhs = '"a c d e f g h"'
         rhs = '"b c d e f g h"'
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), [lhs, rhs]))
+        self.t('"a b c" "d e f" "g h i"', ['"a b c"', '"d e f"', '"g h i"'], ' ')
+        self.t('"a,b,c","d,e,f","g,h,i"', ['"a,b,c"', '"d,e,f"', '"g,h,i"'], ',')
+        self.t('abc,def,ghi', ['abc', 'def', 'ghi'], ',')
+        self.t('abc, def, ghi', ['abc', ' def', ' ghi'], ',')
+        self.t('abc ,def ,ghi', ['abc ', 'def ', 'ghi'], ',')
+        self.t('abc , def , ghi', ['abc ', ' def ', ' ghi'], ',')
 
     def test11_multiletters_quoted_escaped(self):
         lhs = '"a\\" \\"c\\" \\"d\\" \\"e\\" \\"f\\" \\"g\\" \\"h"'
         rhs = '"b\\" \\"c\\" \\"d\\" \\"e\\" \\"f\\" \\"g\\" \\"h"'
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), [lhs, rhs]))
+        self.t('abc\\ def\\ ghi', ['abc\\ def\\ ghi'], ' ')
+        self.t('abc\\,def\\,ghi', ['abc\\,def\\,ghi'], ',')
+        self.t('abc\\ def\\ ghi abc\\ def\\ ghi', ['abc\\ def\\ ghi', 'abc\\ def\\ ghi'], ' ')
+        self.t('abc\\,def\\,ghi,abc\\,def\\,ghi', ['abc\\,def\\,ghi', 'abc\\,def\\,ghi'], ',')
 
-    def test20_varspecs0(self):
+
+    def test30_varspecs0(self):
         self.t('-X "-fPIC" -D VARIANT1', ['-X', '"-fPIC"', '-D', 'VARIANT1'])
         self.t('-X "-Wall" -D VARIANT2', ['-X', '"-Wall"', '-D', 'VARIANT2'])
         self.t('-X nortti,c++14 -D VARIANT3', ['-X', 'nortti,c++14', '-D', 'VARIANT3'])
 
-    def test21_varspecs1(self):
+    def test31_varspecs1(self):
         self.t('-X "-fPIC" -D VARIANT1,VARIANT_TYPE=1', ['-X', '"-fPIC"', '-D', 'VARIANT1,VARIANT_TYPE=1'])
         self.t('-X "-Wall" -D VARIANT2,VARIANT_TYPE=2', ['-X', '"-Wall"', '-D', 'VARIANT2,VARIANT_TYPE=2'])
         self.t('-X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3', ['-X', 'nortti,c++14', '-D', 'VARIANT3,VARIANT_TYPE=3'])
 
-    def test22_varspecs2(self):
+    def test32_varspecs2(self):
         self.t('-X "-fPIC" -D VARIANT1,"VARIANT_TYPE=1"', ['-X', '"-fPIC"', '-D', 'VARIANT1,"VARIANT_TYPE=1"'])
         self.t('-X "-Wall" -D VARIANT2,"VARIANT_TYPE=2"', ['-X', '"-Wall"', '-D', 'VARIANT2,"VARIANT_TYPE=2"'])
         self.t('-X nortti,c++14 -D VARIANT3,"VARIANT_TYPE=3"', ['-X', 'nortti,c++14', '-D', 'VARIANT3,"VARIANT_TYPE=3"'])
 
-    def test23_varspecs3(self):
+    def test33_varspecs3(self):
         self.t('-X "-fPIC" -D "VARIANT1,VARIANT_TYPE=1"', ['-X', '"-fPIC"', '-D', '"VARIANT1,VARIANT_TYPE=1"'])
         self.t('-X "-Wall" -D "VARIANT2,VARIANT_TYPE=2"', ['-X', '"-Wall"', '-D', '"VARIANT2,VARIANT_TYPE=2"'])
         self.t('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', ['-X', 'nortti,c++14', '-D', '"VARIANT3,VARIANT_TYPE=3"'])
 
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-class Test01splitesc(ut.TestCase):
-
-    def test(self):
-        self.assertEqual(
-            util.splitesc('hello\,world,yet\,another', ','),
-            ['hello\,world', 'yet\,another'])
+    def test40_multiple_varspecs0(self):
+        self.t('"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG",'+
+               '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"',
+               ['"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG"',
+                '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"'], ',')
 
 
 # -----------------------------------------------------------------------------

@@ -85,29 +85,29 @@ def in_32bit():
     # return (struct.calcsize('P') * 8) == 32
 
 
-def splitspaces_quoted(string):
-    """split a string at spaces, but respect (and preserve) quotes/
-    double-quotes, including escaped quotes/double-quotes between
-    enclosing ones."""
+def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
+    """split a string at split_char, but respect (and preserve) all the
+    characters inside a quote_chars pair (including escaped quote_chars).
+    split_char can also be escaped when outside of a quote_chars pair"""
     out = []
     begin = 0
     i = 0
     l = len(string)
     prev = 0
     while i < l:
+        is_escaped = (i > 0 and string[i - 1] == escape_char)
         c = string[i]
         # consume at once everything between quotes
-        if c == '"' or c == "'":
+        if c in quote_chars:
             j = i+1  # start counting only on the next position
             closes_quotes = False
             while j < l:
                 d = string[j]
-                if d == c:  # found the matching quote
-                    if j > 0:
-                        if string[j-1] != '\\':  # ... unless it was escaped
-                            j += 1
-                            closes_quotes = True
-                            break
+                is_escaped_j = (j > 0 and string[j - 1] == escape_char)
+                if d == c and not is_escaped_j:  # found the matching quote
+                    j += 1
+                    closes_quotes = True
+                    break
                 j += 1
             # but defend against unbalanced quotes,
             # treating them as regular characters
@@ -119,8 +119,8 @@ def splitspaces_quoted(string):
                     out.append(s)
                 prev = j+1
                 i = prev
-        # when a space is found, append to the list
-        elif c == ' ':
+        # when a split_char is found, append to the list
+        elif c == split_char and not is_escaped:
             if i > 0 and i < l and i > prev:
                 s = string[prev:i]
                 if s:
@@ -130,12 +130,12 @@ def splitspaces_quoted(string):
         # this is a regular character, just go on scanning
         else:
             i += 1
+    # if there are still unread characters, append them as well
     if prev < l:
         s = string[prev:l]
         if s:
             out.append(s)
     return out
-
 
 
 def splitesc(string, split_char, escape_char=r'\\'):
