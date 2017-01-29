@@ -8,6 +8,24 @@ import platform
 import collections
 import copy
 
+import colorama #from colorama import Fore, Back, Style, init
+colorama.init()
+
+def logdone(*args, **kwargs):
+    push = colorama.Fore.GREEN + colorama.Back.WHITE + colorama.Style.BRIGHT
+    pop = colorama.Style.RESET_ALL
+    print(push, *args, pop, **kwargs)
+
+def logwarn(*args, **kwargs):
+    push = colorama.Fore.YELLOW + colorama.Back.WHITE + colorama.Style.BRIGHT
+    pop = colorama.Style.RESET_ALL
+    print(push, *args, pop, **kwargs)
+
+def logerr(*args, **kwargs):
+    push = colorama.Fore.RED + colorama.Back.WHITE + colorama.Style.BRIGHT
+    pop = colorama.Style.RESET_ALL
+    print(push, *args, pop, **kwargs)
+
 
 def sys_str():
     if sys.platform == "linux" or sys.platform == "linux2":
