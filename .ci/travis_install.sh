@@ -51,7 +51,7 @@ which $PYTHON
 which $PIP
 $PYTHON -V
 $PIP -V
-$PIP install requirements.txt .
+$PIP install -r requirements.txt .
 $PIP install -r requirements_test.txt .
 
 exit 0
