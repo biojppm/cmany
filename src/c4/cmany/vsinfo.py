@@ -40,12 +40,6 @@ class VisualStudioInfo:
         else:
             self.is_clang = False
 
-    def cmd(self, cmd_args, *runsyscmd_args):
-        if isinstance(cmd_args, list):
-            cmd_args = " ".join(cmd_args)
-        cmd_args = self.vcvarsall + "; " + cmd_args
-        return runsyscmd(cmd_args, *runsyscmd_args)
-
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
