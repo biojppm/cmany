@@ -5,6 +5,8 @@ import os
 import sys
 import glob
 import argparse
+import copy
+from itertools import combinations
 
 import c4.cmany.util as util
 import c4.cmany.main as main
@@ -16,7 +18,17 @@ maincmd = [sys.executable, '-m', 'c4.cmany.main']
 projdir = os.path.dirname(__file__)
 compiler_set = os.environ.get('CMANY_TEST_COMPILERS', None)
 build_types = os.environ.get('CMANY_TEST_BUILDTYPES', 'Debug,Release')
-test_projs = os.environ.get('CMANY_TEST_PROJS', 'hello')
+test_projs = os.environ.get('CMANY_TEST_PROJS', 'hello,libhello')
+proj_targets = {
+    'hello':{
+        'lib':[],
+        'exe':['hello'],
+    },
+    'libhello':{
+        'lib':['hello','hello_static'],
+        'exe':['test_hello','test_hello_static'],
+    },
+}
 
 
 # -----------------------------------------------------------------------------
@@ -26,9 +38,21 @@ class CMakeTestProj:
 
     def __init__(self, proj):
         self.proj = proj
-        self.root = os.path.join(projdir, proj)
+        self.root = util.chkf(projdir, proj)
+        if proj_targets.get(proj) is None:
+            raise Exception("no target info for project " + proj)
+        self.libs = proj_targets[proj]['lib']
+        self.exes = proj_targets[proj]['exe']
+        self.targets = self.libs + self.exes
+        self.multi_target = (len(self.targets) > 1)
+        # http://stackoverflow.com/questions/17176887/python-get-all-permutation-of-a-list-w-o-repetitions
+        self.target_combinations = []
+        for i in range(1, len(self.targets) + 1):
+            self.target_combinations += list(combinations(self.targets, i))
+        print(self.target_combinations)
 
-    def _run(self, args, custom_root=None):
+    def run(self, args_, custom_root=None):
+        args = copy.deepcopy(args_)
         root = self.root
         if custom_root is not None:
             with util.setcwd(self.root):
@@ -37,9 +61,11 @@ class CMakeTestProj:
                     os.makedirs(root)
                 projdir = os.path.abspath('.')
                 args.append(projdir)
-        with util.setcwd(root, False):
+        with util.setcwd(root):
             args = maincmd + args
+            #print("----->run():", self.proj, "at", os.getcwd(), " ".join(args))
             util.runsyscmd(args)
+            #print("----->finished run():", self.proj, "at", os.getcwd(), " ".join(args))
 
 
 # -----------------------------------------------------------------------------
@@ -63,62 +89,68 @@ build_types = [cmany.BuildType(b) for b in util.splitesc(build_types, ',')]
 # -----------------------------------------------------------------------------
 def run_projs(testobj, args, check_fn=None):
     numbuilds = len(compiler_set) * len(build_types)
+
+    # run with default parameters
+    bd = '.test/0--default--build'
+    id = '.test/0--default--install'
     for p in projs:
+        with testobj.subTest(msg="default parameters", proj=p.proj):
+            p.run(args + ['--build-dir', bd, '--install-dir', id])
+            if check_fn:
+                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                               compiler=cmany.Compiler.default(),
+                               buildtype=cmany.BuildType.default(),
+                               numbuilds=1)
+                check_fn(tb)
 
-        # run with default parameters
-        bd = '.test/0--default--build'
-        id = '.test/0--default--install'
-        p._run(args + ['--build-dir', bd,
-                       '--install-dir', id])
-        if check_fn:
-            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                           compiler=cmany.Compiler.default(),
-                           buildtype=cmany.BuildType.default(),
-                           numbuilds=1)
-            check_fn(tb)
+    # run in a non root dir
+    rd = '.test/1--non_root_dir'
+    for p in projs:
+        with testobj.subTest(msg="run in a non root dir", proj=p.proj):
+            p.run(args, custom_root=rd)
+            if check_fn:
+                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                               compiler=cmany.Compiler.default(),
+                               buildtype=cmany.BuildType.default(),
+                               numbuilds=1)
+                check_fn(tb)
 
-        # run in a non root dir
-        rd = '.test/1--non_root_dir'
-        p._run(args, custom_root=rd)
-        if check_fn:
-            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                           compiler=cmany.Compiler.default(),
-                           buildtype=cmany.BuildType.default(),
-                           numbuilds=1)
-            check_fn(tb)
+    if numbuilds == 1:
+        return
 
-        if numbuilds == 1:
-            continue
+    # run all combinations at once
+    bd = '.test/2--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
+    id = '.test/2--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
+    for p in projs:
+        with testobj.subTest(msg="run all combinations at once", proj=p.proj):
+            p.run(args + ['--build-dir', bd,
+                           '--install-dir', id,
+                           '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
+                           '-t', ','.join([str(b) for b in build_types])])
+            if check_fn:
+                for c in compiler_set:
+                    for t in build_types:
+                        tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                       compiler=c, buildtype=t,
+                                       numbuilds=numbuilds)
+                        check_fn(tb)
 
-        # run all combinations at once
-        bd = '.test/2--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
-        id = '.test/2--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
-        p._run(args + ['--build-dir', bd,
-                       '--install-dir', id,
-                       '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
-                       '-t', ','.join([str(b) for b in build_types])])
-        if check_fn:
+    # run combinations individually
+    for p in projs:
+        with testobj.subTest(msg="run all combinations individually", proj=p.proj):
             for c in compiler_set:
                 for t in build_types:
-                    tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                   compiler=c, buildtype=t,
-                                   numbuilds=numbuilds)
-                    check_fn(tb)
-
-        # run combinations individually
-        for c in compiler_set:
-            for t in build_types:
-                bd = '.test/3--{}--{}--build'.format(c, t)
-                id = '.test/3--{}--{}--install'.format(c, t)
-                p._run(args + ['--build-dir', bd,
-                         '--install-dir', id,
-                         '-c', c.name if c.is_msvc else c.path,
-                         '-t', str(t)])
-                if check_fn:
-                    tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                   compiler=c, buildtype=t,
-                                   numbuilds=1)
-                    check_fn(tb)
+                    bd = '.test/3--{}--{}--build'.format(c, t)
+                    id = '.test/3--{}--{}--install'.format(c, t)
+                    p.run(args + ['--build-dir', bd,
+                             '--install-dir', id,
+                             '-c', c.name if c.is_msvc else c.path,
+                             '-t', str(t)])
+                    if check_fn:
+                        tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                       compiler=c, buildtype=t,
+                                       numbuilds=1)
+                        check_fn(tb)
 
 
 
@@ -170,22 +202,22 @@ class TestBuild:
 class Test00Help(ut.TestCase):
 
     def test00_mh(self):
-        projs[0]._run(['-h'])
+        projs[0].run(['-h'])
 
     def test01_mmhelp(self):
-        projs[0]._run(['--help'])
+        projs[0].run(['--help'])
 
     def test02_cmd_mhelp(self):
         for c, aliases in main.cmds.items():
             if c == 'help':
                 continue
-            projs[0]._run([c, '-h'])
+            projs[0].run([c, '-h'])
 
     def test03_cmd_mmhelp(self):
         for c, aliases in main.cmds.items():
             if c == 'help':
                 continue
-            projs[0]._run([c, '--help'])
+            projs[0].run([c, '--help'])
 
 
 # -----------------------------------------------------------------------------
