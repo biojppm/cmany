@@ -19,7 +19,7 @@ cmds = odict([
     ('install', ['i']),
     ('create_vs', []),
     ('create_conf', []),
-    ('showvars', []),
+    ('show_vars', []),
 ])
 
 
@@ -253,7 +253,7 @@ class install(selectcmd):
         proj.install()
 
 
-class showvars(selectcmd):
+class show_vars(selectcmd):
     '''show the value of certain CMake cache vars'''
     def add_args(self, parser):
         super().add_args(parser)
@@ -264,8 +264,7 @@ class showvars(selectcmd):
 
 
 class create_conf(selectcmd):
-    '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
-    outlining the project builds
+    '''create cmany.yml alongside CMakeLists.txt to hold project-settings
     '''
     def _exec(self, proj, args):
         raise Exception("not implemented")
@@ -275,7 +274,6 @@ class create_vs(selectcmd):
     '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
     outlining the project builds
     '''
-
     def _exec(self, proj, args):
         proj.create_projfile()
 
