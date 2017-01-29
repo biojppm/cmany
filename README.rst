@@ -177,6 +177,11 @@ of the following can be used::
     $ cmany build --help
 
 
+License
+-------
+
+This project is licensed under the MIT license.
+
 Status
 ------
 
@@ -200,9 +205,4 @@ Support
 -------
 
 Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
-
-License
--------
-
-This project is licensed under the MIT license.
 

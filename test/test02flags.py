@@ -172,7 +172,8 @@ def tc(name, comps, flags, **kwargs):
     return d_
 
 def d(*args):
-    return odict([*args])
+    l = list(args)
+    return odict(l)
 
 def f(name, *args, **kwargs):
     return name, flags.CFlag(name, *args, **kwargs)

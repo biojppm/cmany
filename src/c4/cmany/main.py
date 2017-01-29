@@ -17,7 +17,8 @@ cmds = odict([
     ('configure', ['c']),
     ('build', ['b']),
     ('install', ['i']),
-    ('create', []),
+    ('create_vs', []),
+    ('create_conf', []),
     ('showvars', []),
 ])
 
@@ -252,14 +253,6 @@ class install(selectcmd):
         proj.install()
 
 
-"""
-class create(selectcmd):
-    '''create a CMakeSettings.json file with the given combination of build parameters'''
-    def _exec(self, proj, args):
-        print("creating", os.path.join(proj.rootdir, "CMakeSettings.json"))
-"""
-
-
 class showvars(selectcmd):
     '''show the value of certain CMake cache vars'''
     def add_args(self, parser):
@@ -270,10 +263,19 @@ class showvars(selectcmd):
         proj.showvars(args.var_names)
 
 
-class create(selectcmd):
+class create_conf(selectcmd):
     '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
     outlining the project builds
     '''
+    def _exec(self, proj, args):
+        raise Exception("not implemented")
+
+
+class create_vs(selectcmd):
+    '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
+    outlining the project builds
+    '''
+
     def _exec(self, proj, args):
         proj.create_projfile()
 
@@ -474,8 +476,10 @@ Project-scope flag aliases
 
 Save a flags aliases file named 'cmany_flags.yml'. Use the same format as
 
-List of built-in aliases
-------------------------
+Built-in aliases
+----------------
+
+
 
 """)
 

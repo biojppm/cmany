@@ -9,6 +9,7 @@ __cmake_systeminformation
 *.bck
 *.bak
 .idea
+.vs
 
 # Python files
 *.pyc
