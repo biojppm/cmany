@@ -1,10 +1,9 @@
 echo on
 
-set cwd=%cd%
-echo Running in directory %cd%
+set root=%0\..\..
+echo root is %root%
 
-set PYTHONPATH=%cwd%\src
-
-%PYTHON%\python.exe -m nose -d -v --with-id --nocapture
+set PYTHON=%PYTHON%\python.exe
+call %root%\test\run.bat
 
 exit /b %ERRORLEVEL%

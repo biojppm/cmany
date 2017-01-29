@@ -13,8 +13,7 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
 fi
 
-cwd=$(cd $(dirname $0) ; pwd)
-export PYTHONPATH=$cwd/src
-$PYTHON -m nose -d -v --with-id --nocapture
+sdir=$(cd $(dirname $0) ; pwd)
+$sdir/test/run.sh $*
 
 exit $?
