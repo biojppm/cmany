@@ -49,7 +49,6 @@ class CMakeTestProj:
         self.target_combinations = []
         for i in range(1, len(self.targets) + 1):
             self.target_combinations += list(combinations(self.targets, i))
-        print(self.target_combinations)
 
     def run(self, args_, custom_root=None):
         args = copy.deepcopy(args_)
@@ -317,7 +316,7 @@ class Test20Flags(ut.TestCase):
 
     def check_many(self, args, **ref):
         if isinstance(args, str):
-            args = util.splitspaces_quoted(args)
+            args = util.splitesc_quoted(args, ' ')
         p = argparse.ArgumentParser()
         main.add_flag_opts(p)
         out = p.parse_args(args)
@@ -366,48 +365,55 @@ class Test21VariantSpec(ut.TestCase):
         self.c('somevariant', v, cmake_vars=[], defines=[], cflags=[], cxxflags=['-fPIC'])
 
     def test02_norefs(self):
-        out = cmany.Variant.create([
-            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
-            'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2',
-            'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3',
-        ])
-        self.assertEquals(len(out), 3)
-        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall'])
-        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14'])
+        vars = ['\'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1\'',
+                '\'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2\'',
+                '\'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3\'',
+        ]
+        for w in (vars, ','.join(vars)):
+            out = cmany.Variant.create(w)
+            self.assertEquals(len(out), 3)
+            self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+            self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall'])
+            self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14'])
 
     def test10_refs_beginning(self):
-        out = cmany.Variant.create([
-            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
-            'var1: @var0 -X "-Wall" -D VARIANT2,VARIANT_TYPE=2',
-            'var2: @var1 -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3',
-        ])
-        self.assertEquals(len(out), 3)
-        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
-        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['-fPIC', '-Wall', 'nortti', 'c++14'])
+        vars = [
+            '\'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1\'',
+            '\'var1: @var0 -X "-Wall" -D VARIANT2,VARIANT_TYPE=2\'',
+            '\'var2: @var1 -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3\'',
+        ]
+        for w in (vars, ','.join(vars)):
+            out = cmany.Variant.create(w)
+            self.assertEquals(len(out), 3)
+            self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+            self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
+            self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['-fPIC', '-Wall', 'nortti', 'c++14'])
 
     def test11_refs_middle(self):
-        out = cmany.Variant.create([
-            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
-            'var1: -X "-Wall" @var0 -D VARIANT2,VARIANT_TYPE=2',
-            'var2: -X nortti,c++14 @var1 -D VARIANT3,VARIANT_TYPE=3',
-        ])
-        self.assertEquals(len(out), 3)
-        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
-        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+        vars = [
+            '\'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1\'',
+            '\'var1: -X "-Wall" @var0 -D VARIANT2,VARIANT_TYPE=2\'',
+            '\'var2: -X nortti,c++14 @var1 -D VARIANT3,VARIANT_TYPE=3\'',
+        ]
+        for w in (vars, ','.join(vars)):
+            out = cmany.Variant.create(w)
+            self.assertEquals(len(out), 3)
+            self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+            self.c('var1', out[1], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+            self.c('var2', out[2], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT3', 'VARIANT_TYPE=3'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
 
     def test12_refs_end(self):
-        out = cmany.Variant.create([
-            'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1',
-            'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2 @var0',
-            'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3 @var1',
-        ])
-        self.assertEquals(len(out), 3)
-        self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
-        self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
-        self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
+        vars = [
+            '\'var0: -X "-fPIC" -D VARIANT1,VARIANT_TYPE=1\'',
+            '\'var1: -X "-Wall" -D VARIANT2,VARIANT_TYPE=2 @var0\'',
+            '\'var2: -X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3 @var1\'',
+        ]
+        for w in (vars, ','.join(vars)):
+            out = cmany.Variant.create(w)
+            self.assertEquals(len(out), 3)
+            self.c('var0', out[0], cmake_vars=[], defines=['VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
+            self.c('var1', out[1], cmake_vars=[], defines=['VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
+            self.c('var2', out[2], cmake_vars=[], defines=['VARIANT3', 'VARIANT_TYPE=3', 'VARIANT2', 'VARIANT_TYPE=2', 'VARIANT1', 'VARIANT_TYPE=1'], cflags=[], cxxflags=['nortti', 'c++14', '-Wall', '-fPIC'])
 
 
 

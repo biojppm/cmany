@@ -255,6 +255,8 @@ class Variant(BuildFlags):
 
     @staticmethod
     def create(spec_list):
+        if isinstance(spec_list, str):
+            spec_list = util.splitesc_quoted(spec_list, ',')
         variants = []
         for s in spec_list:
             v = Variant(s)
@@ -264,7 +266,9 @@ class Variant(BuildFlags):
         return variants
 
     def __init__(self, spec):
+        spec = util.unquote(spec)
         spl = spec.split(':')
+        self._refs_resolved = False
         if len(spl) == 1:
             name = spec
             super().__init__(name)
@@ -301,7 +305,6 @@ class Variant(BuildFlags):
         else:
             if rest:
                 self.specs.append(rest)
-        self._refs_resolved = False
 
     def resolve_refs(self, variants):
         if self._refs_resolved:
@@ -327,7 +330,7 @@ class Variant(BuildFlags):
             else:
                 parser = argparse.ArgumentParser()
                 main.add_flag_opts(parser)
-                ss = util.splitspaces_quoted(s)
+                ss = util.splitesc_quoted(s, ' ')
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
                 self.append(tmp, append_to_name=False)

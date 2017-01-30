@@ -85,8 +85,12 @@ def in_32bit():
     # return (struct.calcsize('P') * 8) == 32
 
 
+def is_quoted(s):
+    return (s[0] in "'\"" and s[-1] == s[0])
+
+
 def unquote(s):
-    if s[0] in "'\"" and s[-1] == s[0]:
+    if is_quoted(s):
         s = s[1:-1]
     return s
 

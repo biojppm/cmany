@@ -110,10 +110,9 @@ class Test01splitesc_quoted(ut.TestCase):
 
 
     def test40_multiple_varspecs0(self):
-        self.t('"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG",'+
-               '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"',
-               ['"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG"',
-                '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"'], ',')
+        var0 = '"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG"'
+        var1 = '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"'
+        self.t('{},{}'.format(var0, var1), [var0, var1], ',')
 
 
 # -----------------------------------------------------------------------------
