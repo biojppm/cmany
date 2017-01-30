@@ -4,6 +4,7 @@ import copy
 
 from . import conf
 
+
 def _getrealsn(compiler):
     if isinstance(compiler, str):
         return compiler
@@ -207,7 +208,7 @@ known_compilers = []
 known_flags = odict()
 
 def load_known_flags(additional_flag_files=[], read_defaults=True):
-    """reads first the package's known flags file, then the user's
+    """reads first the cmany's known flags file, then the user's
     known flags file, then the given flag files first to last.
     Flags given in latter files will prevail over those of earlier files."""
     import os.path

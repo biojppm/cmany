@@ -1,7 +1,8 @@
 echo on
 
-set root=%0\..\..
-echo root is %root%
+cd %0\..\..
+set root=%cd%
+cd test
 
 set PYTHON=%PYTHON%\python.exe
 call %root%\test\run.bat

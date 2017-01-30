@@ -1,9 +1,10 @@
 echo on
 
-set rdir=%0\..
-echo rdir %cd%
+cd %0\..\..
+set root=%cd%
+cd test
 
-set PYTHONPATH=%rdir%\src
+set PYTHONPATH=%root%\src
 
 if not defined PYTHON set PYTHON=python3
 if "%PYTHON%" == "" set PYTHON=python3

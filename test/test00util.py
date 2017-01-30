@@ -48,26 +48,26 @@ class Test01splitesc_quoted(ut.TestCase):
         rhs = 'b'
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), [lhs, rhs]))
 
-    def test02_multiletters(self):
+    def test02_multi_letters(self):
         lhs = 'a c d e f g h'
         rhs = 'b c d e f g h'
         res = lhs.split(' ') + rhs.split(' ')
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), res))
 
-    def test03_multiletters_quote_at_begin_not_at_end(self):
+    def test03_multi_letters_quote_at_begin_not_at_end(self):
         lhs = '"a c d e f g h'
         rhs = 'b c d e f g h'
         res = lhs.split(' ') + rhs.split(' ')
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), res))
 
-    def test04_multiletters_quote_at_end_not_at_begin(self):
+    def test04_multi_letters_quote_at_end_not_at_begin(self):
         lhs = 'a c d e f g h'
         rhs = 'b c d e f g h"'
         res = lhs.split(' ') + rhs.split(' ')
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), res))
 
 
-    def test10_multiletters_quoted(self):
+    def test10_multi_letters_quoted(self):
         lhs = '"a c d e f g h"'
         rhs = '"b c d e f g h"'
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), [lhs, rhs]))
@@ -78,7 +78,7 @@ class Test01splitesc_quoted(ut.TestCase):
         self.t('abc ,def ,ghi', ['abc ', 'def ', 'ghi'], ',')
         self.t('abc , def , ghi', ['abc ', ' def ', ' ghi'], ',')
 
-    def test11_multiletters_quoted_escaped(self):
+    def test11_multi_letters_quoted_escaped(self):
         lhs = '"a\\" \\"c\\" \\"d\\" \\"e\\" \\"f\\" \\"g\\" \\"h"'
         rhs = '"b\\" \\"c\\" \\"d\\" \\"e\\" \\"f\\" \\"g\\" \\"h"'
         self._run(lambda fmt: self.t(fmt.format(lhs, rhs), [lhs, rhs]))
@@ -118,7 +118,51 @@ class Test01splitesc_quoted(ut.TestCase):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class Test02nested_merge(ut.TestCase):
+class Test02is_quoted(ut.TestCase):
+
+    def test00simple(self):
+        t = lambda s, expected: self.assertEqual(util.is_quoted(s), expected, msg=s)
+        t('aasdasdasdasdasd', False)
+        t('aasdasda""dasdasd', False)
+        t('aasdasda''dasdasd', False)
+        t('"aasdasdasdasdasd"', True)
+        t("'aasdasdasdasdasd'", True)
+        t('"aasdasda,sdasdasd"', True)
+        t("'aasdasda,sdasdasd'", True)
+        t('"aasdasda","sdasdasd"', False)
+        t("'aasdasda','sdasdasd'", False)
+        t('"aasdasda","sdasdasd","sdasdasd","sdasdasd"', False)
+        t("'aasdasda','sdasdasd','aasdasda','sdasdasd'", False)
+        t("'aasdasda',sdasdasd,aasdasda,'sdasdasd'", False)
+
+    def test01nested(self):
+        t = lambda s, expected: self.assertEqual(util.is_quoted(s), expected, msg=s)
+        t("\'aasdasda,sdasdasd\'", True)
+        t("\\'aasdasda,sdasdasd\\'", False)
+        t('\'aasdasda,sdasdasd\'', True)
+        t('\\\'aasdasda,sdasdasd\\\'', False)
+        t("'aasdasda',\"sdasdasd\",'aasdasda',\"sdasdasd\"", False)
+        t("'aasdasda',\'sdasdasd\'", False)
+        #
+        t("\'aasdasda,sdasdasd\'", True)
+        t("\\'aasdasda,sdasdasd\\'", False)
+        #
+        t("'\'aasdasda\',\'sdasdasd\''", False)
+        t("'\\'aasdasda\\',\\'sdasdasd\\''", True)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test09nested_merge(ut.TestCase):
+
+    def test(self):
+        pass
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test09nested_merge(ut.TestCase):
 
     def test00reqs(self):
         import collections
