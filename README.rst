@@ -1,8 +1,10 @@
 
-.. image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
-    :target: https://travis-ci.org/biojppm/cmany
-.. image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
-    :target: https://ci.appveyor.com/project/biojppm/cmany
+============  ============
+Linux + OS X    Windows
+============  ============
+  |travis|     |appveyor|
+============  ============
+
 
 cmany
 =====
@@ -206,3 +208,8 @@ Support
 
 Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
 
+
+.. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
+    :target: https://travis-ci.org/biojppm/cmany
+.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
+    :target: https://ci.appveyor.com/project/biojppm/cmany
