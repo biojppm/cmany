@@ -1,21 +1,16 @@
 
-============  ============
-Linux + OS X    Windows
-============  ============
-  |travis|     |appveyor|
-============  ============
-
+=============  ============  ===========  ============
+Linux + OS X:    |travis|     Windows:     |appveyor|
+=============  ============  ===========  ============
 
 cmany
 =====
 
 Easily batch-build cmake projects!
 
-cmany is a command line tool and Python3 module to easily build several
-variations of a CMake C/C++ project. It combines different compilers, cmake
-build types, processor architectures (WIP), operating systems (also WIP), or
-compilation flags (WIP). cmany works and is continuously tested in Linux, Mac
-OS X and Windows.
+cmany is a command line tool to easily build variations of a CMake C/C++ project.
+It combines different compilers, cmake build types, compilation flags,
+processor architectures (WIP) and operating systems (also WIP).
 
 For example, to configure and build a project using clang++ and g++
 in both Debug and Release::
