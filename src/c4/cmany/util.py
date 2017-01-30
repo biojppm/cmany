@@ -11,22 +11,26 @@ import copy
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
 
+
+def color_log(style, *args, **kwargs):
+    print(style, sep='')
+    print(*args, **kwargs)
+    print(colorama.Style.RESET_ALL, sep='')
+
+
 def logdone(*args, **kwargs):
-    push = colorama.Fore.GREEN + colorama.Style.BRIGHT
-    pop = colorama.Style.RESET_ALL
-    print(push, *args, pop, **kwargs)
+    color_log(colorama.Fore.GREEN + colorama.Style.BRIGHT, *args, **kwargs)
+
 
 def logwarn(*args, **kwargs):
-    push = colorama.Fore.YELLOW + colorama.Style.BRIGHT
-    pop = colorama.Style.RESET_ALL
-    print(push, *args, pop, **kwargs)
+    color_log(colorama.Fore.YELLOW + colorama.Style.BRIGHT, *args, **kwargs)
+
 
 def logerr(*args, **kwargs):
-    push = colorama.Fore.RED + colorama.Style.BRIGHT
-    pop = colorama.Style.RESET_ALL
-    print(push, *args, pop, **kwargs)
+    color_log(colorama.Fore.RED + colorama.Style.BRIGHT, *args, **kwargs)
 
 
+#------------------------------------------------------------------------------
 def sys_str():
     if sys.platform == "linux" or sys.platform == "linux2":
         return "linux"
@@ -86,8 +90,26 @@ def in_32bit():
 
 
 def is_quoted(s):
-    if s is None or len(s) == 0: return False
-    return (s[0] in "'\"" and s[-1] == s[0])
+    if s is None or len(s) == 0:
+        return False
+    if not (s[0] in "'\"" and s[-1] == s[0]):
+        return False
+    # At this point we know the string starts and ends
+    # with matching quotes. But we don't know if the last quote
+    # closes the first one.
+    level = 0
+    open  = False
+    for i, c in enumerate(s):
+        is_escaped = i > 0 and s[i - 1] == '\\'
+        if c == s[0] and not is_escaped:
+            if open:
+                level -= 1
+                if level == 0 and i != (len(s) - 1):
+                    return False
+            else:
+                level += 1
+            open = not open
+    return (level == 0)
 
 
 def has_interior_quotes(s, sep=','):
