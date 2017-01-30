@@ -4,7 +4,7 @@
 
 int HELLO_API hello()
 {
-    auto s = (8 * sizeof(void*));
+    size_t s = (8 * sizeof(void*));
     std::cout << s << std::endl;
     return (int)s;
 }

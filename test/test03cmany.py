@@ -13,6 +13,7 @@ import c4.cmany.main as main
 import c4.cmany.cmany as cmany
 import c4.cmany.cmake as cmake
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 maincmd = [sys.executable, '-m', 'c4.cmany.main']
 
 projdir = os.path.dirname(__file__)
