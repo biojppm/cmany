@@ -13,6 +13,8 @@ from .cmake import CMakeSysInfo, CMakeCache, getcachevars
 from . import vsinfo
 from . import flags
 
+import argparse
+from . import args as c4args
 
 # -----------------------------------------------------------------------------
 class BuildItem:
@@ -233,7 +235,7 @@ class BuildFlags(BuildItem):
         self.cflags = flags.as_flags(self.cflags, compiler)
         self.cxxflags = flags.as_flags(self.cxxflags, compiler)
 
-    def append(self, other, append_to_name=True):
+    def append_flags(self, other, append_to_name=True):
         """other will take precedence, ie, their options will come last"""
         if append_to_name and other.name:
             self.name += '_' + other.name
@@ -266,15 +268,15 @@ class Variant(BuildFlags):
         return variants
 
     def __init__(self, spec):
+        self.specs = []
+        self.refs = []
+        self._refs_resolved = False
         spec = util.unquote(spec)
         spl = spec.split(':')
-        self._refs_resolved = False
         if len(spl) == 1:
             name = spec
             super().__init__(name)
             return
-        self.specs = []
-        self.refs = []
         name = spl[0]
         rest = spl[1]
         super().__init__(name)
@@ -309,8 +311,6 @@ class Variant(BuildFlags):
     def resolve_refs(self, variants):
         if self._refs_resolved:
             return
-        import argparse
-        from . import main
         def _find(name):
             for v in variants:
                 if v.name == name:
@@ -326,14 +326,14 @@ class Variant(BuildFlags):
                     raise Exception(msg.format(self.name, r.name))
                 if not r._refs_resolved:
                     r.resolve_refs(variants)
-                self.append(r, append_to_name=False)
+                self.append_flags(r, append_to_name=False)
             else:
                 parser = argparse.ArgumentParser()
-                main.add_flag_opts(parser)
+                c4args.add_cflags(parser)
                 ss = util.splitesc_quoted(s, ' ')
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
-                self.append(tmp, append_to_name=False)
+                self.append_flags(tmp, append_to_name=False)
         self._refs_resolved = True
 
 
@@ -551,7 +551,7 @@ class Build:
     def _cat(self, sep):
         s = "{1}{0}{2}{0}{3}{0}{4}"
         s = s.format(sep, self.system, self.architecture, self.compiler, self.buildtype)
-        if self.variant:
+        if self.variant and self.variant.name and self.variant.name != "none":
             s += "{0}{1}".format(sep, self.variant)
         return s
 
@@ -797,12 +797,16 @@ class ProjectConfig:
         #     self.parse_file(configfile)
         #     self.configfile = configfile
 
+        vars = kwargs.get('variants')
+        if not vars:
+            vars = ['none']
+
         _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
         self.systems = _get('systems', System)
         self.architectures = _get('architectures', Architecture)
         self.buildtypes = _get('build_types', BuildType)
         self.compilers = _get('compilers', Compiler)
-        self.variants = _get('variants', Variant)
+        self.variants = Variant.create(vars)
 
         self.builds = []
         for s in self.systems:
@@ -869,6 +873,7 @@ class ProjectConfig:
     def select(self, **kwargs):
         out = [b for b in self.builds]
         def _h(kw, attr):
+            global out
             g = kwargs.get(kw)
             if g is not None:
                 lo = []

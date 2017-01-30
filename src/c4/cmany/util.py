@@ -13,9 +13,9 @@ colorama.init()
 
 
 def color_log(style, *args, **kwargs):
-    print(style, sep='')
+    print(style, sep='', end='')
     print(*args, **kwargs)
-    print(colorama.Style.RESET_ALL, sep='')
+    print(colorama.Style.RESET_ALL, sep='', end='')
 
 
 def logdone(*args, **kwargs):
