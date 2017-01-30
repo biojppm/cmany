@@ -12,17 +12,17 @@ import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
 
 def logdone(*args, **kwargs):
-    push = colorama.Fore.GREEN + colorama.Back.WHITE + colorama.Style.BRIGHT
+    push = colorama.Fore.GREEN + colorama.Style.BRIGHT
     pop = colorama.Style.RESET_ALL
     print(push, *args, pop, **kwargs)
 
 def logwarn(*args, **kwargs):
-    push = colorama.Fore.YELLOW + colorama.Back.WHITE + colorama.Style.BRIGHT
+    push = colorama.Fore.YELLOW + colorama.Style.BRIGHT
     pop = colorama.Style.RESET_ALL
     print(push, *args, pop, **kwargs)
 
 def logerr(*args, **kwargs):
-    push = colorama.Fore.RED + colorama.Back.WHITE + colorama.Style.BRIGHT
+    push = colorama.Fore.RED + colorama.Style.BRIGHT
     pop = colorama.Style.RESET_ALL
     print(push, *args, pop, **kwargs)
 
@@ -86,7 +86,19 @@ def in_32bit():
 
 
 def is_quoted(s):
+    if s is None or len(s) == 0: return False
     return (s[0] in "'\"" and s[-1] == s[0])
+
+
+def has_interior_quotes(s, sep=','):
+    rxc = '["\']{}["\']'.format(sep)  # matches "," ',' ",' ',"
+    rxl = '["\']{}'.format(sep)       # matches ', ",
+    rxr = '{}["\']'.format(sep)       # matches ,' ,"
+    got_em = False
+    got_em = got_em and re.search(rxc, s)
+    got_em = got_em and re.search(rxl, s)
+    got_em = got_em and re.search(rxr, s)
+    return got_em
 
 
 def unquote(s):
