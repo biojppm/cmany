@@ -3,9 +3,11 @@
 import unittest as ut
 import tempfile
 import os
+import argparse
 from collections import OrderedDict as odict
 
-import c4.cmany.flags as flags
+
+from c4.cmany import flags, util, args as c4args
 
 
 #------------------------------------------------------------------------------
@@ -134,6 +136,130 @@ class Test04FlagsIO(ut.TestCase):
                 del fval, fvalh
                 os.remove(fn)
                 os.remove(fn_out)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test10Flags(ut.TestCase):
+
+    def test01_cmake_vars(self):
+        self._do_separate_test('-V', '--vars')
+
+    def test02_defines(self):
+        self._do_separate_test('-D', '--defines')
+
+    def test03_cxxflags(self):
+        self._do_separate_test('-X', '--cxxflags')
+
+    def test04_cflags(self):
+        self._do_separate_test('-C', '--cflags')
+
+    def _do_separate_test(self, shortopt, longopt):
+        n = longopt[2:]
+        for o in (shortopt, longopt):
+            def _c(a, r): self.check_one(n, o, a, r)
+
+            _c('{} VAR1', ['VAR1'])
+            _c('{} VAR2,VAR3', ['VAR2', 'VAR3'])
+            _c('{} VAR4 {} VAR5', ['VAR4', 'VAR5'])
+            _c('{} VAR6,VAR7 {} VAR8,VAR9', ['VAR6', 'VAR7', 'VAR8', 'VAR9'])
+            _c('{} VAR\,1', ['VAR,1'])
+            _c('{} VAR\,2,VAR\,3', ['VAR,2', 'VAR,3'])
+            _c('{} VAR\,4 {} VAR\,5', ['VAR,4', 'VAR,5'])
+            _c('{} VAR\,6,VAR\,7 {} VAR\,8,VAR\,9', ['VAR,6', 'VAR,7', 'VAR,8', 'VAR,9'])
+            _c('{} VAR1=1', ['VAR1=1'])
+            _c('{} VAR2=2,VAR3=3', ['VAR2=2', 'VAR3=3'])
+            _c('{} VAR4=4 {} VAR5=5', ['VAR4=4', 'VAR5=5'])
+            _c('{} VAR6=6,VAR7=7 {} VAR8=8,VAR9=9', ['VAR6=6', 'VAR7=7', 'VAR8=8', 'VAR9=9'])
+            _c('{} VAR1=1\,a', ['VAR1=1,a'])
+            _c('{} VAR2=2\,a,VAR3=3\,a', ['VAR2=2,a', 'VAR3=3,a'])
+            _c('{} VAR4=4\,a {} VAR5=5\,a', ['VAR4=4,a', 'VAR5=5,a'])
+            _c('{} VAR6=6\,a,VAR7=7\,a {} VAR8=8\,a,VAR9=9\,a',
+               ['VAR6=6,a', 'VAR7=7,a', 'VAR8=8,a', 'VAR9=9,a'])
+            _c(['{}', 'VAR1="1 with spaces"'], ['VAR1="1 with spaces"'])
+            _c(['{}', 'VAR2="2 with spaces",VAR3="3 with spaces"'],
+               ['VAR2="2 with spaces"', 'VAR3="3 with spaces"'])
+            _c(['{}', 'VAR4="4 with spaces"', '{}', 'VAR5="5 with spaces"'],
+               ['VAR4="4 with spaces"', 'VAR5="5 with spaces"'])
+            _c(['{}', 'VAR6="6 with spaces",VAR7="7 with spaces"', '{}',
+                'VAR8="8 with spaces",VAR9="9 with spaces"'],
+               ['VAR6="6 with spaces"', 'VAR7="7 with spaces"', 'VAR8="8 with spaces"',
+                'VAR9="9 with spaces"'])
+            _c(['{}', 'VAR1="1\,a with spaces"'], ['VAR1="1,a with spaces"'])
+            _c(['{}', 'VAR2="2\,a with spaces",VAR3="3\,a with spaces"'],
+               ['VAR2="2,a with spaces"', 'VAR3="3,a with spaces"'])
+            _c(['{}', 'VAR4="4\,a with spaces"', '{}', 'VAR5="5\,a with spaces"'],
+               ['VAR4="4,a with spaces"', 'VAR5="5,a with spaces"'])
+            _c(['{}', 'VAR6="6\,a with spaces",VAR7="7\,a with spaces"', '{}',
+                'VAR8="8\,a with spaces",VAR9="9\,a with spaces"'],
+               ['VAR6="6,a with spaces"', 'VAR7="7,a with spaces"', 'VAR8="8,a with spaces"',
+                'VAR9="9,a with spaces"'])
+            _c('{} "-fPIC,-Wall,-O3,-Os"', ['-fPIC', '-Wall', '-O3', '-Os'])
+            _c("{} '-fPIC,-Wall,-O3,-Os'", ['-fPIC', '-Wall', '-O3', '-Os'])
+            _c('{} "-fPIC","-Wall","-O3","-Os"', ['-fPIC', '-Wall', '-O3', '-Os'])
+            _c("{} '-fPIC','-Wall','-O3','-Os'", ['-fPIC', '-Wall', '-O3', '-Os'])
+
+    def check_one(self, name, opt, args, ref):
+        if isinstance(args, str):
+            args = args.split(' ')
+        args_ = args
+        args = []
+        for a in args_:
+            args.append(a.format(opt))
+        p = argparse.ArgumentParser()
+        c4args.add_cflags(p)
+        out = p.parse_args(args)
+        # print(out, kwargs)
+        a = getattr(out, name)
+        self.assertEqual(ref, a)
+        del out
+
+    def check_many(self, args, **ref):
+        if isinstance(args, str):
+            args = util.splitesc_quoted(args, ' ')
+        p = argparse.ArgumentParser()
+        c4args.add_cflags(p)
+        out = p.parse_args(args)
+        # print(out, kwargs)
+        for k, refval in ref.items():
+            result = getattr(out, k)
+            self.assertEqual(result, refval)
+        del out
+
+    def test10_mixed0(self):
+        self.check_many('-X "-fPIC" -D VARIANT1', vars=[], cxxflags=['-fPIC'], cflags=[],
+                        defines=['VARIANT1'])
+        self.check_many('-X "-Wall" -D VARIANT2', vars=[], cxxflags=['-Wall'], cflags=[],
+                        defines=['VARIANT2'])
+        self.check_many('-X nortti,c++14 -D VARIANT3', vars=[], cxxflags=['nortti', 'c++14'], cflags=[],
+                        defines=['VARIANT3'])
+        self.check_many('-X "-fPIC,-Wl\,-rpath" -D VARIANT1', vars=[], cxxflags=['-fPIC', '-Wl,-rpath'],
+                        cflags=[], defines=['VARIANT1'])
+
+    def test11_mixed1(self):
+        self.check_many('-X "-fPIC" -D VARIANT1,VARIANT_TYPE=1', vars=[], cxxflags=['-fPIC'], cflags=[],
+                        defines=['VARIANT1', 'VARIANT_TYPE=1'])
+        self.check_many('-X "-Wall" -D VARIANT2,VARIANT_TYPE=2', vars=[], cxxflags=['-Wall'], cflags=[],
+                        defines=['VARIANT2', 'VARIANT_TYPE=2'])
+        self.check_many('-X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3', vars=[], cxxflags=['nortti', 'c++14'],
+                        cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
+
+    def test12_mixed2(self):
+        self.check_many('-X "-fPIC" -D VARIANT1,"VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[],
+                        defines=['VARIANT1', 'VARIANT_TYPE=1'])
+        self.check_many('-X "-Wall" -D VARIANT2,"VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[],
+                        defines=['VARIANT2', 'VARIANT_TYPE=2'])
+        self.check_many('-X nortti,c++14 -D VARIANT3,"VARIANT_TYPE=3"', vars=[],
+                        cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
+
+    def test13_mixed3(self):
+        self.check_many('-X "-fPIC" -D "VARIANT1,VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[],
+                        defines=['VARIANT1', 'VARIANT_TYPE=1'])
+        self.check_many('-X "-Wall" -D "VARIANT2,VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[],
+                        defines=['VARIANT2', 'VARIANT_TYPE=2'])
+        self.check_many('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', vars=[],
+                        cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
 
 #------------------------------------------------------------------------------
