@@ -264,13 +264,13 @@ class Variant(BuildFlags):
             v = Variant(s)
             variants.append(v)
         for s in variants:
-            s.resolve_refs(variants)
+            s.resolve_all(variants)
         return variants
 
     def __init__(self, spec):
         self.specs = []
         self.refs = []
-        self._refs_resolved = False
+        self._resolved = False
         spec = util.unquote(spec)
         spl = spec.split(':')
         if len(spl) == 1:
@@ -280,36 +280,23 @@ class Variant(BuildFlags):
         name = spl[0]
         rest = spl[1]
         super().__init__(name)
-        rxref = r'@[a-zA-Z0-9_-]+' # the regexpr for a reference
-        if re.search(rxref, rest):
-            while re.search(rxref, rest) is not None:
-                # this is crappy... surely there's a better way to do this
-                rxleft = r'({}) (.*)'.format(rxref)
-                rxmid = r'(.*?) ({}) (.*)'.format(rxref)
-                rxright = r'(.*?) ({})'.format(rxref)
-                if re.search(rxmid, rest):
-                    lhs = re.sub(rxmid, r'\1', rest)
-                    ref = re.sub(rxmid, r'\2', rest)
-                    rhs = re.sub(rxmid, r'\3', rest)
-                elif re.search(rxleft, rest):
-                    lhs = ''
-                    ref = re.sub(rxleft, r'\1', rest)
-                    rhs = re.sub(rxleft, r'\2', rest)
-                elif re.search(rxright, rest):
-                    lhs = re.sub(rxright, r'\1', rest)
-                    ref = re.sub(rxright, r'\2', rest)
-                    rhs = ''
-                if lhs: self.specs.append(lhs)
-                self.specs.append(ref)
-                self.refs.append(ref[1:])
-                if rhs: self.specs.append(rhs)
-                rest = rhs
-        else:
-            if rest:
-                self.specs.append(rest)
+        spl = util.splitesc_quoted(rest, ' ')
+        curr = ""
+        for s in spl:
+            if s[0] != '@':
+                curr += " " + s
+            else:
+                self.refs.append(s[1:])
+                if curr:
+                    self.specs.append(curr)
+                    curr = ""
+                self.specs.append(s)
+        if curr:
+            self.specs.append(curr)
 
-    def resolve_refs(self, variants):
-        if self._refs_resolved:
+
+    def resolve_all(self, variants):
+        if self._resolved:
             return
         def _find(name):
             for v in variants:
@@ -324,8 +311,8 @@ class Variant(BuildFlags):
                 if self.name in r.refs:
                     msg = "circular reference found in variant definition: '{}'x'{}'"
                     raise Exception(msg.format(self.name, r.name))
-                if not r._refs_resolved:
-                    r.resolve_refs(variants)
+                if not r._resolved:
+                    r.resolve_all(variants)
                 self.append_flags(r, append_to_name=False)
             else:
                 parser = argparse.ArgumentParser()
@@ -334,7 +321,7 @@ class Variant(BuildFlags):
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
                 self.append_flags(tmp, append_to_name=False)
-        self._refs_resolved = True
+        self._resolved = True
 
 
 # -----------------------------------------------------------------------------
