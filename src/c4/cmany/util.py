@@ -113,13 +113,14 @@ def is_quoted(s):
 
 
 def has_interior_quotes(s, sep=','):
-    rxc = '["\']{}["\']'.format(sep)  # matches "," ',' ",' ',"
-    rxl = '["\']{}'.format(sep)       # matches ', ",
-    rxr = '{}["\']'.format(sep)       # matches ,' ,"
+    q = '[{}{}]'.format('"', "'")
+    rxc = '{}{}{}'.format(q, sep, q)  # matches "," ',' ",' ',"
+    rxl = '{}{}'.format(q, sep)       # matches ', ",
+    rxr = '{}{}'.format(sep, q)       # matches ,' ,"
     got_em = False
-    got_em = got_em and re.search(rxc, s)
-    got_em = got_em and re.search(rxl, s)
-    got_em = got_em and re.search(rxr, s)
+    got_em = got_em or (re.search(rxc, s) is not None)
+    got_em = got_em or (re.search(rxl, s) is not None)
+    got_em = got_em or (re.search(rxr, s) is not None)
     return got_em
 
 
@@ -199,6 +200,22 @@ def cslist(arg):
         elm = re.sub(r'\\,', r',', elm)
         l.append(elm)
     return l
+
+
+def intersperse_l(delimiter, iterable):
+    """put the delimiter on the left of every element of iterable"""
+    it = iter(iterable)
+    for x in it:
+        yield delimiter
+        yield x
+
+
+def intersperse_r(delimiter, iterable):
+    """put the delimiter on the right of every element of iterable"""
+    it = iter(iterable)
+    for x in it:
+        yield x
+        yield delimiter
 
 
 def chkf(*args):

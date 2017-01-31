@@ -150,14 +150,54 @@ class Test02is_quoted(ut.TestCase):
         t("'\'aasdasda\',\'sdasdasd\''", False)
         t("'\\'aasdasda\\',\\'sdasdasd\\''", True)
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class Test09nested_merge(ut.TestCase):
+class Test04has_interior_quotes(ut.TestCase):
 
     def test(self):
-        pass
+        t = lambda s, expected: self.assertEqual(util.has_interior_quotes(s), expected, msg=s)
+        t('aaaaaa,bbbbbbb', False)
+        t('"aaaaaa,bbbbbb"', False)
+        t('aaaaaa,"bbbbbb"', True)
+        t('"aaaaaa",bbbbbb', True)
+        t('aaaaaa",bbbbbb', True)
+        t('aaaaaa,"bbbbbb', True)
+        t("none,'xdebug: --cxxflags g3'", True)
+        t('none,"xdebug: --cxxflags g3"', True)
+        t("none,\"xdebug: --cxxflags g3\"", True)
+        t('none,\'xdebug: --cxxflags g3\'', True)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test05intersperse(ut.TestCase):
+
+    def test_left(self):
+        def t(li):
+            expected = []
+            for l in li:
+                expected += ['delim', l]
+            output = list(util.intersperse_l('delim', li))
+            with self.subTest(input=li, version='left'):
+                self.assertEqual(output, expected)
+        t([0, 1, 2])
+        t([2, 1, 0])
+
+
+    def test_right(self):
+        def t(li):
+            expected = []
+            for l in li:
+                expected += [l, 'delim']
+            output = list(util.intersperse_r('delim', li))
+            with self.subTest(input=li, version='right'):
+                self.assertEqual(output, expected)
+
+        t([0, 1, 2])
+        t([2, 1, 0])
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -197,10 +237,10 @@ class Test09nested_merge(ut.TestCase):
         a = self.nested(cls, 'c')
         b = cls()
         return 'nested_after+empty=nested_after', a, b, a, a
-    def tc3(self, cls):
+    def tc4(self, cls):
         a = self.nested(cls, '0')
         b = cls()
-        return 'nested_before+empty=nested', a, b, a, a
+        return 'nested_before+empty=nested_before', a, b, a, a
 
     def flat(self, cls):
         return self.someval(cls)
