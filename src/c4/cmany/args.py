@@ -186,8 +186,6 @@ class VariantArgument(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
-        util.logwarn("input: ", li, " + ===" + values + "===")
         vli = cmany.Variant.parse_specs(values)
         li += vli
-        util.logerr("result:", li)
         setattr(namespace, self.dest, li)

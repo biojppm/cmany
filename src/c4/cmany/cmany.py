@@ -263,7 +263,6 @@ class Variant(BuildFlags):
         for s in spec_list:
             v = Variant(s)
             variants.append(v)
-        util.logwarn(len(variants), "variants:", variants)
         for s in variants:
             s.resolve_all(variants)
         return variants
@@ -341,7 +340,6 @@ class Variant(BuildFlags):
         vli = ['']
         rest = str(v)
         while True:
-            util.logwarn("rest=", rest)
             # ... is there a smarter way to deal with the quotes?
             matches = re.search(__class__._rxdq, rest)  # try double quotes
             if matches is None:
@@ -350,15 +348,9 @@ class Variant(BuildFlags):
                     matches = re.search(__class__._rxnq, rest)  # try no quotes
                     if matches is None:
                         if rest:
-                            util.logwarn("no matches:", "curr=", vli[-1], "rest=", rest)
                             vli[-1] += rest
                         break
-            util.logwarn("groups=", matches.groups())
             (lhs, var, spec, rest) = matches.groups()
-            util.logwarn("lhs=", lhs)
-            util.logwarn("var=", var)
-            util.logwarn("spec=", spec)
-            util.logwarn("rest=", rest)
             if lhs:
                 vli[-1] += lhs.strip(',')
             if var:
@@ -366,12 +358,8 @@ class Variant(BuildFlags):
                     vli.append(var + spec)
                 else:
                     vli[-1] += var + spec
-            util.logwarn("vli", vli)
-            util.logwarn(". . . . . . .")
-        util.logwarn("after:", vli)
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
-        util.logerr("result:", vli)
         return vli
 
 # -----------------------------------------------------------------------------
