@@ -263,6 +263,7 @@ class Variant(BuildFlags):
         for s in spec_list:
             v = Variant(s)
             variants.append(v)
+        util.logwarn(len(variants), "variants:", variants)
         for s in variants:
             s.resolve_all(variants)
         return variants
@@ -294,20 +295,19 @@ class Variant(BuildFlags):
         if curr:
             self.specs.append(curr)
 
-
     def resolve_all(self, variants):
         if self._resolved:
             return
-        def _find(name):
+        def _find_variant(name):
             for v in variants:
                 if v.name == name:
                     return v
-            raise Exception("variant '{}' not found".format(name))
+            raise Exception("variant '{}' not found in {}".format(name, variants))
         for s_ in self.specs:
             s = s_.lstrip()
             if s[0] == '@':
                 refname = s[1:]
-                r = _find(refname)
+                r = _find_variant(refname)
                 if self.name in r.refs:
                     msg = "circular reference found in variant definition: '{}'x'{}'"
                     raise Exception(msg.format(self.name, r.name))
@@ -323,6 +323,56 @@ class Variant(BuildFlags):
                 self.append_flags(tmp, append_to_name=False)
         self._resolved = True
 
+    _rxdq = r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)'
+    _rxsq = r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)"
+    _rxnq = r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)"
+    @staticmethod
+    def parse_specs(v):
+        """in some cases the shell (or argparse?) removes quotes, so we need
+        to parse variant specifications using regexes. This function implements
+        this parsing for use in argparse. This one was a tough nut to crack."""
+
+        # remove start and end quotes if there are any
+        if util.is_quoted(v):
+            v = util.unquote(v)
+
+        # split at commas, but make sure those commas separate variants
+        # (commas inside a variant spec are legitimate)
+        vli = ['']
+        rest = str(v)
+        while True:
+            util.logwarn("rest=", rest)
+            # ... is there a smarter way to deal with the quotes?
+            matches = re.search(__class__._rxdq, rest)  # try double quotes
+            if matches is None:
+                matches = re.search(__class__._rxsq, rest)  # try single quotes
+                if matches is None:
+                    matches = re.search(__class__._rxnq, rest)  # try no quotes
+                    if matches is None:
+                        if rest:
+                            util.logwarn("no matches:", "curr=", vli[-1], "rest=", rest)
+                            vli[-1] += rest
+                        break
+            util.logwarn("groups=", matches.groups())
+            (lhs, var, spec, rest) = matches.groups()
+            util.logwarn("lhs=", lhs)
+            util.logwarn("var=", var)
+            util.logwarn("spec=", spec)
+            util.logwarn("rest=", rest)
+            if lhs:
+                vli[-1] += lhs.strip(',')
+            if var:
+                if vli[-1]:
+                    vli.append(var + spec)
+                else:
+                    vli[-1] += var + spec
+            util.logwarn("vli", vli)
+            util.logwarn(". . . . . . .")
+        util.logwarn("after:", vli)
+        # unquote split elements
+        vli = [util.unquote(v).strip(',') for v in vli]
+        util.logerr("result:", vli)
+        return vli
 
 # -----------------------------------------------------------------------------
 class Generator(BuildItem):

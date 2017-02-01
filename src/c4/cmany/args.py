@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import re
 import argparse
 
 from . import util, cmany, help
@@ -165,11 +166,9 @@ class FlagArgument(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
         v = values
-        # remove start and end quotes if there are no comma-separated
-        # interior quotes
+        # remove start and end quotes if there are any
         if util.is_quoted(v):
-            if not util.has_interior_quotes(v, ','):
-                v = util.unquote(v)
+            v = util.unquote(v)
         # split at commas
         livals = cslist(v)
         # unquote splits
@@ -187,15 +186,8 @@ class VariantArgument(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
-        v = values
-        if not util.has_interior_quotes(v, ','):
-            v = util.unquote(v)
-            li.append(v)
-        else:
-            # split at commas, preserving quotes
-            vli = util.splitesc_quoted(v, ',')
-            # unquote split elements
-            for l in vli:
-                ul = util.unquote(l)
-                li.append(ul)
+        util.logwarn("input: ", li, " + ===" + values + "===")
+        vli = cmany.Variant.parse_specs(values)
+        li += vli
+        util.logerr("result:", li)
         setattr(namespace, self.dest, li)

@@ -186,6 +186,37 @@ class Test10AsArguments(ut.TestCase):
         j = '"{}","{}","{}","{}"'.format(vars[0], vars[1], vars[2], vars[3])
         comp([j])
 
+    def test04(self):
+        s = ['-v', "none,\"just_no_rtti: --cxxflags no_rtti\"",
+             '-v', "fast: @just_no_rtti --cxxflags no_exceptions,no_bufsec,no_iterator_debug,fast_math"]
+        self.tp(s, 0, 'none')
+        self.tp(s, 1, 'just_no_rtti')
+        self.tp(s, 2, 'fast')
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class Test11AsUnquotedArguments(ut.TestCase):
+    """the shell removes quotes from the arguments, so variant parsing
+    must be able to deal with unquoted specs"""
+
+    def t(self, input, expected):
+        variants = cmany.Variant.parse_specs(input)
+        with self.subTest(input=input):
+            self.assertEqual(variants, expected, msg=input)
+
+    def test00(self):
+        var0 = 'none'
+        var1 = 'just_no_rtti: --cxxflags no_rtti'
+        self.t(var0 + ',' + var1, [var0, var1])
+
+    def test01(self):
+        var0 = 'none'
+        var1 = 'just_no_rtti: --cxxflags no_rtti'
+        var2 = 'fast: @just_no_rtti --cxxflags no_exceptions,no_bufsec,no_iterator_debug,fast_math'
+        self.t(var0 + ',' + var1 + ',' + var2, [var0, var1, var2])
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
