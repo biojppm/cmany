@@ -27,7 +27,6 @@ def read_manifest():
     with open(os.path.join(thisd, 'MANIFEST.in')) as f:
         lines = [ re.sub(r'include (.*)$', r'\1', l) for l in f.readlines() ]
         lines = [ os.path.join(thisd, l) for l in lines ]
-        print(lines)
         return lines
 
 
@@ -43,7 +42,7 @@ def readreqs(*rnames):
 setup(name="cmany",
       version="0.1",
       description="CMake build tree batching tool",
-      long_description=read('README.rst'),
+      long_description=read('README.rst') + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
       download_url="https://github.com/biojppm/cmany",
       license="License :: OSI Approved :: MIT License",
@@ -69,6 +68,14 @@ setup(name="cmany",
       entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
       install_requires=readreqs('requirements.txt'),
       tests_require=readreqs('requirements_test.txt'),
-      include_package_data=True,
-      package_data={'c4.cmany':read_manifest()}
+      #include_package_data=True,
+      #package_data={'c4.cmany':read_manifest()},
+      data_files = [
+          ("", [
+              "LICENSE.txt",
+              "README.rst",
+              "requirements.txt",
+              "requirements_test.txt"]),
+          ("conf", [
+              "src/c4/cmany/flags.yml"])]
 )

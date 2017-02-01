@@ -81,9 +81,10 @@ build_script:
 
 test_script:
   # Run the project tests
-  - "echo start test"
+  - "echo starting_test"
   - ".ci\\appveyor_test.bat"
   - "echo end test"
+  - "echo %cd%"
 
 after_test:
   # If tests are successful, create binary packages for the project.
