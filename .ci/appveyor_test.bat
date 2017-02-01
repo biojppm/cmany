@@ -1,6 +1,6 @@
 echo on
 
-cd orig=%cd%
+set orig=%cd%
 cd %0\..\..
 set root=%cd%
 cd test
