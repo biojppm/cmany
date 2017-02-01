@@ -11,7 +11,7 @@ from multiprocessing import cpu_count as cpu_count
 from . import util
 from .cmake import CMakeSysInfo, CMakeCache, getcachevars
 from . import vsinfo
-from . import flags
+from . import flags as c4flags
 
 import argparse
 from . import args as c4args
@@ -227,13 +227,12 @@ class BuildFlags(BuildItem):
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
         if compiler is not None:
-            self.resolve_flags(compiler)
+            self.resolve_flag_aliases(compiler)
 
-    def resolve_flags(self, compiler):
-        """resolve flag aliases"""
-        self.defines = flags.as_defines(self.defines, compiler)
-        self.cflags = flags.as_flags(self.cflags, compiler)
-        self.cxxflags = flags.as_flags(self.cxxflags, compiler)
+    def resolve_flag_aliases(self, compiler):
+        self.defines = c4flags.as_defines(self.defines, compiler)
+        self.cflags = c4flags.as_flags(self.cflags, compiler)
+        self.cxxflags = c4flags.as_flags(self.cxxflags, compiler)
 
     def append_flags(self, other, append_to_name=True):
         """other will take precedence, ie, their options will come last"""
@@ -264,13 +263,13 @@ class Variant(BuildFlags):
             v = Variant(s)
             variants.append(v)
         for s in variants:
-            s.resolve_all(variants)
+            s.resolve_references(variants)
         return variants
 
     def __init__(self, spec):
         self.specs = []
         self.refs = []
-        self._resolved = False
+        self._resolved_references = False
         spec = util.unquote(spec)
         spl = spec.split(':')
         if len(spl) == 1:
@@ -294,8 +293,8 @@ class Variant(BuildFlags):
         if curr:
             self.specs.append(curr)
 
-    def resolve_all(self, variants):
-        if self._resolved:
+    def resolve_references(self, variants):
+        if self._resolved_references:
             return
         def _find_variant(name):
             for v in variants:
@@ -310,7 +309,7 @@ class Variant(BuildFlags):
                 if self.name in r.refs:
                     msg = "circular reference found in variant definition: '{}'x'{}'"
                     raise Exception(msg.format(self.name, r.name))
-                if not r._resolved:
+                if not r._resolved_references:
                     r.resolve_all(variants)
                 self.append_flags(r, append_to_name=False)
             else:
@@ -320,21 +319,19 @@ class Variant(BuildFlags):
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
                 self.append_flags(tmp, append_to_name=False)
-        self._resolved = True
+        self._resolved_references = True
 
-    _rxdq = r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)'
-    _rxsq = r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)"
-    _rxnq = r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)"
+    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')
+    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")
+    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
     @staticmethod
     def parse_specs(v):
         """in some cases the shell (or argparse?) removes quotes, so we need
         to parse variant specifications using regexes. This function implements
         this parsing for use in argparse. This one was a tough nut to crack."""
-
         # remove start and end quotes if there are any
         if util.is_quoted(v):
             v = util.unquote(v)
-
         # split at commas, but make sure those commas separate variants
         # (commas inside a variant spec are legitimate)
         vli = ['']
@@ -357,7 +354,7 @@ class Variant(BuildFlags):
                 if vli[-1]:
                     vli.append(var + spec)
                 else:
-                    vli[-1] += var + spec
+                    vli[-1] += var + spec  # insert into empty specs
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
         return vli
@@ -533,6 +530,7 @@ class Build:
         self.compiler = compiler
         self.variant = variant
         self.flags = flags
+        self.variant.resolve_flag_aliases(self.compiler)
         # self.crosscompile = (system != System.default())
         # self.toolchain = None
 
@@ -665,17 +663,26 @@ class Build:
             util.runsyscmd(cmd)
             os.remove("cmany_build.done")
 
-    def _gather_flags(self, which, append_to_sysinfo_var=None):
+    def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
         flags = []
         if append_to_sysinfo_var:
             try:
                 flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
             except:
                 pass
+        # append overall build flags
         wf = getattr(self.flags, which)
         for f in wf:
             flags.append(f.get(self.compiler))
-        flags += self.flags.defines
+        if with_defines:
+            flags += self.flags.defines
+        # append variant flags
+        wf = getattr(self.variant, which)
+        for f in wf:
+            flags.append(f.get(self.compiler))
+        if with_defines:
+            flags += self.variant.defines
+        # we're done
         return flags
 
     def gather_input_cache_vars(self):
@@ -698,11 +705,11 @@ class Build:
         _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
         _set(vc.p, 'CMAKE_INSTALL_PREFIX', self.installdir)
         #
-        cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT')
+        cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT', with_defines=True)
         if cflags:
             _set(vc.s, 'CMAKE_C_FLAGS', ' '.join(cflags))
         #
-        cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT')
+        cxxflags = self._gather_flags('cxxflags', 'CMAKE_CXX_FLAGS_INIT', with_defines=True)
         if cxxflags:
             _set(vc.s, 'CMAKE_CXX_FLAGS', ' '.join(cxxflags))
         #
@@ -711,6 +718,8 @@ class Build:
         #
         # if self.flags.link_dirs:
         #     _set(vc.s, 'CMAKE_LINK_DIRECTORIES', ';'.join(self.flags.link_dirs))
+        #
+
 
     def create_preload_file(self):
         # http://stackoverflow.com/questions/17597673/cmake-preload-script-for-cache
@@ -809,18 +818,17 @@ class ProjectConfig:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
 
-        flag_files = []
-        for f in kwargs['flags_file']:
-            if not os.path.isabs(f):
-                f = os.path.join(self.root_dir, f)
-            flag_files.append(f)
-        flags.load_known_flags(flag_files, not kwargs['no_default_flags'])
-
         self.configfile = os.path.join(proj_dir, "CMakeSettings.json")
         # self.configfile = None
         # if os.path.exists(configfile):
         #     self.parse_file(configfile)
         #     self.configfile = configfile
+        flag_files = []
+        for f in kwargs['flags_file']:
+            if not os.path.isabs(f):
+                f = os.path.join(self.root_dir, f)
+            flag_files.append(f)
+        c4flags.load_known_flags(flag_files, not kwargs['no_default_flags'])
 
         vars = kwargs.get('variants')
         if not vars:
