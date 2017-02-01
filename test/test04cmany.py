@@ -175,7 +175,7 @@ class TestBuild:
                                      arch=cmany.Architecture.default(),
                                      buildtype=buildtype,
                                      compiler=compiler,
-                                     variant="",
+                                     variant=cmany.Variant.default(),
                                      flags=self.flags,
                                      num_jobs=cmany.cpu_count()
                                      )

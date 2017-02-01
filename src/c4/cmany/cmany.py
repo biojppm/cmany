@@ -252,7 +252,7 @@ class Variant(BuildFlags):
 
     @staticmethod
     def default():
-        return None
+        return Variant('none')
 
     @staticmethod
     def create(spec_list):
@@ -326,7 +326,7 @@ class Variant(BuildFlags):
     _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
     @staticmethod
     def parse_specs(v):
-        """in some cases the shell (or argparse?) removes quotes, so we need
+        """in some cses the shell (or argparse?) removes quotes, so we need
         to parse variant specifications using regexes. This function implements
         this parsing for use in argparse. This one was a tough nut to crack."""
         # remove start and end quotes if there are any
@@ -885,7 +885,7 @@ class ProjectConfig:
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs)
-        # when a build is created, its parameters may be adjusted
+        # When a build is created, its parameters may have been adjusted
         # because of an incompatible generator specification.
         # So drop this build if an equal one already exists
         if b.adjusted and self.exists(b):
