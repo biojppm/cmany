@@ -3,7 +3,7 @@
 import unittest as ut
 import argparse
 
-from c4.cmany import cmany, util, args as c4args
+from c4.cmany import cmanys as cmany, util, args as c4args
 
 
 # -----------------------------------------------------------------------------

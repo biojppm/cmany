@@ -10,7 +10,7 @@ from itertools import combinations
 
 import c4.cmany.util as util
 import c4.cmany.main as main
-import c4.cmany.cmany as cmany
+import c4.cmany.cmanys as cmany
 import c4.cmany.cmake as cmake
 
 srcdir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')

@@ -4,7 +4,7 @@ import sys
 import pprint
 from collections import OrderedDict as odict
 
-from . import cmany, util, args as c4args, help as c4help
+from . import cmanys as cmany, util, args as c4args, help as c4help
 
 
 cmds = odict([

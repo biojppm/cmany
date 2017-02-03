@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-import sys
-import re
 import argparse
 
-from . import util, cmany, help
+from . import util, cmanys as cmany, help
 from .util import cslist
-from .cmany import cpu_count
+from .cmanys import cpu_count
 
 
 # -----------------------------------------------------------------------------
