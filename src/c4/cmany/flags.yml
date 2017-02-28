@@ -80,15 +80,24 @@ no_rtti:
 no_exceptions:
     desc: disable exceptions
     gcc,clang,icc: -fno-exceptions
-    vs: /EHsc-
-no_stdlib:
-    desc: disable standard library
-    gcc,clang,icc: -fnostdlib
-    vs: /NODEFAULTLIB
+    vs: /EHsca-     # 
+libstdc++11:
+    desc: use the C++11 standard library ABI.
+    gcc,clang,icc: -stdlib=libstdc++ -D_GLIBCXX_USE_CXX11_ABI=1
+libstdc++:
+    desc: use the pre-C++11 standard library ABI.
+    gcc,clang,icc: -stdlib=libstdc++ -D_GLIBCXX_USE_CXX11_ABI=0
+libc++:
+    desc: use the Clang libc++ standard library ABI.
+    clang: -stdlib=libc++
 static_stdlib:
     desc: link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas
-    gcc,clang,icc: -static-libstdc++ -static-libgcc
-    vs: /MD
+    gcc,clang,icc: -static-libstdc++ -static-libgcc -static
+    vs: /MT
+no_stdlib:
+    desc: do not link with the standard library
+    gcc,clang,icc: -fnostdlib
+    vs: /NODEFAULTLIB
 no_bufsec:
     desc: disable buffer security checks
     vs: /GS-

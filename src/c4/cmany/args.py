@@ -45,6 +45,7 @@ def argerror(parser, *msg_args):
 # -----------------------------------------------------------------------------
 def add_hidden(parser):
     parser.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--show-args-only', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--dump-help-topics', action='store_true', help=argparse.SUPPRESS)
 
 
@@ -156,6 +157,22 @@ def add_cflags(parser):
     #                help="""add dirs to the link path of all builds
     #                Multiple invokations of -L are possible, in which case arguments will be appended and not overwritten.
     #                Can also be given as a comma-separated list. To escape commas, use a backslash \\.""")
+
+    d = parser.add_argument_group('Dependencies')
+    d.add_argument('--deps', default='', type=str,
+                   metavar='path/to/extern/CMakeLists.txt',
+                   help="""Before configuring, process (ie, configure, build
+                   and install) the given CMakeLists.txt project containing
+                   needed external project dependencies. This will be done
+                   separately for each build, using the same parameters. The main
+                   project will be configured such that the built dependencies are
+                   found by cmake.""")
+    d.add_argument('--deps-prefix', nargs=1, default="", type=str,
+                   metavar='path/to/install/directory',
+                   help="""When using --deps set the install directory for
+                   external dependencies to the given dir.""")
+    d.add_argument('--with-conan', action='store_true', default=False,
+                   help="""(WIP)""")
 
 
 # -----------------------------------------------------------------------------

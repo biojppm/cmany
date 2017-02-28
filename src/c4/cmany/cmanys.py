@@ -4,6 +4,7 @@ import os
 import re
 import glob
 import json
+import copy
 from datetime import datetime
 from collections import OrderedDict as odict
 from multiprocessing import cpu_count as cpu_count
@@ -12,6 +13,7 @@ from . import util
 from .cmake import CMakeSysInfo, CMakeCache, getcachevars
 from . import vsinfo
 from . import flags as c4flags
+from .conan import Conan
 
 import argparse
 from . import args as c4args
@@ -324,6 +326,7 @@ class Variant(BuildFlags):
     _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')
     _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")
     _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
+
     @staticmethod
     def parse_specs(v):
         """in some cses the shell (or argparse?) removes quotes, so we need
@@ -439,24 +442,33 @@ class Generator(BuildItem):
             return ['make', '-j', str(self.num_jobs)] + targets
         else:
             bt = str(self.build.buildtype)
-            cmd = ['cmake', '--build', '.', '--config', bt]
-            targets_safe = []
-            if len(targets) <= 1:
-                for t in targets:
-                    targets_safe.append('--target')
-                    targets_safe.append(t)
-            else:
+            if len(targets) > 1:
                 msg = ("Building multiple targets with this generator is not implemented. "
                        "cmake --build cannot handle multiple --target " +
                        "invokations. A generator-specific command must be "
                        "written to handle multiple targets with this "
                        "generator " + '("{}")'.format(self.name))
                 raise Exception(msg)
-            if self.is_msvc:
+            if not self.is_msvc:
+                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
+            else:
                 # if a target has a . in the name, it must be substituted for _
-                targets_safe = [re.sub(r'\.', r'_', t) for t in targets_safe]
-                cmd = (cmd + targets_safe +
-                       ['--', '/maxcpucount:' + str(self.num_jobs)])
+                targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
+                if len(targets_safe) != 1:
+                    raise Exception("msbuild can only build one target at a time: was " + str(targets_safe))
+                t = targets_safe[0]
+                pat = os.path.join(self.build.builddir, t + '*.vcxproj')
+                projs = glob.glob(pat)
+                if len(projs) == 0:
+                    msg = "could not find vcx project for this target: {} (glob={}, got={})".format(t, pat, projs)
+                    raise Exception(msg)
+                elif len(projs) > 1:
+                    msg = "multiple vcx projects for this target: {} (glob={}, got={})".format(t, pat, projs)
+                    raise Exception(msg)
+                proj = projs[0]
+                cmd = [self.build.compiler.vs.msbuild, proj,
+                       '/property:Configuration='+bt,
+                       '/maxcpucount:' + str(self.num_jobs)]
             return cmd
 
     def install(self):
@@ -519,7 +531,10 @@ class Build:
 
     def __init__(self, proj_root, build_root, install_root,
                system, arch, buildtype, compiler, variant, flags,
-               num_jobs):
+               num_jobs, kwargs):
+        #
+        self.kwargs = kwargs
+        #
         self.projdir = util.chkf(proj_root)
         self.buildroot = os.path.abspath(build_root)
         self.installroot = os.path.abspath(install_root)
@@ -530,7 +545,6 @@ class Build:
         self.compiler = compiler
         self.variant = variant
         self.flags = flags
-        self.variant.resolve_flag_aliases(self.compiler)
         # self.crosscompile = (system != System.default())
         # self.toolchain = None
 
@@ -548,11 +562,20 @@ class Build:
         # needs to be committed back to CMakeCache.txt
         self.gather_input_cache_vars()
 
+        self.variant.resolve_flag_aliases(self.compiler)
+
+        self.deps = kwargs.get('deps', '')
+        if self.deps and not os.path.isabs(self.deps):
+            self.deps = os.path.abspath(self.deps)
+        self.deps_prefix = kwargs.get('deps_prefix')
+        if not self.deps_prefix:
+            self.deps_prefix = self.builddir
+
     def _set_paths(self):
         self.tag = self._cat('-')
         self.buildtag = self.tag
+        self.installtag = self.tag  # this was different in the past and may become so in the future
         self.builddir = os.path.abspath(os.path.join(self.buildroot, self.buildtag))
-        self.installtag = self.tag
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
@@ -584,9 +607,9 @@ class Build:
 
     def configure_cmd(self, for_json=False):
         if for_json:
-            return ('-C ' + os.path.basename(self.preload_file)
+            return ('-C ' + self.preload_file
                     + ' ' + self.generator.configure_args(for_json))
-        return (['cmake', '-C', os.path.basename(self.preload_file)]
+        return (['cmake', '-C', self.preload_file]
                 + self.generator.configure_args() +
                 [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
                 self.projdir])
@@ -594,6 +617,7 @@ class Build:
     def configure(self):
         self.create_dir()
         self.create_preload_file()
+        self.handle_deps()
         if self.needs_cache_regeneration():
             self.varcache.commit(self.builddir)
         with util.setcwd(self.builddir, silent=False):
@@ -626,6 +650,7 @@ class Build:
         with util.setcwd(self.builddir, silent=False):
             if self.needs_configure():
                 self.configure()
+            self.handle_deps()
             if self.compiler.is_msvc and len(targets) == 0:
                 targets = ["ALL_BUILD"]
             cmd = self.generator.cmd(targets)
@@ -720,7 +745,6 @@ class Build:
         #     _set(vc.s, 'CMAKE_LINK_DIRECTORIES', ';'.join(self.flags.link_dirs))
         #
 
-
     def create_preload_file(self):
         # http://stackoverflow.com/questions/17597673/cmake-preload-script-for-cache
         self.create_dir()
@@ -773,6 +797,48 @@ message(STATUS "cmany:preload----------------------")
 message(STATUS "cmany: nothing to preload...")
 """
 
+    def handle_deps(self):
+        if not self.deps:
+            self.handle_conan()
+            return
+        util.lognotice(self.tag + ': building dependencies', self.deps)
+        dup = copy.copy(self)
+        dup.builddir = os.path.join(self.builddir, 'cmany_deps-build')
+        dup.installdir = self.deps_prefix
+        util.logwarn('installdir:', dup.installdir)
+        dup.projdir = self.deps
+        dup.preload_file = os.path.join(self.builddir, self.preload_file)
+        dup.deps = None
+        dup.generator.build = dup
+        dup.configure()
+        dup.build()
+        try:
+            # if the dependencies cmake project is purely consisted of
+            # external projects, there won't be an install target.
+            dup.install()
+        except:
+            pass
+        util.logdone(self, ': building dependencies: done')
+        util.logwarn('installdir:', dup.installdir)
+        self.varcache.p('CMAKE_PREFIX_PATH', self.installdir)
+
+    def handle_conan(self):
+        if not self.kwargs.get('with_conan'):
+            return
+        doit = False
+        f = None
+        for fn in ('conanfile.py', 'conanfile.txt'):
+            f = os.path.join(self.projdir, fn)
+            cf = os.path.join(self.builddir, 'conanbuildinfo.cmake')
+            if os.path.exists(f) and not os.path.exists(cf):
+                doit = True
+                break
+        if not doit:
+            return
+        util.logdone('found conan file')
+        c = Conan()
+        c.install(self)
+
     def json_data(self):
         """
         https://blogs.msdn.microsoft.com/vcblog/2016/11/16/cmake-support-in-visual-studio-the-visual-studio-2017-rc-update/
@@ -796,6 +862,8 @@ class ProjectConfig:
     def __init__(self, **kwargs):
 
         self.kwargs = kwargs
+        print(self.kwargs)
+        print(type(self.kwargs))
 
         proj_dir = kwargs.get('proj_dir', os.getcwd())
         proj_dir = os.getcwd() if proj_dir == "." else proj_dir
@@ -884,7 +952,7 @@ class ProjectConfig:
         flags = BuildFlags('all_builds', compiler, **self.kwargs)
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   system, arch, buildtype, compiler, variant, flags,
-                  self.num_jobs)
+                  self.num_jobs, dict(self.kwargs))
         # When a build is created, its parameters may have been adjusted
         # because of an incompatible generator specification.
         # So drop this build if an equal one already exists
@@ -953,31 +1021,32 @@ class ProjectConfig:
         if num == 0:
             return
         if not silent:
-            print("")
-            print("===============================================")
+            util.lognotice("")
+            util.lognotice("===============================================")
             if num > 1:
-                print(msg + ": start", num, "builds:")
+                util.lognotice(msg + ": start", num, "builds:")
                 for b in builds:
-                    print(b)
-                print("===============================================")
+                    util.lognotice(b)
+                util.lognotice("===============================================")
         for i, b in enumerate(builds):
             if not silent:
                 if i > 0:
-                    print("\n")
-                print("-----------------------------------------------")
+                    util.lognotice("\n")
+                util.lognotice("-----------------------------------------------")
                 if num > 1:
-                    print(msg + ": build #{} of {}:".format(i+1, num), b)
+                    util.lognotice(msg + ": build #{} of {}:".format(i+1, num), b)
                 else:
-                    print(msg, b)
-                print("-----------------------------------------------")
+                    util.lognotice(msg, b)
+                util.lognotice("-----------------------------------------------")
             fn(b)
+            util.logdone(msg + ": finished build #{} of {}:".format(i + 1, num), b)
         if not silent:
             if num > 1:
-                print("-----------------------------------------------")
-                print(msg + ": finished", num, "builds:")
+                util.lognotice("-----------------------------------------------")
+                util.logdone(msg + ": finished", num, "builds:")
                 for b in builds:
-                    print(b)
-            print("===============================================")
+                    util.logdone(b)
+            util.lognotice("===============================================")
 
     def create_projfile(self):
         confs = []
