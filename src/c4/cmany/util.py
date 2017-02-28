@@ -242,15 +242,26 @@ def remove_if(fname):
 
 def which(cmd):
     """look for an executable in the current PATH environment variable"""
-    if os.path.exists(cmd):
+    if exists_and_exec(cmd):
         return cmd
-    exts = ("", ".exe", ".bat") if sys.platform == "win32" else ""
+    exts = ("", ".exe", ".bat") if sys.platform == "win32" else [""]
     for path in os.environ["PATH"].split(os.pathsep):
         for e in exts:
             j = os.path.join(path, cmd+e)
-            if os.path.exists(j):
+            if exists_and_exec(j):
                 return j
     return None
+
+
+def exists_and_exec(file):
+    """return true if the given file exists and is executable"""
+    if not os.path.exists(file):
+        return False
+    if not os.access(file, os.R_OK):
+        return False
+    if not os.access(file, os.X_OK):
+        return False
+    return True
 
 
 def cacheattr(obj, name, function):
