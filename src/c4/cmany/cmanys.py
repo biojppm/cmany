@@ -177,7 +177,7 @@ class Compiler(BuildItem):
             name = "clang"
             version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
             # print("clang version:", version, "---")
-        elif name.startswith("icpc"):
+        elif name.startswith("icpc") or name.startswith("icc"):
             name = "icc"
             version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             # print("icc version:", version, "---")
