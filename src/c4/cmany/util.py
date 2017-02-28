@@ -18,6 +18,14 @@ def color_log(style, *args, **kwargs):
     print(colorama.Style.RESET_ALL, sep='', end='')
 
 
+def loginfo(*args, **kwargs):
+    color_log(colorama.Fore.CYAN + colorama.Style.BRIGHT, *args, **kwargs)
+
+
+def lognotice(*args, **kwargs):
+    color_log(colorama.Fore.BLUE + colorama.Style.BRIGHT, *args, **kwargs)
+
+
 def logdone(*args, **kwargs):
     color_log(colorama.Fore.GREEN + colorama.Style.BRIGHT, *args, **kwargs)
 
@@ -396,7 +404,17 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
         raise Exception("the command must be a list with each argument a different element in the list ")
 
     if echo_cmd:
-        print('$', cmd)
+        scmd = cmd
+        if not isinstance(cmd, str):
+            scmd = ""
+            for a in cmd:
+                if ' ' in a:
+                    if in_windows():
+                        a = '"' + a + '"'
+                    else:
+                        a = re.sub(r' ', r'\\ ', a)
+                scmd += " " + a
+        print('$' + scmd)
 
     if as_bytes_string:
         if capture_output:
