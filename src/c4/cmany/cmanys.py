@@ -862,8 +862,6 @@ class ProjectConfig:
     def __init__(self, **kwargs):
 
         self.kwargs = kwargs
-        print(self.kwargs)
-        print(type(self.kwargs))
 
         proj_dir = kwargs.get('proj_dir', os.getcwd())
         proj_dir = os.getcwd() if proj_dir == "." else proj_dir
