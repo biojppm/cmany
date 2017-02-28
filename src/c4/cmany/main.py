@@ -24,8 +24,10 @@ def cmany_main(in_args=None):
     parser = c4args.setup(cmds, mymod)
     args = c4args.parse(parser, in_args)
     #
-    if args.show_args:
+    if args.show_args or args.show_args_only:
         pprint.pprint(vars(args), indent=4)
+        if args.show_args_only:
+            return
     if args.dump_help_topics:
         dump_help_topics()
     #
@@ -96,6 +98,8 @@ class configure(selectcmd):
     '''configure the selected builds'''
     def _exec(self, proj, args):
         proj.configure()
+    def add_args(self, parser):
+        super().add_args(parser)
 
 
 class build(selectcmd):
@@ -139,7 +143,7 @@ class export_vs(selectcmd):
         proj.create_projfile()
 
 
-
+# -----------------------------------------------------------------------------
 def dump_help_topics():
     for t, _ in c4help.topics.items():
         print(t)
