@@ -103,7 +103,7 @@ def add_cflags(parser):
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
                    help="""Add CMake cache variables to all builds.
-                   Multiple invokations of are possible, in which case
+                   Multiple invokations of -V are possible, in which case
                    arguments will be appended and not overwritten.
                    Can also be given as a comma-separated list, including in
                    each invokation.
@@ -157,6 +157,10 @@ def add_cflags(parser):
     #                help="""add dirs to the link path of all builds
     #                Multiple invokations of -L are possible, in which case arguments will be appended and not overwritten.
     #                Can also be given as a comma-separated list. To escape commas, use a backslash \\.""")
+    g.add_argument("-E", "--export-compile", default=False, action="store_true",
+                   help="""Have cmake export a compile_commands.json containing
+                   the compile commands for each file. This is useful eg for
+                   clang-based indexing tools can be used.""")
 
     d = parser.add_argument_group('Dependencies')
     d.add_argument('--deps', default='', type=str,
@@ -198,7 +202,6 @@ class VariantArgument(argparse.Action):
     """a class to be used by argparse when parsing variant specifications.
     Note that prettyprint shows variants wrong.
     """
-
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
         vli = cmany.Variant.parse_specs(values)
