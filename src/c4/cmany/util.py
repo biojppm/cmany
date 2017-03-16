@@ -12,10 +12,32 @@ import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
 
 
+def supports_color():
+    """
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    Taken from http://stackoverflow.com/questions/7445658/
+    """
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
+    # also this: https://gist.github.com/ssbarnea/1316877
+
+cmany_colored_output = supports_color()
+
+
 def color_log(style, *args, **kwargs):
-    print(style, sep='', end='')
-    print(*args, **kwargs)
-    print(colorama.Style.RESET_ALL, sep='', end='')
+    if cmany_colored_output:
+        print(style, sep='', end='')
+        print(*args, **kwargs)
+        print(colorama.Style.RESET_ALL, sep='', end='')
+    else:
+        print(*args, **kwargs)
 
 
 def loginfo(*args, **kwargs):
@@ -36,6 +58,15 @@ def logwarn(*args, **kwargs):
 
 def logerr(*args, **kwargs):
     color_log(colorama.Fore.RED + colorama.Style.BRIGHT, *args, **kwargs)
+
+
+def logcmd(*args, **kwargs):
+    #print(*args, **kwargs)
+    print("--------")
+    color_log(colorama.Fore.WHITE + colorama.Style.BRIGHT, *args, **kwargs)
+    # this print here is needed to prevent the command output
+    # from being colored. Need to address this somehow.
+    print("--------")
 
 
 #------------------------------------------------------------------------------
@@ -414,7 +445,7 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
                     else:
                         a = re.sub(r' ', r'\\ ', a)
                 scmd += " " + a
-        print('$' + scmd)
+        logcmd('$' + scmd)
 
     if as_bytes_string:
         if capture_output:
