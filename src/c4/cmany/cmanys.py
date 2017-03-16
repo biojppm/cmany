@@ -120,8 +120,8 @@ class Compiler(BuildItem):
             p = util.which(path)
             if p is None:
                 raise Exception("compiler not found: " + path)
-            if p != path:
-                print("compiler: selected {} for {}".format(p, path))
+            # if p != path:
+            #     print("compiler: selected {} for {}".format(p, path))
             path = os.path.abspath(p)
         name, version, version_full = self.get_version(path)
         self.shortname = name
@@ -329,7 +329,7 @@ class Variant(BuildFlags):
 
     @staticmethod
     def parse_specs(v):
-        """in some cses the shell (or argparse?) removes quotes, so we need
+        """in some cases the shell (or argparse?) removes quotes, so we need
         to parse variant specifications using regexes. This function implements
         this parsing for use in argparse. This one was a tough nut to crack."""
         # remove start and end quotes if there are any
@@ -609,10 +609,13 @@ class Build:
         if for_json:
             return ('-C ' + self.preload_file
                     + ' ' + self.generator.configure_args(for_json))
-        return (['cmake', '-C', self.preload_file]
-                + self.generator.configure_args() +
-                [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
-                self.projdir])
+        cmd = (['cmake', '-C', self.preload_file]
+               + self.generator.configure_args())
+        if self.kwargs.get('export_compile', False):
+            cmd.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=1')
+        cmd += [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
+            self.projdir]
+        return cmd
 
     def configure(self):
         self.create_dir()
@@ -651,10 +654,18 @@ class Build:
             if self.needs_configure():
                 self.configure()
             self.handle_deps()
-            if self.compiler.is_msvc and len(targets) == 0:
-                targets = ["ALL_BUILD"]
-            cmd = self.generator.cmd(targets)
-            util.runsyscmd(cmd)
+            if len(targets) == 0:
+                if self.compiler.is_msvc:
+                    targets = ["ALL_BUILD"]
+                else:
+                    targets = ["all"]
+            # cmake --build and visual studio won't handle
+            # multiple targets at once, so loop over them.
+            for t in targets:
+                cmd = self.generator.cmd([t])
+                util.runsyscmd(cmd)
+            # this was written before using the loop above.
+            # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
 
     def mark_build_done(self, cmd):
@@ -855,6 +866,30 @@ message(STATUS "cmany: nothing to preload...")
             # ('variables', []),  # this is not needed since the vars are set in the preload file
         ])
 
+    def get_targets(self):
+        with util.setcwd(self.builddir):
+            if self.generator.is_msvc:
+                # each target in MSVC has a corresponding vcxproj file
+                files = glob.glob(".", "*.vcxproj")
+                files = [os.path.basename(f) for f in files]
+                files = [os.path.splitext(f)[0] for f in files]
+                return files
+            elif self.generator.is_makefile:
+                output = util.runsyscmd(["make", "help"], echo_cmd=False,
+                                        echo_output=False, capture_output=True)
+                output = output.split("\n")
+                output = output[1:]  # The following are some of the valid targets....
+                output = [o[4:] for o in output]  # take off the initial "... "
+                output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
+                output = sorted(output)
+                result = []
+                for o in output:
+                    if o:
+                        result.append(o)
+                return result
+            else:
+                util.logerr("sorry, feature not implemented for this generator: " +
+                            str(self.generator))
 
 # -----------------------------------------------------------------------------
 class ProjectConfig:
@@ -1076,3 +1111,11 @@ class ProjectConfig:
         for var, sysvalues in varv.items():
             for s, v in sysvalues.items():
                 print(fmt.format(var, s, v))
+
+    def showbuilds(self):
+        for b in self.builds:
+            print(b)
+
+    def showtargets(self):
+        for t in self.builds[0].get_targets():
+            print(t)
