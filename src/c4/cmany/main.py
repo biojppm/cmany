@@ -2,6 +2,8 @@
 
 import sys
 import pprint
+import argcomplete
+
 from collections import OrderedDict as odict
 
 from . import cmanys as cmany, util, args as c4args, help as c4help
@@ -24,6 +26,7 @@ def cmany_main(in_args=None):
     if in_args is None: in_args = sys.argv[1:]
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
+    argcomplete.autocomplete(parser)
     args = c4args.parse(parser, in_args)
     #
     if args.show_args or args.show_args_only:
