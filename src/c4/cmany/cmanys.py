@@ -1045,6 +1045,13 @@ class ProjectConfig:
     def install(self, **restrict_to):
         self._execute(Build.install, "Install", silent=False, **restrict_to)
 
+    def run_cmd(self, cmd, **restrict_to):
+        cmds = util.splitesc_quoted(cmd, ' ')
+        def _run_cmd(b):
+            with util.setcwd(b.builddir):
+                util.runsyscmd(cmds)
+        self._execute(_run_cmd, "Run cmd", silent=False, **restrict_to)
+
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)
         num = len(builds)

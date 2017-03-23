@@ -14,6 +14,7 @@ cmds = odict([
     ('configure', ['c']),
     ('build', ['b']),
     ('install', ['i']),
+    ('run', ['r']),
     ('show_vars', []),
     ('show_builds', []),
     ('show_build_dirs', []),
@@ -124,12 +125,21 @@ class install(selectcmd):
         proj.install()
 
 
+class run(selectcmd):
+    '''run a command in each build directory'''
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('command', default="",
+                            help="""command to be run in each build directory""")
+    def _exec(self, proj, args):
+        proj.run_cmd(args.command)
+
+
 class show_vars(selectcmd):
     '''show the value of certain CMake cache vars'''
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
-
     def _exec(self, proj, args):
         proj.showvars(args.var_names)
 

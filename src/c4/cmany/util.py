@@ -432,7 +432,7 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
     """run a system command. Note that stderr is interspersed with stdout"""
 
     if not isinstance(cmd, list):
-        raise Exception("the command must be a list with each argument a different element in the list ")
+        raise Exception("the command must be a list with each argument a different element in the list")
 
     if echo_cmd:
         scmd = cmd
