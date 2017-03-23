@@ -16,6 +16,7 @@ cmds = odict([
     ('install', ['i']),
     ('show_vars', []),
     ('show_builds', []),
+    ('show_build_dirs', []),
     ('show_targets', []),
     ('create', []),
     ('export_vs', []),
@@ -137,6 +138,12 @@ class show_builds(selectcmd):
     '''show the build names'''
     def _exec(self, proj, args):
         proj.showbuilds()
+
+
+class show_build_dirs(selectcmd):
+    '''show the build directories'''
+    def _exec(self, proj, args):
+        proj.showbuilddirs()
 
 
 class show_targets(selectcmd):

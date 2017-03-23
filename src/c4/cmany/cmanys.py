@@ -1116,6 +1116,10 @@ class ProjectConfig:
         for b in self.builds:
             print(b)
 
+    def showbuilddirs(self):
+        for b in self.builds:
+            print(b.builddir)
+
     def showtargets(self):
         for t in self.builds[0].get_targets():
             print(t)
