@@ -1,0 +1,11 @@
+Using cmany with Visual Studio
+==============================
+
+TODO: add help for visual studio
+
+Visual Studio aliases example:
+    vs2015_32: use 32bit version
+    vs2015_64: use 64bit version
+    vs2015:    use the bitness of the current system; will resolve into
+               either vs2015_32 or vs2015_64
+

@@ -1,0 +1,14 @@
+Welcome to cmany's documentation!
+*********************************
+
+Basic usage examples
+
+
+Indices and tables
+******************
+
+* Index
+
+* Module Index
+
+* Search Page

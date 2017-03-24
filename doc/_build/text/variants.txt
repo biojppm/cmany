@@ -1,0 +1,9 @@
+Build variants
+**************
+
+   $ cmany b -v none,'noexcept: @none --cxxflags c++14,noexceptions
+   --define V_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
+
+
+Making a variant inherit the properties of another variant
+==========================================================

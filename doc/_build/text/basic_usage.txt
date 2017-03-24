@@ -1,0 +1,200 @@
+Basic usage examples
+********************
+
+Consider a directory initially with this layout:
+
+   $ ls -1
+   CMakeLists.txt
+   main.cpp
+
+The following command invokes CMake to configure and build this
+project:
+
+   $ cmany build .
+
+Like with CMake, this will look for the CMakeLists.txt file at the
+given path (".") and place the build tree at the current working
+directory. If the path is omitted, CMakeLists.txt is assumed to be on
+the current working dir.
+
+
+Build
+=====
+
+When no compiler is specified, cmany chooses CMake's default compiler.
+cmany's default build type is (explicitly set to) Release. As an
+example, using g++ 6.1 in Linux x86_64, the result of the command
+above will be this:
+
+   $ tree -fi -L 2
+   build/
+   build/linux-x86_64-gcc6.1-Release/
+   CMakeLists.txt
+   main.cpp
+
+   $ ls build/*/CMakeCache.txt
+   build/linux-x86_64-gcc6.1-Release/CMakeCache.txt
+
+Note that unlike CMake, cmany will not place the resulting build tree
+directly at the current working directory: it will instead nest it
+under "./build". Each build tree name is made unique by combining the
+names of the operating system, architecture, compiler+version and the
+CMake build type. The "build" command has an alias of "b". So the
+following command is exactly the same as "cmany build .":
+
+   $ cmany b
+
+
+Configuring only
+================
+
+Above it was said that the "cmany build" command will also configure.
+In fact, cmany tries to guess when a configure step is needed. You can
+use "cmany configure" if that's just what you want to do:
+
+   $ cmany configure
+
+Same as above: "c" is an alias to "configure":
+
+   $ cmany c
+
+
+Installing
+==========
+
+The "cmany install" command does what it says, and will also
+"configure" and "build" if needed. "i" is an alias to "install":
+
+   $ cmany i
+
+The install root defaults to "./install". So assuming the project
+creates an executable named "hello", the following will result:
+
+   $ ls -1
+   CMakeLists.txt
+   build/
+   install/
+   main.cpp
+
+   $ tree -fi install
+   install/
+   install/linux-x86_64-gcc6.1-Release/
+   install/linux-x86_64-gcc6.1-Release/bin/
+   install/linux-x86_64-gcc6.1-Release/bin/hello
+
+
+Choosing the build type
+=======================
+
+To set the build types use "-t" or "--build-types". The following
+command chooses a build type of Debug instead of Release. If the
+directory is initially empty, this will be the result:
+
+   $ cmany b -t Debug
+   $ ls -1 build/*
+   build/linux-x86_64-gcc6.1-Debug/
+
+Note that the build naming scheme will cause build trees with
+different build types to be placed in different directories. Apart
+from producing a better organization of your builds, this saves you a
+full project rebuild when the build type changes (and the cmake
+generator is not a multi-config generator like MSVC).
+
+
+Choosing the compiler
+=====================
+
+To choose the compiler use "-c" or "--compilers". The following
+command chooses clang++ instead of CMake's default compiler. If the
+directory is initially empty, this will be the result:
+
+   $ cmany b -t Debug
+   $ ls -1 build/*
+   build/linux-x86_64-clang3.9-Debug/
+
+
+Building many trees at once
+===========================
+
+The commands shown up to this point were only fancy, practical
+wrappers for CMake. Since defaults were being used, or single
+arguments were given, the result for each command was a single build
+tree. But as its name attests to, cmany will build many trees at once
+by combining the build parameters. For example, to build both Debug
+and Release build types while using defaults for the remaining
+parameters, you can do the following (resulting in 2 build trees):
+
+   $ cmany b -t Debug,Release
+   $ ls -1 build/
+   build/linux-x86_64-gcc6.1-Debug/
+   build/linux-x86_64-gcc6.1-Release/
+
+You can also do this for the compilers (2 build trees):
+
+   $ cmany b -c clang++,g++
+   $ ls -1 build/
+   build/linux-x86_64-clang3.9-Release/
+   build/linux-x86_64-gcc6.1-Release/
+
+And you can also combine all of them (4 build trees):
+
+   $ cmany b -c clang++,g++ -t Debug,Release
+   $ ls -1 build/
+   build/linux-x86_64-clang3.9-Debug/
+   build/linux-x86_64-clang3.9-Release/
+   build/linux-x86_64-gcc6.1-Debug/
+   build/linux-x86_64-gcc6.1-Release/
+
+Another example -- build using clang++,g++,icpc for
+Debug,Release,MinSizeRel build types (9 build trees):
+
+   $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
+   $ ls -1 build/
+   build/linux-x86_64-clang3.9-Debug/
+   build/linux-x86_64-clang3.9-MinSizeRel/
+   build/linux-x86_64-clang3.9-Release/
+   build/linux-x86_64-gcc6.1-Debug/
+   build/linux-x86_64-gcc6.1-MinSizeRel/
+   build/linux-x86_64-gcc6.1-Release/
+   build/linux-x86_64-icc16.1-Debug/
+   build/linux-x86_64-icc16.1-MinSizeRel/
+   build/linux-x86_64-icc16.1-Release/
+
+
+Choosing build/install directories
+==================================
+
+You don't have to use cmany's default build/install dirs. The
+following command will use "foo" for building and "bar" for
+installing:
+
+   $ cmany i -c clang++,g++ --build-dir foo --install-dir bar path/to/proj/dir
+
+   $ ls -1 foo/ bar/
+   bar/linux-x86_64-clang3.9-Release/
+   bar/linux-x86_64-gcc6.1-Release/
+   bar/linux-x86_64-icc16.1-Release/
+   foo/linux-x86_64-clang3.9-Release/
+   foo/linux-x86_64-gcc6.1-Release/
+   foo/linux-x86_64-icc16.1-Release/
+
+Note that "foo" and "bar" will still be placed under the current
+working directory.
+
+
+Getting help
+============
+
+To get a list of available commands and help topics:
+
+   $ cmany help
+
+To get help on a particular command or topic (eg, "build"), any of the
+following can be used, and they are all equivalent:
+
+   $ cmany help build
+   $ cmany h build             # help has an alias: h
+   $ cmany build -h
+   $ cmany build --help
+   $ cmany b -h
+   $ cmany b --help
