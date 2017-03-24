@@ -1,7 +1,7 @@
 Welcome to cmany's documentation!
 *********************************
 
-Basic usage examples
+Quick tour
 
 
 Indices and tables

@@ -10,7 +10,7 @@ Welcome to cmany's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-:doc:`basic_usage`
+:doc:`quick_tour`
 
 Indices and tables
 ==================
