@@ -53,8 +53,7 @@ class cmdbase:
 
 
 class help(cmdbase):
-    '''get help on a particular subcommand or topic. Available topics:
-    basic_examples, flags, visual_studio.'''
+    """get help on a particular subcommand or topic"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
