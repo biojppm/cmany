@@ -77,5 +77,12 @@ setup(name="cmany",
               "requirements.txt",
               "requirements_test.txt"]),
           ("conf", [
-              "src/c4/cmany/flags.yml"])]
+              "src/c4/cmany/flags.yml"]),
+          ("doc", [
+              "doc/_build/text/flags.txt",
+              "doc/_build/text/index.txt",
+              "doc/_build/text/quick_tour.txt",
+              "doc/_build/text/variants.txt",
+          ])
+      ]
 )
