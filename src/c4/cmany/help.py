@@ -27,11 +27,14 @@ def create_topic(id, title, txt, disabled=False):
     ht = Topic(id, title, txt, disabled)
     setattr(sys.modules[__name__], 'help_' + id, ht)
 
+
 def _get_doc(topic_name):
-    txtdocs = os.path.abspath(os.path.dirname(__file__) + "/../../../doc/_build/text")
+    txtdocs = os.path.abspath(os.path.dirname(__file__) +
+                              "/../../../doc/_build/text")
     with open(os.path.join(txtdocs, topic_name + ".txt")) as f:
         txt = "".join(f.readlines())
     return txt
+
 
 # -----------------------------------------------------------------------------
 create_topic(
@@ -64,11 +67,10 @@ create_topic(
     txt=_get_doc("vs")
 )
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 
-
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 epilog = """
 
 list of help topics:
