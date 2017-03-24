@@ -17,7 +17,7 @@ class Topic:
         self.title = title
         self.__doc__ = title
         self.txt = txt
-        Topic.keylen = max(Topic.keylen, len(id))
+        Topic.keylen = max(Topic.keylen, len(id)) + 1
         Topic.tablefmt = '    {:' + str(Topic.keylen) + '} {}'
         if not disabled:
             topics[id] = self
