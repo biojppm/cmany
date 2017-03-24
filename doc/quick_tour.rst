@@ -330,3 +330,33 @@ former two variants to the 9-build example above would result in 18 builds ::
     build/linux-x86_64-icc16.1-Release-bar/
     build/linux-x86_64-icc16.1-Release-foo/
 
+
+Null variant
+^^^^^^^^^^^^
+
+To retain the basic build without the variant suffix use the special name ``none``::
+
+    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2"'
+    $ ls -1 build
+    build/linux-x86_64-clang3.9-Release/
+    build/linux-x86_64-clang3.9-Release-bar/
+    build/linux-x86_64-clang3.9-Release-foo/
+
+
+Inheriting variants
+^^^^^^^^^^^^^^^^^^^
+
+To make a variant inherit all the settings in another variant, reference the
+base variant name prefixed with ``@``. For example, note the ``@foo`` spec in
+the bar variant::
+
+    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: @foo -D BAR_FEATURE=16 -X "-O2"'
+
+With this command, bar will be now consist of ``-D
+FOO_FEATURE=32,BAR_FEATURE=16 -X "-Os","-O2"'``. Note also that order matters
+here::
+
+    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2" @foo'
+
+will make bar consist instead of ``-D BAR_FEATURE=16,FOO_FEATURE=32 -X
+"-O2","-Os"``.
