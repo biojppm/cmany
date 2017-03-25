@@ -1,9 +1,122 @@
 Build variants
 ==============
 
-    $ cmany b -v none,'noexcept: @none --cxxflags c++14,noexceptions --define V_NOEXCEPT','noexcept_static: @noexcept -DV_STATIC'
+If you have read the help on setting up cmake cache variables,
+preprocessor defines or compiler flags, you know that a direct invokation
+like this::
 
-Making a variant inherit the properties of another variant
-----------------------------------------------------------
+  $ cmany b --defines FOO=bar ...more options
+
+(ie, at the level of the cmany command) will cause these to apply to all the
+builds produced by cmany. For setting up build specific cmake cache
+variables, preprocessor defines or compiler flags, cmany has **variants**.
+
+A variant is a build different from any other which uses a specific
+combination of flags via ``--vars/-V``, ``--defines/-D``, ``--cxxflags/-X``,
+``--cflags/-C``.
+
+The command option to setup a variant is ``--variant/-v`` and should be used
+as follows: ``--variant 'variant_name: <variant_specs>'``. For example,
+assume a vanilla build::
+
+    $ cmany b
+
+which will produce the following tree::
+
+    $ ls -1 build
+    build/linux-x86_64-clang3.9-Release/
+
+If instead of this we want to produce two variants ``foo`` and ``bar`` with
+specific defines and compiler flags, the following command should be used::
+
+    $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
+              --variant 'bar: --defines SOME_DEFINE=16 --cxxflags "-O2"'
+
+To be clear, the ``foo`` variant will be compiled with the preprocessor symbol
+named ``SOME_DEFINE`` defined to 32, and will use the ``-Os`` C++ compiler
+flag. In turn, the ``bar`` variant will be compiled with the preprocessor
+symbol named ``SOME_DEFINE`` defined to 16, and will use the ``-O2`` C++
+compiler flag. So instead of the build above, we now get::
+
+    $ ls -1 build
+    build/linux-x86_64-clang3.9-Release-bar/
+    build/linux-x86_64-clang3.9-Release-foo/
+
+Variants will be combined, just like compilers or build types. So applying
+the former two variants to the 9-build example above will result in 18
+builds (3 compilers * 3 build types * 2 variants) ::
+
+    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel \
+              --variant 'foo: -D SOME_DEFINE=32 -X "-Os"' \
+              --variant 'bar: -D SOME_DEFINE=16 -X "-O2"'
+    $ ls -1 build/
+    build/linux-x86_64-clang3.9-Debug-bar/
+    build/linux-x86_64-clang3.9-Debug-foo/
+    build/linux-x86_64-clang3.9-MinSizeRel-bar/
+    build/linux-x86_64-clang3.9-MinSizeRel-foo/
+    build/linux-x86_64-clang3.9-Release-bar/
+    build/linux-x86_64-clang3.9-Release-foo/
+    build/linux-x86_64-gcc6.1-Debug-bar/
+    build/linux-x86_64-gcc6.1-Debug-foo/
+    build/linux-x86_64-gcc6.1-MinSizeRel-bar/
+    build/linux-x86_64-gcc6.1-MinSizeRel-foo/
+    build/linux-x86_64-gcc6.1-Release-bar/
+    build/linux-x86_64-gcc6.1-Release-foo/
+    build/linux-x86_64-icc16.1-Debug-bar/
+    build/linux-x86_64-icc16.1-Debug-foo/
+    build/linux-x86_64-icc16.1-MinSizeRel-bar/
+    build/linux-x86_64-icc16.1-MinSizeRel-foo/
+    build/linux-x86_64-icc16.1-Release-bar/
+    build/linux-x86_64-icc16.1-Release-foo/
+
+Note that ``--variant/-v`` accepts also comma-separated arguments::
+
+    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel \
+              --variant 'foo: -D SOME_DEFINE=32 -X "-Os"','bar: -D SOME_DEFINE=16 -X "-O2"'
+
+Null variant
+------------
+cmany will combine only the given variant names. Notice above that the
+basic (variant-less) build ``linux-x86_64-clang3.9-Debug`` is not there. 
+To retain the basic build without a variant suffix use the special name ``none``::
+
+    $ cmany b -v none \
+              -v 'foo: -D SOME_DEFINE=32 -X "-Os"' \
+              -v 'bar: -D SOME_DEFINE=16 -X "-O2"'
+    $ ls -1 build
+    build/linux-x86_64-clang3.9-Release/
+    build/linux-x86_64-clang3.9-Release-bar/
+    build/linux-x86_64-clang3.9-Release-foo/
+
+You can add flags to the none variant as well, and use inheritance at will.
+
+
+Inheriting variants
+-------------------
+To make a variant inherit all the settings in another variant, reference the
+base variant name prefixed with ``@``. The result is that the inheriting
+variant will have all the flags of the base variant, plus its own flags.
+
+For example, note the ``@foo`` spec in the bar variant::
+
+    $ cmany b -v none \
+              -v 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
+              -v 'bar: @foo --defines SOME_DEFINE=16 -cxxflags "-O2"'
+
+With this command, bar will be now consist of ``-D
+SOME_DEFINE=32,SOME_DEFINE=16 -X "-Os","-O2"'``.
+
+**IMPORTANT**. Order matters here: the place where the inheritance directive
+occurs is relevant. For example::
+
+    $ cmany b -v none \
+              -v 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
+              -v 'bar: --defines SOME_DEFINE=16 -cxxflags "-O2" @foo'
+
+will make bar consist instead of ``-D SOME_DEFINE=16,SOME_DEFINE=32 -X
+"-O2","-Os"``. So here ``SOME_DEFINE`` will have with a value of 16, as
+opposed to 32 which will be the value in the previous example. This happens
+because cmany will insert foo's options right in the place where ``@foo``
+appears.
 
 

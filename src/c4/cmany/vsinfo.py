@@ -172,9 +172,9 @@ _toolsets = (
     'v140_clang_c2', 'v140_clang', 'v140_xp', 'v140',
     # vs2013 compiler toolsets
     'v120_xp', 'v120',
-    # vs2013 compiler toolsets
+    # vs2012 compiler toolsets
     'v110_xp', 'v110',
-    # vs2013 compiler toolsets
+    # vs2010 compiler toolsets
     'v100_xp', 'v100',
     # aliases - implicit compiler toolsets (the same as the chosen VS version)
     'clang_c2', 'clang', 'xp',

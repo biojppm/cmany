@@ -21,7 +21,7 @@ Contents:
 
   * Choosing build/install directories
 
-  * Fine-tuning build flags/defines
+  * Using flags/defines/cache vars
 
   * Build variants
 
@@ -37,7 +37,9 @@ Contents:
 
 * Build variants
 
-  * Making a variant inherit the properties of another variant
+  * Null variant
+
+  * Inheriting variants
 
 * Using cmany with Visual Studio
 

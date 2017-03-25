@@ -34,6 +34,10 @@ The following command invokes CMake to configure and build this project::
 Like with CMake, this will look for the CMakeLists.txt file at the given path
 (``.``) and place the build tree at the current working directory. If the
 path is omitted, CMakeLists.txt is assumed to be on the current working dir.
+Also, the ``build`` command has an alias of ``b``. So the following command is
+exactly the same as ``cmany build .``::
+
+    $ cmany b
 
 When no compiler is specified, cmany chooses CMake's default
 compiler. cmany's default build type is (explicitly set to) Release. As an
@@ -53,11 +57,7 @@ Note that unlike CMake, cmany will not place the resulting build tree
 directly at the current working directory: it will instead nest it under
 ``./build``. Each build tree name is made unique by combining the names of
 the operating system, architecture, compiler+version and the CMake build
-type. The ``build`` command has an alias of ``b``. So the following command is
-exactly the same as ``cmany build .``::
-
-    $ cmany b
-
+type.
 
 Configure
 ---------
@@ -100,7 +100,7 @@ a single executable named ``hello``, the following will result::
 Choosing the build type
 -----------------------
 
-To set the build types use ``-t`` or ``--build-types``. The following command
+To set the build types use ``--build-types/-t``. The following command
 chooses a build type of Debug instead of Release. If the directory is
 initially empty, this will be the result::
 
@@ -118,14 +118,31 @@ like MSVC).
 Choosing the compiler
 ---------------------
 
-To choose the compiler use ``-c`` or ``--compilers``. The following command
+To choose the compiler use ``--compilers/-c``. The following command
 chooses clang++ instead of CMake's default compiler. If the directory is
 initially empty, this will be the result::
 
-    $ cmany b -t Debug
+    $ cmany b -c clang++
     $ ls -1 build/*
-    build/linux-x86_64-clang3.9-Debug/
-        
+    build/linux-x86_64-clang3.9-Release/
+
+cmany works with Visual Studio, and makes it easier than CMake to specify the
+Visual Studio version to use. For example, this will use Visual Studio 2015::
+
+    $ cmany b -c vs2015
+    $ ls -1 build/*
+    build/windows-x86_64-vs2015-Release/
+
+(for comparison the necessary flag in Visual Studio would be "Visual Studio
+15 2017"). If Visual Studio 2017 in 32 bit mode is desired, then it should
+simply be::
+
+    $ cmany b -c vs2017_32
+    $ ls -1 build/*
+    build/windows-x86-vs2017-Release/
+
+Other than the version and architecture, you can also specify the toolset to
+be used. Read more about it 
 
 Building many trees at once
 ---------------------------
@@ -195,168 +212,69 @@ Note that ``foo`` and ``bar`` will still be placed under the current working
 directory.
 
 
-Fine-tuning the build parameters
---------------------------------
+Using flags/defines/cache vars
+------------------------------
 
-Being able to combine compilers and build types is nice, but it's not
-enough. For sure, there is also the need for setting cmake cache variables,
-preprocessor and compiler flags. This section is an intro on how to achieve
-this. It is also a stepping stone for more advanced usage, such as
-variants and per-combination-parameter options.
-
-Note that all of the options below apply across the board to all the
-individual builds produced by the command. For example, this will add
-``-Wall`` to all of the 9 builds in the example above::
-
-    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel -X "--Wall"
-
-If you want something more specific, it's cool! One of the main motivations
-of cmany is being able to easily create variations in which the options below
-apply only to certain builds. If you want to do this, you can either a) use
-**variants** or b) specify those parameters to be specific to the OS,
-architecture, compiler, or build configuration (WIP). Let's start first by
-showing how to set these parameters.
-
-CMake cache variables
-^^^^^^^^^^^^^^^^^^^^^
-
-You can set cmake cache variables using ``-V``/``--vars``. For example, the
+You can set cmake cache variables using ```--vars/-V``. For example, the
 following command will be the same as if ``cmake -DCMAKE_VERBOSE_MAKEFILES=1
--DPROJECT_FOO=BAR .`` followed by ``cmake --build`` was used::
+-DPROJECT_SOME_DEFINE=SOME_DEFINE= .`` followed by ``cmake --build`` was used::
 
-    $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1,PROJECT_FOO=BAR
+    $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1,PROJECT_SOME_DEFINE=SOME_DEFINE=
 
-Note the use of the comma to separate the variables. This is for consistency
-with the rest of the cmany options, namely (for example) those selecting,
-compilers or build types. You can also use separate invocations::
+To add preprocessor macros, use the option ``--defines/-D``::
 
-    $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1 -V PROJECT_FOO=BAR
-
-which will have the same result as above.
-
-Note that these cmake cache variables will be used across the board in all
-the individual builds produced by the cmany command.
-
-Preprocessor macros
-^^^^^^^^^^^^^^^^^^^
-
-To add preprocessor macros, use the option ``-D``/``--defines``::
-
-    $ cmany b -D MY_MACRO=1,FOO=BAR
+    $ cmany b -D MY_MACRO=1,FOO=bar,SOME_DEFINE
 
 The command above has the same meaning as if ``cmake -D
-CMAKE_CXX_FLAGS="-DMY_MACRO=1 -DFOO=BAR"`` followed by ``cmake --build`` was used.
+CMAKE_CXX_FLAGS="-DMY_MACRO=1 -DFOO=bar -DSOME_DEFINE"`` followed by ``cmake
+--build`` was used.
 
-These macros will be used across the board in all the individual builds
-produced by the cmany command.
-
-C++ compiler flags
-^^^^^^^^^^^^^^^^^^
-
-To add C++ compiler flags, use the option ``-X``/``--cxxflags``. To prevent
-these flags being interpreted as cmany command options, use quotes or single
-quotes::
+To add C++ compiler flags, use the command line option
+``--cxxflags/-X``. To prevent these flags being interpreted as cmany
+command options, use quotes or single quotes::
 
     $ cmany b -X "--Wall","-O3"      # add -Wall -O3 to all builds
 
-These flags will be used across the board in all the individual builds
-produced by the cmany command.
-
-C compiler flags
-^^^^^^^^^^^^^^^^
-
-To add C compiler flags, use the option ``-C``/``--cflags``. As with C++
+To add C compiler flags, use the option ``--cflags/-C``. As with C++
 flags, use quotes to escape::
 
     $ cmany b -C "--Wall","-O3"
 
-These flags will be used across the board in all the individual builds
-produced by the cmany command.
-
-
+The cmake cache variables, preprocessor defines and compiler flags specified
+this way will be used across the board in all the individual builds produced
+by the cmany command. For applying these only to certain builds, you can use
+build **variants**, introduced next.
 
 Build variants
 --------------
 
 cmany has **variants** for setting up per-build parameters. A variant is a
-build different from any other, and uses a combination of the options of the
-previous section (``--vars``, ``--defines``, ``--cxxflags``,
-``--cflags``).
+build different from any other which uses a specific combination of the
+options of the previous section (``--vars/-V``, ``--defines/-D``,
+``--cxxflags/-X``, ``--cflags/-C``). The command option to setup a variant is
+``--variant/-v`` and should be used as follows: ``--variant 'variant_name:
+<variant_specs>'``. For example, assume a vanilla build::
 
-For example, we may want to compile ``linux-x86_64-clang3.9-Release`` with
-exceptions enabled and disabled. So in fact we would have
-``linux-x86_64-clang3.9-Release`` and
-``linux-x86_64-clang3.9-Release-no_exceptions``.
+    $ cmany b
 
-The command option to setup a variant is as follows: ``-v 'variant_name:
-<variant_specs>'``. For example, the following command will produce two
-variants, one named foo, and another named bar::
+which will produce the following tree::
 
-    $ cmany b -v 'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2"'
-
-To be clear, the ``foo`` variant will be compiled with a preprocessor symbol named
-``FOO_FEATURE`` defined to 32, and will use the ``-Os`` C++ compiler flag. In
-turn, the ``bar`` var will be compiled with a preprocessor symbol named
-``BAR_FEATURE`` defined to 16, and will use the ``-O2`` C++ compiler
-flag. This will produce 2 builds::
-
-    $ ls -1 build
-    build/linux-x86_64-clang3.9-Release-bar/
-    build/linux-x86_64-clang3.9-Release-foo/
-
-Like compilers or build types, variants will be combined. So applying the
-former two variants to the 9-build example above would result in 18 builds ::
-
-    $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel \
-     -v 'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2"'
-
-    $ ls -1 build/
-    build/linux-x86_64-clang3.9-Debug-bar/
-    build/linux-x86_64-clang3.9-Debug-foo/
-    build/linux-x86_64-clang3.9-MinSizeRel-bar/
-    build/linux-x86_64-clang3.9-MinSizeRel-foo/
-    build/linux-x86_64-clang3.9-Release-bar/
-    build/linux-x86_64-clang3.9-Release-foo/
-    build/linux-x86_64-gcc6.1-Debug-bar/
-    build/linux-x86_64-gcc6.1-Debug-foo/
-    build/linux-x86_64-gcc6.1-MinSizeRel-bar/
-    build/linux-x86_64-gcc6.1-MinSizeRel-foo/
-    build/linux-x86_64-gcc6.1-Release-bar/
-    build/linux-x86_64-gcc6.1-Release-foo/
-    build/linux-x86_64-icc16.1-Debug-bar/
-    build/linux-x86_64-icc16.1-Debug-foo/
-    build/linux-x86_64-icc16.1-MinSizeRel-bar/
-    build/linux-x86_64-icc16.1-MinSizeRel-foo/
-    build/linux-x86_64-icc16.1-Release-bar/
-    build/linux-x86_64-icc16.1-Release-foo/
-
-
-Null variant
-^^^^^^^^^^^^
-
-To retain the basic build without the variant suffix use the special name ``none``::
-
-    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2"'
     $ ls -1 build
     build/linux-x86_64-clang3.9-Release/
+
+If instead of this we want to produce two variants ``foo`` and ``bar`` with
+specific defines and compiler flags, the following command should be used::
+
+    $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
+              --variant 'bar: --defines SOME_DEFINE=16 --cxxflags "-O2"'
+
+To be clear, the ``foo`` variant will be compiled with the preprocessor symbol
+named ``SOME_DEFINE`` defined to 32, and will use the ``-Os`` C++ compiler
+flag. In turn, the ``bar`` variant will be compiled with the preprocessor
+symbol named ``SOME_DEFINE`` defined to 16, and will use the ``-O2`` C++
+compiler flag. So instead of the build above, we now get::
+
+    $ ls -1 build
     build/linux-x86_64-clang3.9-Release-bar/
     build/linux-x86_64-clang3.9-Release-foo/
 
-
-Inheriting variants
-^^^^^^^^^^^^^^^^^^^
-
-To make a variant inherit all the settings in another variant, reference the
-base variant name prefixed with ``@``. For example, note the ``@foo`` spec in
-the bar variant::
-
-    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: @foo -D BAR_FEATURE=16 -X "-O2"'
-
-With this command, bar will be now consist of ``-D
-FOO_FEATURE=32,BAR_FEATURE=16 -X "-Os","-O2"'``. Note also that order matters
-here::
-
-    $ cmany b -v none,'foo: -D FOO_FEATURE=32 -X "-Os"','bar: -D BAR_FEATURE=16 -X "-O2" @foo'
-
-will make bar consist instead of ``-D BAR_FEATURE=16,FOO_FEATURE=32 -X
-"-O2","-Os"``.
