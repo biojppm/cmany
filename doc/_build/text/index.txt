@@ -1,6 +1,46 @@
 Welcome to cmany's documentation!
 *********************************
 
+Contents:
+
+* Quick tour
+
+  * Getting help
+
+  * Build
+
+  * Configure
+
+  * Install
+
+  * Choosing the build type
+
+  * Choosing the compiler
+
+  * Building many trees at once
+
+  * Choosing build/install directories
+
+  * Fine-tuning build flags/defines
+
+  * Build variants
+
+* Compiler flags
+
+  * Specifying flags on the command line
+
+  * Flag aliases
+
+  * Built-in aliases
+
+  * Defining more flag aliases
+
+* Build variants
+
+  * Making a variant inherit the properties of another variant
+
+* Using cmany with Visual Studio
+
 Quick tour
 
 

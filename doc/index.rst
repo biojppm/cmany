@@ -10,6 +10,11 @@ Welcome to cmany's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   quick_tour
+   flags
+   variants
+   vs
+
 :doc:`quick_tour`
 
 Indices and tables
