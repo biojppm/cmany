@@ -1,45 +1,158 @@
 Using cmany with Visual Studio
 ==============================
 
-* Visual Studio aliases example:
-    * vs2015_32: compile 32 bit project
-    * vs2015_64: compile 64 bit project
-    * vs2015: use the bitness of the current system; resolves into
-      either vs2015_32 or vs2015_64 depending on whether the current
-      operating system is 32 bit or 64 bit.
+Visual Studio has an awkward numbering system: the year and the version
+number. Sadly, and confusingly, these have similar values, and cmake forces
+you to deal with this by having to explicitly state the full Visual Studio
+version and year.
 
-* Valid cmake Visual Studio specifiers:
-    * Visual Studio 15 2017 (compile in 32 bit)
-    * Visual Studio 15 2017 Win64
-    * Visual Studio 15 2017 ARM
-    * Visual Studio 14 2015 (compile in 32 bit)
-    * Visual Studio 14 2015 Win64
-    * Visual Studio 14 2015 ARM
-    * Visual Studio 12 2013 (compile in 32 bit)
-    * Visual Studio 12 2013 Win64
-    * Visual Studio 12 2013 ARM
-    * Visual Studio 11 2012 (compile in 32 bit)
-    * Visual Studio 11 2012 Win64
-    * Visual Studio 11 2012 ARM
-    * Visual Studio 10 2010 (compile in 32 bit)
-    * Visual Studio 10 2010 Win64
-    * Visual Studio 10 2010 IA64
-    * Visual Studio 9 2008 (compile in 32 bit)
-    * Visual Studio 9 2008 Win64
-    * Visual Studio 9 2008 IA64
-    * Visual Studio 8 2005 (compile in 32 bit)
-    * Visual Studio 8 2005 Win64
-* Valid Visual Studio toolsets:
-    * vs2017 compiler toolsets: 'v141_clang_c2', 'v141_clang', 'v141_xp', 'v141',
-    * vs2015 compiler toolsets: 'v140_clang_c2', 'v140_clang', 'v140_xp', 'v140',
-    * vs2013 compiler toolsets: 'v120_xp', 'v120',
-    * vs2012 compiler toolsets: 'v110_xp', 'v110',
-    * vs2010 compiler toolsets: 'v100_xp', 'v100',
-    * vs2008 compiler toolsets: 'v90_xp', 'v90',
-    * vs2005 compiler toolsets: 'v80',
+cmany tries to help in this situation by making it easier to specify which
+Visual Studio version to use via a simple alias naming scheme. For example,
+this will create two Visual Studio projects **in the native architecture**
+(eg, x86_64), but with different project versions::
 
-Aliases for VS2017
-------------------
+    $ cmany b -c vs2015,vs2017
+
+As usual, this would be the result the command::  
+
+    $ ls -1 build/*
+    build/windows-x86_64-vs2015-Release/
+    build/windows-x86_64-vs2015-Release/
+
+For comparison, to achieve this with direct use of CMake, the equivalent
+commands would have to be::
+
+    $ mkdir build/windows-x86-vs2015-Release ; \
+      cd build/windows-x86-vs2015-Release ; \
+      cmake -G "Visual Studio 14 2015 Win64" ../.. ; \
+      cd ../.. ; \
+      mkdir build/windows-x86-vs2017-Release ; \
+      cd build/windows-x86-vs2017-Release ; \
+      cmake -G "Visual Studio 15 2017 Win64" ../..
+
+.. note:: cmany defaults to using the native architecture, while cmake
+   defaults to a 32 bit build. For example, when running in a x86 system, the
+   command ``cmake -G "Visual Studio 15 2017" ../..`` will produce a 32 bit
+   build.  For contrast, the command ``cmany b -c vs2015`` will produce a 64
+   bit build. If cmany is running in a 32 bit system instead, then the result
+   of running the command above would be a 32 bit build instead.
+
+Aliasing scheme
+---------------
+cmany allows you to create any valid combination of the Visual Studio project
+versions (from vs2017 to vs2005), target architectures (32, 64, arm, ia64)
+and toolsets (from v141 to v80, with clang_c2 and xp variants). The general
+form for the cmany VS alias is::
+
+    <vs_version>[_<vs_platform>][_<vs_toolset>]
+
+Note that the platform or the toolset can be omitted, in which case a sensible
+default will be used:
+
+   * if the platform is omitted, then the current platform will be used
+   * if the toolset is omitted, then the toolset of the given project version
+     will be used.
+
+Note also that the order must be exactly as given: first the VS version, then
+the platform, then the toolset. For example, when the platform is omitted,
+then the alias should have the following form::
+
+    <vs_version>_<vs_toolset>
+
+When the toolset is omitted, then the alias should have the form::
+
+    <vs_version>[_<vs_platform>]
+
+If both the architecture and platform are omitted, then has the simple form::
+
+    <vs_version>
+
+Here are some alias examples and the equivalent cmake command line options:
+
+* ``vs2015_32_clang``: ``-G "Visual Studio 14 2015" -T v140_clang_c2``
+* ``vs2015_64_clang``: ``-G "Visual Studio 14 2015 Win64" -T v140_clang_c2``
+* ``vs2017_64_v140``: ``-G "Visual Studio 15 2017 Win64" -T
+  v140``. This will generate a VS2017 solution which is compiled
+  with the ``v140`` toolset.
+
+
+Visual Studio versions
+^^^^^^^^^^^^^^^^^^^^^^
+
+Here's an enumeration with the valid cmake Visual Studio solution version /
+target architecture specifier duplets:
+
+* Visual Studio 15 2017 (compile in native architecture): ``vs2017``
+* Visual Studio 15 2017 (compile in 32 bit): ``vs2017_32``
+* Visual Studio 15 2017 Win64: ``vs2017_64``
+* Visual Studio 15 2017 ARM: ``vs2017_arm``
+* Visual Studio 14 2015 (compile in native architecture): ``vs2015``
+* Visual Studio 14 2015 (compile in 32 bit): ``vs2015_32``
+* Visual Studio 14 2015 Win64: ``vs2015_64``
+* Visual Studio 14 2015 ARM: ``vs2015_arm``
+* Visual Studio 12 2013 (compile in native architecture): ``vs2013``
+* Visual Studio 12 2013 (compile in 32 bit): ``vs2013_32``
+* Visual Studio 12 2013 Win64: ``vs2013_64``
+* Visual Studio 12 2013 ARM: ``vs2013_arm``
+* Visual Studio 11 2012 (compile in native architecture): ``vs2012``
+* Visual Studio 11 2012 (compile in 32 bit): ``vs2012_32``
+* Visual Studio 11 2012 Win64: ``vs2012_64``
+* Visual Studio 11 2012 ARM: ``vs2012_arm``
+* Visual Studio 10 2010 (compile in native architecture): ``vs2010``
+* Visual Studio 10 2010 (compile in 32 bit): ``vs2010_32``
+* Visual Studio 10 2010 Win64: ``vs2010_64``
+* Visual Studio 10 2010 IA64: ``vs2010_ia64``
+* Visual Studio 9 2008 (compile in native architecture): ``vs2008``
+* Visual Studio 9 2008 (compile in 32 bit): ``vs2008_32``
+* Visual Studio 9 2008 Win64: ``vs2008_64``
+* Visual Studio 9 2008 IA64: ``vs2008_ia64``
+* Visual Studio 8 2005 (compile in native architecture): ``vs2005``
+* Visual Studio 8 2005 (compile in 32 bit): ``vs2005_32``
+* Visual Studio 8 2005 Win64: ``vs2005_64``
+
+Target architecture
+^^^^^^^^^^^^^^^^^^^
+
+Here's the list of valid architectures in cmany's VS aliasing scheme:
+
+ * ``32``
+ * ``64``
+ * ``arm``
+ * ``ia64``
+
+Visual Studio toolset
+^^^^^^^^^^^^^^^^^^^^^
+
+Here's the list of valid Visual Studio toolsets:
+
+* ``vs2017`` compiler toolsets: ``v141``, ``v141_clang_c2``, ``v141_xp``
+* ``vs2015`` compiler toolsets: ``v140``, ``v140_clang_c2``, ``v140_xp``
+* ``vs2013`` compiler toolsets: ``v120``, ``v120_xp``
+* ``vs2012`` compiler toolsets: ``v110``, ``v110_xp``
+* ``vs2010`` compiler toolsets: ``v100``, ``v100_xp``
+* ``vs2008`` compiler toolsets: ``v90``, ``v90_xp``
+* ``vs2005`` compiler toolsets: ``v80``,
+
+cmany allows several shorter forms for specifying some of these toolsets:
+
+* the default toolset can be omitted. For example, ``vs2017`` is exactly the
+  same as ``vs2017_v141``, and ``vs2013`` is exactly the same as ``vs2013_v120``
+* the clang toolset can be shortened to ``clang`` instead of
+  ``clang_c2``. Also, omitting the version from a clang toolset will default
+  to the current VS version's toolset. So for example, ``vs2015_clang``
+  or ``vs2015_clang_c2`` are the same as ``vs2015_v140_clang_c2``.
+* the xp toolset has the same ommission behaviour as clang. For example,
+  ``vs2015_xp`` is the same as ``vs2015_v140_xp``.
+
+Alias list
+----------
+
+It is easy to see that combining the VS solution version, target architecture
+and toolsets above creates hundreds of different possibilities. This section
+shows what each of them mean.
+
+VS2017
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -171,8 +284,8 @@ Aliases for VS2017
 |  ``vs2017_arm_v100``         |  ``15 2017``                |  ``arm``           |  ``v100``           |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
-Aliases for VS2015
-------------------
+VS2015
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -272,9 +385,8 @@ Aliases for VS2015
 |  ``vs2015_arm_clang``        |  ``14 2015``                |  ``arm``           |  ``v140_clang_c2``  |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
-
-Aliases for VS2013
-------------------
+VS2013
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -335,8 +447,8 @@ Aliases for VS2013
 +------------------------------+-----------------------------+--------------------+---------------------+
 
 
-Aliases for VS2012
-------------------
+VS2012
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -414,8 +526,8 @@ Aliases for VS2012
 |  ``vs2012_arm_v80``          |  ``11 2012``                |  ``arm``           |  ``v80``            |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
-Aliases for VS2010
-------------------
+VS2010
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -476,8 +588,8 @@ Aliases for VS2010
 +------------------------------+-----------------------------+--------------------+---------------------+
 
 
-Aliases for VS2008
-------------------
+VS2008
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -524,8 +636,8 @@ Aliases for VS2008
 +------------------------------+-----------------------------+--------------------+---------------------+
 
 
-Aliases for VS2005
-------------------
+VS2005
+^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |

@@ -18,8 +18,7 @@ equivalent:
    $ cmany build -h
    $ cmany build --help
 
-This text is also a help topic. You can also read this text through
-the help command by:
+This text is also a help topic. You can read it with the help command:
 
    $ cmany h quick_tour
 
@@ -350,10 +349,13 @@ flags be used whenever a certain build combination parameter is used.
 In other words, the variant mechanism also applies to the following
 parameters:
 
-   * operating system (``--systems/-s``)
-   * architecture (``--architectures/-a``)
-   * compiler (``--compilers/-c``)
-   * build type (``--build-types/-t``)
+   * operating system ("--systems/-s")
+
+   * architecture ("--architectures/-a")
+
+   * compiler ("--compilers/-c")
+
+   * build type ("--build-types/-t")
 
 Some examples follow.
 

@@ -17,8 +17,8 @@ of the following can be used, and they are all equivalent::
     $ cmany build -h
     $ cmany build --help
 
-This text is also a help topic. You can also read this text through the help
-command by::
+This text is also a help topic. You can read it with the help
+command::
 
     $ cmany h quick_tour
 
@@ -135,6 +135,7 @@ The given compiler should be found in the path.
 
 Microsoft Visual Studio
 ^^^^^^^^^^^^^^^^^^^^^^^
+
 cmany makes it easier than CMake to :doc:`specify which Visual Studio
 version </vs>` to use. For example, this will use Visual Studio 2015 **in the
 native architecture**::
@@ -335,12 +336,12 @@ The pattern ``item_name: <flag_specs>`` which is used for specifying the
 flags to use in :doc:`a variant </variants>` can also be used for making a
 bundle of flags be used whenever a certain build combination parameter is
 used. In other words, the variant mechanism also applies to the following
-parameters::
+parameters:
 
-* operating system (``--systems/-s``)
-* architecture (``--architectures/-a``)
-* compiler (``--compilers/-c``)
-* build type (``--build-types/-t``)
+ * operating system (``--systems/-s``)
+ * architecture (``--architectures/-a``)
+ * compiler (``--compilers/-c``)
+ * build type (``--build-types/-t``)
 
 Some examples follow.
 

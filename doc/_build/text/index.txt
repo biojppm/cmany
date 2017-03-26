@@ -71,19 +71,9 @@ Contents:
 
 * Using cmany with Visual Studio
 
-  * Aliases for VS2017
+  * Aliasing scheme
 
-  * Aliases for VS2015
-
-  * Aliases for VS2013
-
-  * Aliases for VS2012
-
-  * Aliases for VS2010
-
-  * Aliases for VS2008
-
-  * Aliases for VS2005
+  * Alias list
 
 
 Indices and tables
