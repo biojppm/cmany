@@ -177,7 +177,8 @@ class TestBuild:
                                      compiler=compiler,
                                      variant=cmany.Variant.default(),
                                      flags=self.flags,
-                                     num_jobs=cmany.cpu_count()
+                                     num_jobs=cmany.cpu_count(),
+                                     kwargs={}
                                      )
 
     def checkc(self, tester):
