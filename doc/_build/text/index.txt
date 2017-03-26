@@ -25,6 +25,8 @@ Contents:
 
   * Build variants
 
+  * System- and architecture- specific flags
+
 * Compiler flags
 
   * Specifying flags on the command line

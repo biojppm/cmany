@@ -128,24 +128,57 @@ is initially empty, this will be the result:
    $ ls -1 build/*
    build/linux-x86_64-clang3.9-Release/
 
-cmany works with Visual Studio, and makes it easier than CMake to
-specify the Visual Studio version to use. For example, this will use
-Visual Studio 2015:
+The given compiler should be found in the path.
+
+
+Microsoft Visual Studio
+-----------------------
+
+cmany makes it easier than CMake to specify which Visual Studio
+version to use. For example, this will use Visual Studio 2015 **in the
+native architecture**:
 
    $ cmany b -c vs2015
    $ ls -1 build/*
    build/windows-x86_64-vs2015-Release/
 
-(for comparison the necessary flag in Visual Studio would be "Visual
-Studio 15 2017"). If Visual Studio 2017 in 32 bit mode is desired,
-then it should simply be:
+as opposed to the option required by CMake, which would be "-G "Visual
+Studio 15 2017 Win64""). Significantly, this will use the native
+architecture (this is a behaviour slightly different from CMake). So
+if cmany is running in a 32 bit system, then the result of running the
+command above would be a 32 bit build instead:
+
+   $ cmany b -c vs2015
+   $ ls -1 build/*
+   build/windows-x86-vs2015-Release/
+
+An explicit request for the target architecture may be made by
+appending a "_32" or "_64" suffix. For example, if Visual Studio 2017
+in 32 bit mode is desired, then simply use "vs2017_32":
 
    $ cmany b -c vs2017_32
    $ ls -1 build/*
    build/windows-x86-vs2017-Release/
 
-Other than the version and architecture, you can also specify the
-toolset to be used. Read more about it
+cmany allows you to create any valid combination of the Visual Studio
+project versions (from vs2017 to vs2005), target architectures (32,
+64, arm, ia64) and toolsets (from v141 to v80, with clang_c2 and xp
+variants). The general form for the cmany VS specification alias is:
+
+   <vs_project_version>[_<vs_platform_version>][_<vs_toolset_version>]
+
+Note that the order must be exactly as given. Note also that the
+platform version or the toolset version can be omitted, in which case
+a sensible default will be used:
+
+   * if the platform is omitted, then the current platform will be
+     used
+
+   * if the toolset is omitted, then the toolset of the given
+     project version will be used.
+
+This creates hundreds of possible aliases, so read the complete
+documentation for Visual Studio.
 
 
 Building many trees at once
@@ -199,11 +232,14 @@ Debug,Release,MinSizeRel build types (9 build trees):
 Choosing build/install directories
 ==================================
 
-You don't have to use cmany's default build/install dirs. The
+By default, cmany creates the build trees nested under a directory
+"build" which is made as a sibling of the "CMakeLists.txt" project
+file. Similarly, the install trees are nested under the "install"
+directory. However, you don't have to use these defaults. The
 following command will use "foo" for building and "bar" for
 installing:
 
-   $ cmany i -c clang++,g++ --build-dir foo --install-dir bar path/to/proj/dir
+   $ cmany i -c clang++,g++ --build-dir foo --install-dir bar
 
    $ ls -1 foo/ bar/
    bar/linux-x86_64-clang3.9-Release/
@@ -220,7 +256,9 @@ working directory.
 Using flags/defines/cache vars
 ==============================
 
-You can set cmake cache variables using "`--vars/-V". For example, the
+(Full docs for flags here).
+
+You can set cmake cache variables using "--vars/-V". For example, the
 following command will be the same as if "cmake
 -DCMAKE_VERBOSE_MAKEFILES=1 -DPROJECT_SOME_DEFINE=SOME_DEFINE= ."
 followed by "cmake --build" was used:
@@ -255,12 +293,14 @@ certain builds, you can use build **variants**, introduced next.
 Build variants
 ==============
 
+(Full docs for variants here).
+
 cmany has **variants** for setting up per-build parameters. A variant
 is a build different from any other which uses a specific combination
 of the options of the previous section ("--vars/-V", "--defines/-D", "
 --cxxflags/-X", "--cflags/-C"). The command option to setup a variant
 is "--variant/-v" and should be used as follows: "--variant
-'variant_name: <variant_specs>'". For example, assume a vanilla build:
+'variant_name: <flag_specs>'". For example, assume a vanilla build:
 
    $ cmany b
 
@@ -286,3 +326,47 @@ get:
    $ ls -1 build
    build/linux-x86_64-clang3.9-Release-bar/
    build/linux-x86_64-clang3.9-Release-foo/
+
+Note above the additional "-foo" and "-bar" suffixes to denote the
+originating variant.
+
+You can also make variants inherit from other variants, as well as
+having a null variant. Read more about this in the Build variants
+document.
+
+
+System- and architecture- specific flags
+========================================
+
+The "item_name: <flag_specs>" pattern for specifying the flags to use
+in a variant can also be used for specifying flags specific to one of
+the build combination parameters:
+
+* operating system ("--systems/-s")
+
+* architecture ("--architectures/-a")
+
+* compiler ("--compilers/-c")
+
+* build type ("--build-types/-t")
+
+For example, to associate specific flags to an operating system in
+order to used a toolchain, you can simply do:
+
+   $ cmany b --systems linux,'android: --vars CMAKE_TOOLCHAIN=toolchain.cmake'
+
+Or if you want to invoke gcc in both in 32 and 64 bit mode while in a
+64 bit system:
+
+   $ cmany b --architecture x86_64,'x86: --cxxflags "-m32"'
+
+Or if you want to add a special define only for one compiler:
+
+   $ cmany b --compilers g++,'clang: --defines FOO=bar"'
+
+Or you can add a flag only to a certain build type:
+
+   $ cmany b --build-types Release,'Debug: --cxxflags "-Wall"'
+
+Again, all of the flag directives can be used inside the "item_name:
+<flag_specs>" pattern.

@@ -1,7 +1,7 @@
 Build variants
 ==============
 
-If you have read the help on setting up cmake cache variables,
+If you have read the :doc:`help on setting up </flags>` cmake cache variables,
 preprocessor defines or compiler flags, you know that a direct invokation
 like this::
 
