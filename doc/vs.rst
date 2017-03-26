@@ -1,13 +1,45 @@
 Using cmany with Visual Studio
 ==============================
 
-Visual Studio aliases example:
-
+* Visual Studio aliases example:
     * vs2015_32: compile 32 bit project
     * vs2015_64: compile 64 bit project
     * vs2015: use the bitness of the current system; resolves into
       either vs2015_32 or vs2015_64 depending on whether the current
       operating system is 32 bit or 64 bit.
+
+* Valid cmake Visual Studio specifiers:
+    * Visual Studio 15 2017 (compile in 32 bit)
+    * Visual Studio 15 2017 Win64
+    * Visual Studio 15 2017 ARM
+    * Visual Studio 14 2015 (compile in 32 bit)
+    * Visual Studio 14 2015 Win64
+    * Visual Studio 14 2015 ARM
+    * Visual Studio 12 2013 (compile in 32 bit)
+    * Visual Studio 12 2013 Win64
+    * Visual Studio 12 2013 ARM
+    * Visual Studio 11 2012 (compile in 32 bit)
+    * Visual Studio 11 2012 Win64
+    * Visual Studio 11 2012 ARM
+    * Visual Studio 10 2010 (compile in 32 bit)
+    * Visual Studio 10 2010 Win64
+    * Visual Studio 10 2010 IA64
+    * Visual Studio 9 2008 (compile in 32 bit)
+    * Visual Studio 9 2008 Win64
+    * Visual Studio 9 2008 IA64
+    * Visual Studio 8 2005 (compile in 32 bit)
+    * Visual Studio 8 2005 Win64
+* Valid Visual Studio toolsets:
+    * vs2017 compiler toolsets: 'v141_clang_c2', 'v141_clang', 'v141_xp', 'v141',
+    * vs2015 compiler toolsets: 'v140_clang_c2', 'v140_clang', 'v140_xp', 'v140',
+    * vs2013 compiler toolsets: 'v120_xp', 'v120',
+    * vs2012 compiler toolsets: 'v110_xp', 'v110',
+    * vs2010 compiler toolsets: 'v100_xp', 'v100',
+    * vs2008 compiler toolsets: 'v90_xp', 'v90',
+    * vs2005 compiler toolsets: 'v80',
+
+Aliases for VS2017
+------------------
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -139,6 +171,9 @@ Visual Studio aliases example:
 |  ``vs2017_arm_v100``         |  ``15 2017``                |  ``arm``           |  ``v100``           |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
+Aliases for VS2015
+------------------
+
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
 +==============================+=============================+====================+=====================+
@@ -237,6 +272,10 @@ Visual Studio aliases example:
 |  ``vs2015_arm_clang``        |  ``14 2015``                |  ``arm``           |  ``v140_clang_c2``  |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
+
+Aliases for VS2013
+------------------
+
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
 +==============================+=============================+====================+=====================+
@@ -294,6 +333,10 @@ Visual Studio aliases example:
 +------------------------------+-----------------------------+--------------------+---------------------+
 |  ``vs2013_64_v80``           |  ``12 2013``                |  ``x86_64``        |  ``v80``            |
 +------------------------------+-----------------------------+--------------------+---------------------+
+
+
+Aliases for VS2012
+------------------
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
@@ -371,6 +414,9 @@ Visual Studio aliases example:
 |  ``vs2012_arm_v80``          |  ``11 2012``                |  ``arm``           |  ``v80``            |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
+Aliases for VS2010
+------------------
+
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
 +==============================+=============================+====================+=====================+
@@ -429,6 +475,10 @@ Visual Studio aliases example:
 |  ``vs2010_64_v80``           |  ``10 2010``                |  ``x86_64``        |  ``v80``            |
 +------------------------------+-----------------------------+--------------------+---------------------+
 
+
+Aliases for VS2008
+------------------
+
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
 +==============================+=============================+====================+=====================+
@@ -472,6 +522,10 @@ Visual Studio aliases example:
 +------------------------------+-----------------------------+--------------------+---------------------+
 |  ``vs2008_ia64_v80``         |  ``9 2008``                 |  ``ia64``          | ``v80``             |
 +------------------------------+-----------------------------+--------------------+---------------------+
+
+
+Aliases for VS2005
+------------------
 
 +------------------------------+-----------------------------+--------------------+---------------------+
 |    cmany compiler alias      |    project VS version       |    Target arch.    |    VS Toolset       |
