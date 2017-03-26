@@ -1,6 +1,15 @@
 cmany
 =====
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   quick_tour
+   flags
+   variants
+   vs
+
 Easily batch-build cmake projects!
 
 cmany is a command line tool to easily build variations of a CMake C/C++ project.

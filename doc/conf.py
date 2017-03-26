@@ -154,4 +154,3 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-print("CARALHO")
