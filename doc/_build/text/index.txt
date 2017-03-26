@@ -1,65 +1,121 @@
-Welcome to cmany's documentation!
-*********************************
+cmany
+*****
 
-Contents:
+Easily batch-build cmake projects!
 
-* Quick tour
+cmany is a command line tool to easily build variations of a CMake
+C/C++ project. It combines different compilers, cmake build types,
+compilation flags, processor architectures (WIP) and operating systems
+(also WIP).
 
-  * Getting help
+For example, to configure and build a project combining clang++ and
+g++ with both Debug and Release:
 
-  * Build
+   $ cmany build -c clang++,g++ -t Debug,Release path/to/CMakeLists.txt
 
-  * Configure
+The command above will result in four different build trees, placed by
+default under a "build" directory which is under the current working
+directory:
 
-  * Install
+   $ ls build/*
+   build/linux-x86_64-clang3.9-Debug
+   build/linux-x86_64-clang3.9-Release
+   build/linux-x86_64-gcc6.1-Debug
+   build/linux-x86_64-gcc6.1-Release
 
-  * Choosing the build type
+Each build tree is obtained by first configuring CMake with the given
+parameters, and then invoking "cmake --build" to build the project at
+once.
 
-  * Choosing the compiler
+You can also just use cmany as a much simpler version of the typical
+cmake usage pattern:
 
-  * Building many trees at once
++---------------------------------+---------------------------------+
+| typical cmake                   | cmany                           |
++=================================+=================================+
+| "$ git clone <some-repo>" "$ cd | "$ git clone <some-repo>" "$ cd |
+| <some-repo>" "$ mkdir build" "$ | <some-repo>" "$ cmany b"        |
+| cd build" "$ cmake .." "$ cmake |                                 |
+| --build ."                      |                                 |
++---------------------------------+---------------------------------+
 
-  * Choosing build/install directories
 
-  * Using flags/defines/cache vars
+Features
+========
 
-  * Build variants
+* Easily configure and build many variations of your project with
+  one simple command.
 
-  * System- and architecture- specific flags
+* Saves the tedious work of dealing with many build trees by hand.
 
-* Compiler flags
+* Sensible defaults: "cmany build" will create and build a single
+  project using CMake's defaults.
 
-  * Specifying flags on the command line
+* Transparently pass flags (compiler flags, processor defines  or
+  cmake cache variables) to any or all of the builds.
 
-  * Flag aliases
+* Useful for build comparisons. You can easily setup bundles of
+  flags, aka variants.
 
-  * Built-in aliases
+* Useful for validating and unit-testing your project with different
+  compilers and flags.
 
-  * Defining more flag aliases
+* Useful for creating distributions.
 
-* Build variants
+* Avoids a full rebuild when the build type is changed. Although
+  this feature already exists in multi-configuration cmake generators
+  like Visual Studio, it is missing from mono-configuration generators
+  like Unix Makefiles.
 
-  * Null variant
+* Run arbitrary commands in every build tree or install tree.
 
-  * Inheriting variants
+* Emacs integration! *<https://github.com/biojppm/cmany.el>*
 
-* Using cmany with Visual Studio
 
-  * Aliases for VS2017
+Installing
+==========
 
-  * Aliases for VS2015
+cmany is written in Python 3. It will eventually be added to the PyPI
+repository, but for now you can install it from a repo clone:
 
-  * Aliases for VS2013
+   $ git clone https://github.com/biojppm/cmany
+   $ cd cmany
+   $ pip3 install .
 
-  * Aliases for VS2012
+If you want to install and develop cmany, use the "-e" option for pip:
 
-  * Aliases for VS2010
+   $ pip3 install -e .
 
-  * Aliases for VS2008
 
-  * Aliases for VS2005
+Getting started
+===============
 
-Quick tour
+Read *the quick tour <https://cmany.readthedocs.io/>* in cmany's
+documentation.
+
+
+License
+=======
+
+This project is licensed under the MIT license.
+
+
+Status
+======
+
+This project is a pre-alpha under development.
+
+
+Contribute
+==========
+
+Send pull requests to *<https://github.com/biojppm/cmany/pulls>*.
+
+
+Support
+=======
+
+Send bug reports to *<https://github.com/biojppm/cmany/issues>*.
 
 
 Indices and tables
