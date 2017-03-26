@@ -176,6 +176,10 @@ _toolsets = (
     'v110_xp', 'v110',
     # vs2010 compiler toolsets
     'v100_xp', 'v100',
+    # vs2008 compiler toolsets
+    'v90_xp', 'v90',
+    # vs2005 compiler toolsets
+    'v80',
     # aliases - implicit compiler toolsets (the same as the chosen VS version)
     'clang_c2', 'clang', 'xp',
 )
@@ -212,6 +216,10 @@ def sep_name_toolset(name, canonize=True):
                 vs_toolset = 'v110_' + toolset
             elif year == 2010:
                 vs_toolset = 'v100_' + toolset
+            elif year == 2008:
+                vs_toolset = 'v90_' + toolset
+            elif year == 2005:
+                vs_toolset = 'v80_' + toolset
             else:
                 raise Exception("toolset not implemented for " + name + ". toolset="+toolset)
     else:
