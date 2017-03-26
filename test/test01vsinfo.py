@@ -33,12 +33,16 @@ if util.in_windows():
         #         self.fail("could not find any VS installation")
         #     self.assertIsNotNone(any)
 
+if True:
+
+    _sfx = " Win64" if util.in_64bit() else ""
+
+    class TestVisualStudioAliases(ut.TestCase):
         def test01_name_to_gen(self):
             def c(a, s):
                 sc = vsinfo.to_gen(a)
                 if sc != s:
                     self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
-            _sfx = " Win64" if util.in_64bit() else ""
             c('vs2017'      , 'Visual Studio 15 2017' + _sfx )
             c('vs2017_32'   , 'Visual Studio 15 2017'        )
             c('vs2017_64'   , 'Visual Studio 15 2017 Win64'  )
@@ -155,6 +159,7 @@ if util.in_windows():
                     self.fail("{} should be '{}' but is '{}'".format(spec, name_vs, cname_vs))
                 if cts_vs != ts_vs:
                     self.fail("{} should be '{}' but is '{}'".format(spec, ts_vs, cts_vs))
+
             t('vs2017'                , 'vs2017'     , None           )
             t('vs2017_clang'          , 'vs2017'     , 'v141_clang_c2')
             t('vs2017_xp'             , 'vs2017'     , 'v141_xp'      )
@@ -170,6 +175,7 @@ if util.in_windows():
             t('vs2017_v110_xp'        , 'vs2017'     , 'v110_xp'      )
             t('vs2017_v100'           , 'vs2017'     , 'v100'         )
             t('vs2017_v100_xp'        , 'vs2017'     , 'v100_xp'      )
+
             t('vs2017_32'             , 'vs2017_32'  , None           )
             t('vs2017_32_clang'       , 'vs2017_32'  , 'v141_clang_c2')
             t('vs2017_32_xp'          , 'vs2017_32'  , 'v141_xp'      )
@@ -185,6 +191,7 @@ if util.in_windows():
             t('vs2017_32_v110_xp'     , 'vs2017_32'  , 'v110_xp'      )
             t('vs2017_32_v100'        , 'vs2017_32'  , 'v100'         )
             t('vs2017_32_v100_xp'     , 'vs2017_32'  , 'v100_xp'      )
+
             t('vs2017_64'             , 'vs2017_64'  , None           )
             t('vs2017_64_clang'       , 'vs2017_64'  , 'v141_clang_c2')
             t('vs2017_64_xp'          , 'vs2017_64'  , 'v141_xp'      )
@@ -200,6 +207,7 @@ if util.in_windows():
             t('vs2017_64_v110_xp'     , 'vs2017_64'  , 'v110_xp'      )
             t('vs2017_64_v100'        , 'vs2017_64'  , 'v100'         )
             t('vs2017_64_v100_xp'     , 'vs2017_64'  , 'v100_xp'      )
+
             t('vs2017_arm'            , 'vs2017_arm' , None           )
             t('vs2017_arm_clang'      , 'vs2017_arm' , 'v141_clang_c2')
             t('vs2017_arm_v141'       , 'vs2017_arm' , 'v141'         )
@@ -209,6 +217,7 @@ if util.in_windows():
             t('vs2017_arm_v120'       , 'vs2017_arm' , 'v120'         )
             t('vs2017_arm_v110'       , 'vs2017_arm' , 'v110'         )
             t('vs2017_arm_v100'       , 'vs2017_arm' , 'v100'         )
+
             t('vs2015'                , 'vs2015'     , None           )
             t('vs2015_clang'          , 'vs2015'     , 'v140_clang_c2')
             t('vs2015_xp'             , 'vs2015'     , 'v140_xp'      )
@@ -221,6 +230,7 @@ if util.in_windows():
             t('vs2015_v110_xp'        , 'vs2015'     , 'v110_xp'      )
             t('vs2015_v100'           , 'vs2015'     , 'v100'         )
             t('vs2015_v100_xp'        , 'vs2015'     , 'v100_xp'      )
+
             t('vs2015_32'             , 'vs2015_32'  , None           )
             t('vs2015_32_clang'       , 'vs2015_32'  , 'v140_clang_c2')
             t('vs2015_32_xp'          , 'vs2015_32'  , 'v140_xp'      )
@@ -233,6 +243,7 @@ if util.in_windows():
             t('vs2015_32_v110_xp'     , 'vs2015_32'  , 'v110_xp'      )
             t('vs2015_32_v100'        , 'vs2015_32'  , 'v100'         )
             t('vs2015_32_v100_xp'     , 'vs2015_32'  , 'v100_xp'      )
+
             t('vs2015_64'             , 'vs2015_64'  , None           )
             t('vs2015_64_clang'       , 'vs2015_64'  , 'v140_clang_c2')
             t('vs2015_64_xp'          , 'vs2015_64'  , 'v140_xp'      )
@@ -247,8 +258,26 @@ if util.in_windows():
             t('vs2015_64_v100_xp'     , 'vs2015_64'  , 'v100_xp'      )
             t('vs2015_arm'            , 'vs2015_arm' , None           )
             t('vs2015_arm_clang'      , 'vs2015_arm' , 'v140_clang_c2')
-            t('vs2013'                , 'vs2013'     , None           )
-            t('vs2013_xp'             , 'vs2013'     , 'v120_xp'      )
+
+            t('vs2013'                , 'vs2013'    , None           )
+            t('vs2013_xp'             , 'vs2013'    , 'v120_xp'      )
+            t('vs2013_32'             , 'vs2013_32' , None           )
+            t('vs2013_32_xp'          , 'vs2013_32' , 'v120_xp'      )
+            t('vs2013_64'             , 'vs2013_64' , None           )
+            t('vs2013_64_xp'          , 'vs2013_64' , 'v120_xp'      )
+            t('vs2013_v110'           , 'vs2013'    , 'v110'         )
+            t('vs2013_v110_xp'        , 'vs2013'    , 'v110_xp'      )
+            t('vs2013_32_v110'        , 'vs2013_32' , 'v110'         )
+            t('vs2013_32_v110_xp'     , 'vs2013_32' , 'v110_xp'      )
+            t('vs2013_64_v110'        , 'vs2013_64' , 'v110'         )
+            t('vs2013_64_v110_xp'     , 'vs2013_64' , 'v110_xp'      )
+            t('vs2013_v100'           , 'vs2013'    , 'v100'         )
+            t('vs2013_v100_xp'        , 'vs2013'    , 'v100_xp'      )
+            t('vs2013_32_v100'        , 'vs2013_32' , 'v100'         )
+            t('vs2013_32_v100_xp'     , 'vs2013_32' , 'v100_xp'      )
+            t('vs2013_64_v100'        , 'vs2013_64' , 'v100'         )
+            t('vs2013_64_v100_xp'     , 'vs2013_64' , 'v100_xp'      )
+
             t('vs2012'                , 'vs2012'     , None           )
             t('vs2012_xp'             , 'vs2012'     , 'v110_xp'      )
             t('vs2010'                , 'vs2010'     , None           )
