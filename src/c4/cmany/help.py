@@ -38,9 +38,9 @@ def _get_doc(topic_name):
 
 # -----------------------------------------------------------------------------
 create_topic(
-    "examples",
-    title="Basic usage examples",
-    txt=_get_doc("basic_usage")
+    "quick_tour",
+    title="Quick tour",
+    txt=_get_doc("quick_tour")
 )
 
 
