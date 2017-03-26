@@ -9,7 +9,7 @@ To get a list of available commands and help topics::
 
     $ cmany help
 
-To get help on a particular command or topic (eg, ``build``), any
+To get help on a particular command (eg, ``build``) or topic (eg, ``quick_tour``), any
 of the following can be used, and they are all equivalent::
 
     $ cmany help build
@@ -17,6 +17,10 @@ of the following can be used, and they are all equivalent::
     $ cmany build -h
     $ cmany build --help
 
+This text is also a help topic. You can also read this text through the help
+command by::
+
+    $ cmany h quick_tour
 
 Build
 -----

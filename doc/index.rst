@@ -86,11 +86,11 @@ This project is a pre-alpha under development.
 
 Contribute
 ----------
-Send pull requests to `<https://github.com/biojppm/cmany/pulls>`.
+Send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 
 Support
 -------
-Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
+Send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
 
 
 Contents
@@ -100,6 +100,7 @@ Contents
    :maxdepth: 2
    :caption: Contents:
 
+   index
    quick_tour
    flags
    variants

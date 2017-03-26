@@ -122,6 +122,34 @@ Contents
 
 Contents:
 
+* cmany
+
+  * Features
+
+  * Installing
+
+  * Getting started
+
+  * License
+
+  * Status
+
+  * Contribute
+
+  * Support
+
+* Contents
+
+  * Quick tour
+
+  * Flags
+
+  * Build variants
+
+  * Using cmany with Visual Studio
+
+* Indices and tables
+
 * Quick tour
 
   * Getting help
