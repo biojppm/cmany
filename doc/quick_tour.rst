@@ -228,7 +228,7 @@ Choosing build/install directories
 ----------------------------------
 
 By default, cmany creates the build trees nested under a directory ``build``
-which is made as a sibling of the ``CMakeLists.txt`` project file. Similarly,
+which is created as a sibling of the ``CMakeLists.txt`` project file. Similarly,
 the install trees are nested under the ``install`` directory. However, you
 don't have to use these defaults. The following command will use ``foo`` for
 building and ``bar`` for installing::
@@ -302,7 +302,7 @@ which will produce the following tree::
     $ ls -1 build
     build/linux-x86_64-clang3.9-Release/
 
-If instead of this we want to produce two variants ``foo`` and ``bar`` with
+If want instead to produce two variants ``foo`` and ``bar`` with some
 specific defines and compiler flags, the following command should be used::
 
     $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
@@ -324,34 +324,48 @@ originating variant.
 You can also make variants inherit from other variants, as well as having a
 null variant. Read more about this in the :doc:`variants` document.
 
-System- and architecture- specific flags
-----------------------------------------
+Per-parameter flags
+-------------------
 
-The ``item_name: <flag_specs>`` pattern for specifying the flags to use in
-:doc:`a variant </variants>` can also be used for specifying flags specific
-to one of the build combination parameters:
+The pattern ``item_name: <flag_specs>`` which is used for specifying the
+flags to use in :doc:`a variant </variants>` can also be used for making a
+bundle of flags be used whenever a certain build combination parameter is
+used. In other words, the variant mechanism also applies to the following
+parameters::
 
 * operating system (``--systems/-s``)
 * architecture (``--architectures/-a``)
 * compiler (``--compilers/-c``)
 * build type (``--build-types/-t``)
 
+Some examples follow.
+
 For example, to associate specific flags to an operating system in order to
 used a toolchain, you can simply do::
 
   $ cmany b --systems linux,'android: --vars CMAKE_TOOLCHAIN=toolchain.cmake'
 
-Or if you want to invoke gcc in both in 32 and 64 bit mode while in a 64 bit system::
+This will build linux with default settings, and will make the android build
+use a cmake toolchain file.
+
+Or if you want to invoke gcc in both in 32 and 64 bit mode while in a 64 bit
+system::
 
   $ cmany b --architecture x86_64,'x86: --cxxflags "-m32"'
 
 Or if you want to add a special define only for one compiler::
 
-  $ cmany b --compilers g++,'clang: --defines FOO=bar"'
+  $ cmany b --compilers g++,'clang++: --defines FOO=bar"'
 
 Or you can add a flag only to a certain build type::
 
   $ cmany b --build-types Release,'Debug: --cxxflags "-Wall"'
 
 Again, all of the :doc:`flag directives </flags>` can be used inside the
-``item_name: <flag_specs>`` pattern.
+``item_name: <flags>`` pattern.
+
+Cross-compiling
+---------------
+
+Cross compilation with cmany is easy: just use per-parameter flags for your
+target operating system, as described in the previous section.

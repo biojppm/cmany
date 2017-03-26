@@ -1,15 +1,6 @@
 cmany
 =====
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   quick_tour
-   flags
-   variants
-   vs
-
 Easily batch-build cmake projects!
 
 cmany is a command line tool to easily build variations of a CMake C/C++ project.
@@ -64,7 +55,7 @@ Features
   Studio, it is missing from mono-configuration generators like Unix
   Makefiles.
 * Run arbitrary commands in every build tree or install tree.
-* Emacs integration! `<https://github.com/biojppm/cmany.el>`
+* Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 
 Installing
@@ -83,7 +74,7 @@ If you want to install and develop cmany, use the ``-e`` option for pip::
 
 Getting started
 ---------------
-Read `the quick tour <https://cmany.readthedocs.io/>` in cmany's documentation.
+Read `the quick tour <https://cmany.readthedocs.io/>`_ in cmany's documentation.
 
 License
 -------
@@ -100,6 +91,19 @@ Send pull requests to `<https://github.com/biojppm/cmany/pulls>`.
 Support
 -------
 Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
+
+
+Contents
+========
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   quick_tour
+   flags
+   variants
+   vs
 
 Indices and tables
 ==================

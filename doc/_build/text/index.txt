@@ -69,7 +69,7 @@ Features
 
 * Run arbitrary commands in every build tree or install tree.
 
-* Emacs integration! *<https://github.com/biojppm/cmany.el>*
+* Emacs integration! https://github.com/biojppm/cmany.el
 
 
 Installing
@@ -90,8 +90,7 @@ If you want to install and develop cmany, use the "-e" option for pip:
 Getting started
 ===============
 
-Read *the quick tour <https://cmany.readthedocs.io/>* in cmany's
-documentation.
+Read the quick tour in cmany's documentation.
 
 
 License
@@ -116,6 +115,78 @@ Support
 =======
 
 Send bug reports to *<https://github.com/biojppm/cmany/issues>*.
+
+
+Contents
+********
+
+Contents:
+
+* Quick tour
+
+  * Getting help
+
+  * Build
+
+  * Configure
+
+  * Install
+
+  * Choosing the build type
+
+  * Choosing the compiler
+
+  * Building many trees at once
+
+  * Choosing build/install directories
+
+  * Using flags/defines/cache vars
+
+  * Build variants
+
+  * Per-parameter flags
+
+  * Cross-compiling
+
+* Flags
+
+  * CMake cache variables
+
+  * Preprocessor macros
+
+  * C++ compiler flags
+
+  * C compiler flags
+
+  * Linker flags
+
+  * Flag aliases
+
+  * Built-in aliases
+
+  * Defining more flag aliases
+
+* Build variants
+
+  * Null variant
+
+  * Inheriting variants
+
+* Using cmany with Visual Studio
+
+  * Aliases for VS2017
+
+  * Aliases for VS2015
+
+  * Aliases for VS2013
+
+  * Aliases for VS2012
+
+  * Aliases for VS2010
+
+  * Aliases for VS2008
+
+  * Aliases for VS2005
 
 
 Indices and tables
