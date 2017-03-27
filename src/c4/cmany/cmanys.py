@@ -707,18 +707,17 @@ class Build:
                 flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
             except:
                 pass
+
         # append overall build flags
-        wf = getattr(self.flags, which)
-        for f in wf:
-            flags.append(f.get(self.compiler))
-        if with_defines:
-            flags += self.flags.defines
         # append variant flags
-        wf = getattr(self.variant, which)
-        for f in wf:
-            flags.append(f.get(self.compiler))
-        if with_defines:
-            flags += self.variant.defines
+        flagseq = (self.flags, self.variant)
+        for fs in flagseq:
+            wf = getattr(fs, which)
+            for f in wf:
+                r = f.get(self.compiler)
+                flags.append(r)
+            if with_defines:
+                flags += fs.defines
         # we're done
         return flags
 

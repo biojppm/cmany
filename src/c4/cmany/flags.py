@@ -2,7 +2,7 @@ from collections import OrderedDict as odict
 from ruamel import yaml
 import copy
 
-from . import conf
+from . import conf, util
 
 
 def _getrealsn(compiler):
@@ -33,10 +33,15 @@ class CFlag:
             self.set(k, v)
 
     def get(self, compiler):
-        sn = _getrealsn(compiler)
-        if hasattr(self, sn):
-            s = getattr(self, sn)
-        else:
+        compseq = (compiler, 'gcc', 'g++', 'vs')
+        s = None
+        for c in compseq:
+            sn = _getrealsn(c)
+            if hasattr(self, sn):
+                s = getattr(self, sn)
+                break
+        if s is None:
+            util.logwarn('compiler not found: ', compiler, self.compilers, self.__dict__)
             s = ''
         # print(self, sn, s)
         return s
