@@ -1,3 +1,8 @@
+
+========================  ======================  ======================
+ Linux + OS X: |travis|    Windows: |appveyor|    Docs: |readthedocs|
+========================  ======================  ======================
+
 cmany
 =====
 
@@ -91,3 +96,20 @@ Send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 Support
 -------
 Send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
+
+Known issues
+------------
+* cmany will invoke the compilers given to it to find their name and
+  version. So far, this successfully works with Visual Studio, gcc, clang,
+  icc and zapcc. However, the current implementation of this logic is fragile
+  and may fail in some cases. Please submit a bug or PR if you experience
+  such a failure.
+* Pure C projects (ie not C++) should work but have not yet been extensively
+  tested. Some bugs may be present.
+
+.. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
+    :target: https://travis-ci.org/biojppm/cmany
+.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
+    :target: https://ci.appveyor.com/project/biojppm/cmany
+.. |readthedocs| image:: https://cmany.readthedocs.io/en/latest/?badge=latest
+    :target: https://cmany.readthedocs.io/

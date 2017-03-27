@@ -104,8 +104,8 @@ Known issues
   icc and zapcc. However, the current implementation of this logic is fragile
   and may fail in some cases. Please submit a bug or PR if you experience
   such a failure.
-* Pure C projects (ie not C++) have not yet been extensively tested. Some
-  bugs may be present.
+* Pure C projects (ie not C++) should work but have not yet been extensively
+  tested. Some bugs may be present.
 
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
     :target: https://travis-ci.org/biojppm/cmany
