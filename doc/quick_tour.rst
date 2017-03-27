@@ -267,7 +267,8 @@ building and ``bar`` for installing::
     foo/linux-x86_64-icc16.1-Release/
 
 Note that ``foo`` and ``bar`` will still be placed under the current working
-directory.
+directory, since they are given as relative paths. cmany also accepts if they
+are given as absolute paths.
 
 
 Using flags/defines/cache vars
