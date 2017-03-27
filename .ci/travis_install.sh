@@ -10,11 +10,17 @@ echo "TRAVIS_OS_NAME=$TRAVIS_OS_NAME"
 if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
 
     sudo apt-get update
-    sudo apt-get install -y python3-pip python3-dev
-    sudo apt-get install -y cmake build-essential
+    sudo apt-get install -y \
+         python3-pip \
+         python3-dev \
+         cmake \
+         build-essential \
+         gcc-arm-linux-gnueabihf \
+         binutils-arm-linux-gnueabihf
 
     PYTHON=python3
     PIP=pip3
+    ARM_ABI=1
 
 elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
@@ -37,6 +43,7 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 
     PYTHON=python3
     PIP=pip3
+    ARM_ABI=0
 
 fi
 
