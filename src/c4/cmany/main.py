@@ -6,7 +6,7 @@ import argcomplete
 
 from collections import OrderedDict as odict
 
-from . import cmanys as cmany, util, args as c4args, help as c4help
+from c4.cmany import cmanys as cmany, util, args as c4args, help as c4help
 
 
 cmds = odict([
