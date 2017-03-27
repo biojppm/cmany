@@ -984,6 +984,7 @@ class ProjectConfig:
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
         flags = BuildFlags('all_builds', compiler, **self.kwargs)
+        variant.resolve_flag_aliases(compiler)
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs, dict(self.kwargs))

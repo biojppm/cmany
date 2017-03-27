@@ -76,7 +76,9 @@ def as_flags(spec, compiler=None):
         if f is not None:
             out.append(f)
         else:
-            out.append(CFlag(s, s, s, s, s, ''))
+            ft = CFlag(name=s, desc=s)
+            ft.set(compiler, s)
+            out.append(ft)
     return out
 
 
