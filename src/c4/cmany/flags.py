@@ -19,6 +19,12 @@ def _getrealsn(compiler):
 
 class CFlag:
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
     def __init__(self, name, desc='', **kwargs):
         self.name = name
         self.desc = desc
@@ -52,12 +58,6 @@ class CFlag:
         for c in that.compilers:
             v = that.get(c)
             self.set(c, v)
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.name
 
 
 def get(name, compiler=None):
