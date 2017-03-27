@@ -337,8 +337,8 @@ class Variant(BuildFlags):
             v = util.unquote(v)
         # split at commas, but make sure those commas separate variants
         # (commas inside a variant spec are legitimate)
-        vli = ['']
-        rest = str(v)
+        vli = ['']    # the variant list
+        rest = str(v) # the part of the variant specification yet to be read
         while True:
             # ... is there a smarter way to deal with the quotes?
             matches = re.search(__class__._rxdq, rest)  # try double quotes
