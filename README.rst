@@ -60,7 +60,7 @@ Features
   Studio, it is missing from mono-configuration generators like Unix
   Makefiles.
 * Run arbitrary commands in every build tree or install tree.
-* Emacs integration! `<https://github.com/biojppm/cmany.el>`
+* Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 
 Installing
@@ -79,7 +79,7 @@ If you want to install and develop cmany, use the ``-e`` option for pip::
 
 Getting started
 ---------------
-Read `the quick tour <https://cmany.readthedocs.io/>` in cmany's documentation.
+Read `the quick tour <https://cmany.readthedocs.io/>`_ in cmany's documentation.
 
 License
 -------
@@ -91,12 +91,21 @@ This project is a pre-alpha under development.
 
 Contribute
 ----------
-Send pull requests to `<https://github.com/biojppm/cmany/pulls>`.
+Send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 
 Support
 -------
-Send bug reports to `<https://github.com/biojppm/cmany/issues>`.
+Send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
 
+Known issues
+------------
+* cmany will invoke the compilers given to it to find their name and
+  version. So far, this successfully works with Visual Studio, gcc, clang,
+  icc and zapcc. However, the current implementation of this logic is fragile
+  and may fail in some cases. Please submit a bug or PR if you experience
+  such a failure.
+* Pure C projects (ie not C++) have not yet been extensively tested. Some
+  bugs may be present.
 
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
     :target: https://travis-ci.org/biojppm/cmany
