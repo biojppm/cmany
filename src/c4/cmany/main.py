@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import pprint
 import argcomplete
 
 from collections import OrderedDict as odict
