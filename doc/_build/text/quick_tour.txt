@@ -125,15 +125,25 @@ generator is not a multi-config generator like MSVC).
 Choosing the compiler
 =====================
 
-To choose the compiler use "--compilers/-c". The following command
-chooses clang++ instead of CMake's default compiler. If the directory
-is initially empty, this will be the result:
+By default, cmany uses CMake's default compiler. To use different
+compilers, use "--compilers/-c". Each argument given here must be an
+executable compiler found in your path, or an absolute path to the
+compiler.
+
+The following command chooses clang++ instead of CMake's default
+compiler:
 
    $ cmany b -c clang++
+
+If the directory is initially empty, this will be the result:
+
    $ ls -1 build/*
    build/linux-x86_64-clang3.9-Release/
 
-The given compiler should be found in the path.
+Note that cmany will query the compiler for a name and a version. This
+is for ensuring the use of different build trees for different
+versions of the same compiler. The logic for this may be a bit faulty,
+so open an issue if see problems here.
 
 
 Microsoft Visual Studio

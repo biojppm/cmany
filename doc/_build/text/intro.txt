@@ -1,3 +1,9 @@
++--------------------------+------------------------+------------------------+
+| Linux + OS X: [image:    | Windows: [image:       | Docs: [image:          |
+| travis][image]           | appveyor][image]       | readthedocs][image]    |
++--------------------------+------------------------+------------------------+
+
+
 cmany
 *****
 
@@ -115,3 +121,16 @@ Support
 =======
 
 Send bug reports to https://github.com/biojppm/cmany/issues.
+
+
+Known issues
+============
+
+* cmany will invoke the compilers given to it to find their name and
+  version. So far, this successfully works with Visual Studio, gcc,
+  clang, icc and zapcc. However, the current implementation of this
+  logic is fragile and may fail in some cases. Please submit a bug or
+  PR if you experience such a failure.
+
+* Pure C projects (ie not C++) should work but have not yet been
+  extensively tested. Some bugs may be present.

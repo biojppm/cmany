@@ -19,6 +19,8 @@ Contents:
 
   * Support
 
+  * Known issues
+
 * Quick tour
 
   * Getting help

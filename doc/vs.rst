@@ -9,22 +9,24 @@ The general form for choosing the Visual Studio version with cmany is::
 
 where:
 
-* ``<vs_version>`` is one of ``vs2017, vs2015, vs2013, vs2012, vs2010, vs2008
-  or vs2005``
-* ``<architecture>`` is one of ``32, 64, arm, ia64``. When omitted uses the
-  native architecture.
+* ``<vs_version>`` is one of ``vs2017``, ``vs2015``, ``vs2013``, ``vs2012``,
+  ``vs2010``, ``vs2008`` or ``vs2005``
+* ``<architecture>`` is one of ``32``, ``64``, ``arm``, ``ia64``. Defaults to
+  the native architecture when omitted.
 * as for ``<vs_toolset>``:
     * when omitted, uses the default toolset of the chosen VS version
     * when either ``clang`` or ``xp`` is given, uses the default toolset of
       the chosen VS version for either clang or xp
     * otherwise, one of:
-        * ``v141, v141_clang, v141_clang_c2, v141_xp`` from ``vs2017``
-        * ``v140, v140_clang, v140_clang_c2, v140_xp`` from ``vs2015``
-        * ``v120, v120_xp`` from ``vs2013``
-        * ``v110, v110_xp`` from ``vs2012``
-        * ``v100, v100_xp`` from ``vs2010``
-        * ``v90, v90_xp`` from ``vs2008``
-        * ``v80`` from ``vs2008``
+        * from ``vs2017``: ``v141``, ``v141_clang``, ``v141_clang_c2``,
+          ``v141_xp``
+        * from ``vs2015``: ``v140``, ``v140_clang``, ``v140_clang_c2``,
+          ``v140_xp``
+        * from ``vs2013``: ``v120``, ``v120_xp``
+        * from ``vs2012``: ``v110``, ``v110_xp``
+        * from ``vs2010``: ``v100``, ``v100_xp``
+        * from ``vs2008``: ``v90``, ``v90_xp``
+        * from ``vs2008``: ``v80``
   
 Note that not every combination is valid. For example, you cannot use
 toolsets newer than your chosen VS version. arm is not available in VS
