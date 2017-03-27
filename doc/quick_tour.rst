@@ -162,6 +162,14 @@ is desired, then simply use ``vs2017_32``::
     $ ls -1 build/*
     build/windows-x86-vs2017-Release/
 
+You can also choose the VS toolset to use in the compiler name. For example,
+compile with the ``clang`` frontend (equivalent in this case to cmake's ``-T
+v141_clang_c2`` option)::
+
+    $ cmany b -c vs2017_clang
+    $ ls -1 build/*
+    build/windows-x86-vs2017_clang-Release/
+
 cmany allows you to create any valid combination of the Visual Studio project
 versions (from vs2017 to vs2005), target architectures (32, 64, arm, ia64)
 and toolsets (from v141 to v80, with clang_c2 and xp variants). The general
@@ -177,8 +185,9 @@ default will be used:
    * if the toolset is omitted, then the toolset of the given project version
      will be used.
 
-This creates hundreds of possible aliases, so read :doc:`the complete
-documentation for Visual Studio </vs>`.
+Given the many VS versions, target architectures and toolsets, this creates
+hundreds of possible aliases, so read :doc:`the complete documentation for
+Visual Studio </vs>`.
 
 
 Building many trees at once

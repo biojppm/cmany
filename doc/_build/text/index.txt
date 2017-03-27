@@ -71,6 +71,12 @@ Contents:
 
 * Using cmany with Visual Studio
 
+  * TL;DR
+
+  * VS alias examples
+
+  * Complete explanation
+
   * Aliasing scheme
 
   * Alias list

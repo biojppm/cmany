@@ -1,6 +1,54 @@
 Using cmany with Visual Studio
 ==============================
 
+TL;DR
+-----
+The general form for choosing the Visual Studio version with cmany is::
+
+    <vs_version>[_<architecture>][_<vs_toolset>]
+
+where:
+
+* ``<vs_version>`` is one of ``vs2017, vs2015, vs2013, vs2012, vs2010, vs2008
+  or vs2005``
+* ``<architecture>`` is one of ``32, 64, arm, ia64``. When omitted uses the
+  native architecture.
+* as for ``<vs_toolset>``:
+    * when omitted, uses the default toolset of the chosen VS version
+    * when either ``clang`` or ``xp`` is given, uses the default toolset of
+      the chosen VS version for either clang or xp
+    * otherwise, one of:
+        * ``v141, v141_clang, v141_clang_c2, v141_xp`` from ``vs2017``
+        * ``v140, v140_clang, v140_clang_c2, v140_xp`` from ``vs2015``
+        * ``v120, v120_xp`` from ``vs2013``
+        * ``v110, v110_xp`` from ``vs2012``
+        * ``v100, v100_xp`` from ``vs2010``
+        * ``v90, v90_xp`` from ``vs2008``
+        * ``v80`` from ``vs2008``
+  
+Note that not every combination is valid. For example, you cannot use
+toolsets newer than your chosen VS version. arm is not available in VS
+versions older than VS2012; also ia64 is not available in VS versions later
+than VS2012. clang is not available in versions older than VS2015.
+
+VS alias examples
+-----------------
+
+* ``vs2015``: depending on the native architecture, same as ``cmake -G
+  "Visual Studio 14 2015"`` **OR** ``cmake -G "Visual Studio 14 2015 Win64"``
+* ``vs2015_clang``: ditto, but use the ``v140_clang_c2`` toolset
+* ``vs2015_arm``: same as ``cmake -G "Visual Studio 14 2015 ARM"``
+* ``vs2015_32_clang``: same as ``cmake -G "Visual Studio 14 2015" -T v140_clang_c2``
+* ``vs2015_64_clang``: same as ``cmake -G "Visual Studio 14 2015 Win64" -T v140_clang_c2``
+* ``vs2017_64_v140``: same as ``cmake -G "Visual Studio 15 2017 Win64" -T
+  v140``. This will generate a VS2017 solution for x86_64 which is compiled
+  with the ``v140`` toolset which is from VS2015.
+
+---------------------------------------------
+
+Complete explanation
+--------------------
+
 Visual Studio (VS) has an awkward numbering system: the year and the version
 number (it also has a different version number for the ``cl.exe`` compiler,
 but fortunately we have no need to deal with that here). Sadly, and
@@ -49,7 +97,8 @@ toolset, ``v120``. To do that in CMake, the command would be ``cmake -G
 
 The issue of the Visual Studio toolsets was made less of a corner case with
 the recent addition (since VS 2015) of a clang frontend, which is convenient
-for multi-compiler validation of a project's code.
+for multi-compiler validation of a project's code. So making it easier to
+specify toolsets was also from the outset a requirement for cmany.
 
 Aliasing scheme
 ---------------
@@ -71,29 +120,26 @@ Note also that the order must be exactly as given: first the VS version, then
 the platform, then the toolset. For example, when the platform is omitted,
 then the alias should have the following form::
 
-    <vs_version>_<vs_toolset>
+    <vs_version>[_<vs_toolset>]
 
 When the toolset is omitted, then the alias should have the form::
 
     <vs_version>[_<vs_platform>]
 
-If both the architecture and platform are omitted, then has the simple form::
+If both the architecture and platform are omitted, then the alias becomes simply::
 
     <vs_version>
 
-Here are some alias examples and the equivalent cmake command line options:
-
-* ``vs2015_32_clang``: ``-G "Visual Studio 14 2015" -T v140_clang_c2``
-* ``vs2015_64_clang``: ``-G "Visual Studio 14 2015 Win64" -T v140_clang_c2``
-* ``vs2017_64_v140``: ``-G "Visual Studio 15 2017 Win64" -T
-  v140``. This will generate a VS2017 solution which is compiled
-  with the ``v140`` toolset.
-
+Check the `VS alias examples`_ for seeing this scheme at
+work. The next subsections give a complete enumeration of the possible values
+for each item in the triplet.
 
 Visual Studio versions
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Here's a correspondence between the basic cmany names and the cmake specification:
+Here's a correspondence between the basic cmany names and the cmake
+specification. CMake simultaneously specifies the VS version and the target
+architecture.
 
 +-----------------+---------------------------------+----------------------------+
 | cmany           | cmake                           | target architecture        |
@@ -193,7 +239,8 @@ Alias list
 
 It is easy to see that combining the VS solution version, target architecture
 and toolsets above creates hundreds of different possibilities. This section
-shows what each of them mean.
+shows what each of them mean. (If you find any errors, please submit a bug or
+PR).
 
 VS2017
 ^^^^^^
