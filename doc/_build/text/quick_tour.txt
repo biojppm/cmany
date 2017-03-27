@@ -107,11 +107,14 @@ creates a single executable named "hello", the following will result:
 Choosing the build type
 =======================
 
-To set the build types use "--build-types/-t". The following command
-chooses a build type of Debug instead of Release. If the directory is
-initially empty, this will be the result:
+cmany uses Release as the default build type. To set a different build
+type use "--build-types/-t". The following command chooses a build
+type of Debug instead of Release:
 
    $ cmany b -t Debug
+
+If the directory is initially empty, this will be the result:
+
    $ ls -1 build/*
    build/linux-x86_64-gcc6.1-Debug/
 
@@ -142,8 +145,9 @@ If the directory is initially empty, this will be the result:
 
 Note that cmany will query the compiler for a name and a version. This
 is for ensuring the use of different build trees for different
-versions of the same compiler. The logic for this may be a bit faulty,
-so open an issue if see problems here.
+versions of the same compiler. The logic for extracting the compiler
+name/version may be a bit faulty, so open an issue if you see problems
+here.
 
 
 Microsoft Visual Studio
@@ -274,7 +278,8 @@ installing:
    foo/linux-x86_64-icc16.1-Release/
 
 Note that "foo" and "bar" will still be placed under the current
-working directory.
+working directory, since they are given as relative paths. cmany also
+accepts if they are given as absolute paths.
 
 
 Using flags/defines/cache vars

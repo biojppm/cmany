@@ -33,6 +33,15 @@ toolsets newer than your chosen VS version. arm is not available in VS
 versions older than VS2012; also ia64 is not available in VS versions later
 than VS2012. clang is not available in versions older than VS2015.
 
+.. note:: cmany defaults to using the native architecture when no target
+          architecture is specified. For example, the command ``cmany b -c
+          vs2015`` will produce a 64 bit build when it is run in a 64 bit
+          system; but when it is run in a 32 bit system will produce a 32 bit
+          build.
+
+          This contrasts with cmake: ``cmake -G "Visual Studio 15 2017"
+          ../..`` will produce a 32 in any system.
+
 VS alias examples
 -----------------
 
@@ -79,13 +88,6 @@ For comparison, to achieve this with direct use of CMake, the equivalent
     $ cmake -G "Visual Studio 14 2015 Win64" ../..
     $ cd ../../build/windows-x86_64-vs2017-Release
     $ cmake -G "Visual Studio 15 2017 Win64" ../..
-
-.. note:: cmany defaults to using the native architecture, while cmake
-   defaults to a 32 bit build. For example, when running in a x86 system, the
-   command ``cmake -G "Visual Studio 15 2017" ../..`` will produce a 32 bit
-   build.  For contrast, the command ``cmany b -c vs2015`` will produce a 64
-   bit build. If cmany is running in a 32 bit system instead, then the result
-   of running the command above would be a 32 bit build.
 
 A further point of confusion with Visual Studio is that a given VS solution
 version actually consists of two separate items: a) the compiler version (the
