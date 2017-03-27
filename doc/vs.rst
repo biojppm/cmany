@@ -36,11 +36,11 @@ than VS2012. clang is not available in versions older than VS2015.
 .. note:: cmany defaults to using the native architecture when no target
           architecture is specified. For example, the command ``cmany b -c
           vs2015`` will produce a 64 bit build when it is run in a 64 bit
-          system; but when it is run in a 32 bit system will produce a 32 bit
+          system; but when it is run in a 32 bit system it will produce a 32 bit
           build.
 
           This contrasts with cmake: ``cmake -G "Visual Studio 15 2017"
-          ../..`` will produce a 32 in any system.
+          ../..`` will produce a 32 bit build in any system.
 
 VS alias examples
 -----------------
