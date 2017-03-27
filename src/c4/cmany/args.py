@@ -32,6 +32,8 @@ def parse(parser, in_args):
     args = parser.parse_args(in_args)
     if not hasattr(args, 'func'):
         argerror(parser, 'missing subcommand')
+    if _handle_hidden_args_and_skip(args):
+        return None
     return args
 
 
@@ -45,9 +47,28 @@ def argerror(parser, *msg_args):
 # -----------------------------------------------------------------------------
 def add_hidden(parser):
     parser.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--show-args-only', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--dump-help-topics', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--only-show-args', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--show-args-list', type=cslist, default=[], help=argparse.SUPPRESS)
+    parser.add_argument('--only-show-args-list', type=cslist, default=[], help=argparse.SUPPRESS)
 
+
+def _handle_hidden_args_and_skip(args):
+    if args.show_args or args.only_show_args:
+        pprint.pprint(vars(args), indent=4)
+        if args.only_show_args:
+            return True
+    if args.show_args_list or args.only_show_args_list:
+        l = args.show_args_list + args.only_show_args_list
+        for a in l:
+            print("args[", a, "]: ", sep='', end='')
+            if not hasattr(args, a):
+                print("(does not exist!)")
+                continue
+            v = getattr(args, a)
+            pprint.pprint(v, indent=4)
+        if args.only_show_args_list:
+            return True
+    return False
 
 # -----------------------------------------------------------------------------
 def add_proj(parser):

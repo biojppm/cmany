@@ -30,17 +30,10 @@ def cmany_main(in_args=None):
     parser = c4args.setup(cmds, mymod)
     argcomplete.autocomplete(parser)
     args = c4args.parse(parser, in_args)
-    #
-    if args.show_args or args.show_args_only:
-        pprint.pprint(vars(args), indent=4)
-        if args.show_args_only:
-            return
-    if args.dump_help_topics:
-        dump_help_topics()
-    #
-    args.func(args)
+    if args:
+        args.func(args)
 
-
+# -----------------------------------------------------------------------------
 class cmdbase:
     '''base class for commands'''
     def add_args(self, parser):
@@ -175,14 +168,6 @@ class export_vs(selectcmd):
     def _exec(self, proj, args):
         proj.create_projfile()
 
-
-# -----------------------------------------------------------------------------
-def dump_help_topics():
-    for t, _ in c4help.topics.items():
-        print(t)
-        txt = util.runsyscmd([sys.executable, sys.modules[__name__].__file__,
-                              'help', t], echo_cmd=False, capture_output=True)
-        print(txt)
 
 # -----------------------------------------------------------------------------
 
