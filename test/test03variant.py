@@ -217,7 +217,6 @@ class Test11AsUnquotedArguments(ut.TestCase):
         var2 = 'fast: @just_no_rtti --cxxflags no_exceptions,no_bufsec,no_iterator_debug,fast_math'
         self.t(var0 + ',' + var1 + ',' + var2, [var0, var1, var2])
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

@@ -269,7 +269,8 @@ class Variant(BuildFlags):
         return variants
 
     def __init__(self, spec):
-        self.specs = []
+        self.full_specs = spec
+        self.flag_specs = []
         self.refs = []
         self._resolved_references = False
         spec = util.unquote(spec)
@@ -289,11 +290,11 @@ class Variant(BuildFlags):
             else:
                 self.refs.append(s[1:])
                 if curr:
-                    self.specs.append(curr)
+                    self.flag_specs.append(curr)
                     curr = ""
-                self.specs.append(s)
+                self.flag_specs.append(s)
         if curr:
-            self.specs.append(curr)
+            self.flag_specs.append(curr)
 
     def resolve_references(self, variants):
         if self._resolved_references:
@@ -303,7 +304,7 @@ class Variant(BuildFlags):
                 if v.name == name:
                     return v
             raise Exception("variant '{}' not found in {}".format(name, variants))
-        for s_ in self.specs:
+        for s_ in self.flag_specs:
             s = s_.lstrip()
             if s[0] == '@':
                 refname = s[1:]

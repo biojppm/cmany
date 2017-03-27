@@ -31,7 +31,49 @@ proj_targets = {
         'exe':['test_hello','test_hello_static'],
     },
 }
+flag_bundle_set = {
+    'none':{
+        'spec':'none',
+        'expected':{
+            'none':{'vars':[], 'defines':[], 'cxxflags':[], 'flags':[], },
+        },
+    },
+    'foo':{
+        'spec':'\'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X "wall" -C "wall"\'',
+        'expected':{
+            'foo':{'vars':['FOO_VAR=1'], 'defines':['FOO_DEF=1'], 'cxxflags':['wall'], 'flags':['wall'], },
+        },
+    },
+    'bar':{
+        'spec':'\'bar: -V BAR_VAR=1 -D BAR_DEF=1 -X "g3" -C "g3"\'',
+        'expected':{
+            'bar':{'vars':['BAR_VAR=1'], 'defines':['BAR_DEF=1'], 'cxxflags':['g3'], 'flags':['g3'], },
+        },
+    },
+}
+variant_set = [flag_bundle_set[v]['spec'] for v in ('none', 'foo', 'bar')]
 
+variant_tests = {
+    'variant_test00-null':[],
+    'variant_test01-none_explicit':['none'],
+
+    'variant_test10-foo_only':['foo'],
+    'variant_test11-none_foo':['none', 'foo'],
+
+    'variant_test20-bar_only':['bar'],
+    'variant_test21-none_bar':['none', 'bar'],
+
+    'variant_test30-foobar_only':['foo', 'bar'],
+    'variant_test31-foobar_only':['none', 'foo', 'bar'],
+}
+
+def _get_variant_spec(test_name):
+    blueprint = variant_tests[name]
+    if not blueprint:
+        return []
+    li = ['-v'] + [','.join(flag_bundle_set[v]['spec']) for v in blueprint]
+    variants = cmany.Variant.create(li)
+    return li, variants
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -84,6 +126,7 @@ else:
 
 build_types = [cmany.BuildType(b) for b in util.splitesc(build_types, ',')]
 
+variant_set = cmany.Variant.create(variant_set)
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -101,10 +144,11 @@ def run_projs(testobj, args, check_fn=None):
                 tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                buildtype=cmany.BuildType.default(),
+                               variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
 
-    # run in a non root dir
+    # run with default parameters in a non root dir
     rd = '.test/1--non_root_dir'
     for p in projs:
         with testobj.subTest(msg="run in a non root dir", proj=p.proj):
@@ -113,45 +157,52 @@ def run_projs(testobj, args, check_fn=None):
                 tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                buildtype=cmany.BuildType.default(),
+                               variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
 
     if numbuilds == 1:
         return
 
-    # run all sys,arch,compiler,buildtype combinations at once
-    bd = '.test/2--comps{}--types{}--build'.format(len(compiler_set), len(build_types))
-    id = '.test/2--comps{}--types{}--install'.format(len(compiler_set), len(build_types))
+    # run all sys,arch,compiler,buildtype,variant combinations at once
+    bd = '.test/2--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
+    id = '.test/2--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
     for p in projs:
         with testobj.subTest(msg="run all combinations at once", proj=p.proj):
             p.run(args + ['--build-dir', bd,
-                           '--install-dir', id,
-                           '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
-                           '-t', ','.join([str(b) for b in build_types])])
+                          '--install-dir', id,
+                          '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
+                          '-t', ','.join([str(b) for b in build_types]),
+                          '-v', ','.join([v.full_specs for v in variant_set])
+            ])
             if check_fn:
                 for c in compiler_set:
                     for t in build_types:
-                        tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                       compiler=c, buildtype=t,
-                                       numbuilds=numbuilds)
-                        check_fn(tb)
+                        for v in variant_set:
+                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                           compiler=c, buildtype=t, variant=v,
+                                           numbuilds=numbuilds)
+                            check_fn(tb)
 
     # run sys,arch,compiler,buildtype combinations individually
     for p in projs:
-        with testobj.subTest(msg="run all combinations individually", proj=p.proj):
-            for c in compiler_set:
-                for t in build_types:
-                    bd = '.test/3--{}--{}--build'.format(c, t)
-                    id = '.test/3--{}--{}--install'.format(c, t)
-                    p.run(args + ['--build-dir', bd,
-                             '--install-dir', id,
-                             '-c', c.name if c.is_msvc else c.path,
-                             '-t', str(t)])
-                    if check_fn:
-                        tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                       compiler=c, buildtype=t,
-                                       numbuilds=1)
-                        check_fn(tb)
+        for c in compiler_set:
+            for t in build_types:
+                for v in variant_set:
+                    with testobj.subTest(msg="run all combinations individually", proj=p.proj, compiler=c, build_type=t, variant=v):
+                        bd = '.test/3--{}--{}--{}--build'.format(c, t, v.name)
+                        id = '.test/3--{}--{}--{}--install'.format(c, t, v.name)
+                        p.run(args + ['--build-dir', bd,
+                                      '--install-dir', id,
+                                      '-c', c.name if c.is_msvc else c.path,
+                                      '-t', str(t),
+                                      '-v', v.specs,
+                        ])
+                        if check_fn:
+                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                           compiler=c, buildtype=t, variant=v,
+                                           numbuilds=1)
+                            check_fn(tb)
 
 
 
@@ -160,12 +211,13 @@ def run_projs(testobj, args, check_fn=None):
 # -----------------------------------------------------------------------------
 class TestBuild:
 
-    def __init__(self, proj, buildroot, installroot, compiler, buildtype, numbuilds):
+    def __init__(self, proj, buildroot, installroot, compiler, buildtype, variant, numbuilds):
         self.proj = proj
         self.buildroot = buildroot
         self.installroot = installroot
         self.compiler = compiler
         self.buildtype = buildtype
+        self.variant = variant
         self.numbuilds = numbuilds
         self.flags = cmany.BuildFlags('all_builds')
         self.build_obj = cmany.Build(proj_root=self.proj.root,
@@ -175,7 +227,7 @@ class TestBuild:
                                      arch=cmany.Architecture.default(),
                                      buildtype=buildtype,
                                      compiler=compiler,
-                                     variant=cmany.Variant.default(),
+                                     variant=variant,
                                      flags=self.flags,
                                      num_jobs=cmany.cpu_count(),
                                      kwargs={}
@@ -185,6 +237,9 @@ class TestBuild:
         tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds)
         buildtype = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
         tester.assertEqual(buildtype, str(self.buildtype))
+
+    def checkv(self, tester):
+        pass
 
     def checkb(self, tester):
         self.checkc(tester)
@@ -242,7 +297,6 @@ class Test02Build(ut.TestCase):
     def test00_default(self):
         run_projs(self, ['b'], lambda tb: tb.checkb(self))
 
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -252,6 +306,8 @@ class Test03Install(ut.TestCase):
         run_projs(self, ['i'], lambda tb: tb.checki(self))
 
 
+class Test04Variants(ut.TestCase):
+    pass
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
