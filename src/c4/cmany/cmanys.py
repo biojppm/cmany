@@ -247,6 +247,12 @@ class BuildFlags(BuildItem):
         # self.include_dirs += other.include_dirs
         # self.link_dirs += other.link_dirs
 
+    def log(self, log_fn=print, msg=""):
+        t = "BuildFlags[{}]: {}".format(self.name, msg)
+        log_fn(t, "cmake_vars=", self.cmake_vars)
+        log_fn(t, "defines=", self.defines)
+        log_fn(t, "cxxflags=", self.cxxflags)
+        log_fn(t, "cflags=", self.cflags)
 
 # -----------------------------------------------------------------------------
 class Variant(BuildFlags):
