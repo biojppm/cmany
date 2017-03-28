@@ -69,14 +69,10 @@ class BuildFlags(NamedItem):
         log_fn(t, "cxxflags=", self.cxxflags)
         log_fn(t, "cflags=", self.cflags)
 
-    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')
-    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")
-    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
-
     @staticmethod
     def parse_specs(v):
         """in some cases the shell (or argparse?) removes quotes, so we need
-        to parse variant specifications using regexes. This function implements
+        to parse flag specifications using regexes. This function implements
         this parsing for use in argparse. This one was a tough nut to crack."""
         # remove start and end quotes if there are any
         if util.is_quoted(v):
@@ -107,6 +103,10 @@ class BuildFlags(NamedItem):
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
         return vli
+
+    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')  # double quotes
+    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")  # single quotes
+    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")    # no quotes
 
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
