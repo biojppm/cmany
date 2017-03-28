@@ -22,32 +22,32 @@ compiler_set = os.environ.get('CMANY_TEST_COMPILERS', None)
 build_types = os.environ.get('CMANY_TEST_BUILDTYPES', 'Debug,Release')
 test_projs = os.environ.get('CMANY_TEST_PROJS', 'hello,libhello')
 proj_targets = {
-    'hello':{
-        'lib':[],
-        'exe':['hello'],
+    'hello': {
+        'lib': [],
+        'exe': ['hello'],
     },
-    'libhello':{
-        'lib':['hello','hello_static'],
-        'exe':['test_hello','test_hello_static'],
+    'libhello': {
+        'lib': ['hello', 'hello_static'],
+        'exe': ['test_hello', 'test_hello_static'],
     },
 }
 flag_bundle_set = {
-    'none':{
-        'spec':'none',
-        'expected':{
-            'none':{'vars':[], 'defines':[], 'cxxflags':[], 'flags':[], },
+    'none': {
+        'spec': 'none',
+        'expected': {
+            'none': {'vars': [], 'defines': [], 'cxxflags': [], 'flags': [], },
         },
     },
-    'foo':{
-        'spec':'\'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X "wall" -C "wall"\'',
-        'expected':{
-            'foo':{'vars':['FOO_VAR=1'], 'defines':['FOO_DEF=1'], 'cxxflags':['wall'], 'flags':['wall'], },
+    'foo': {
+        'spec': '\'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X "wall" -C "wall"\'',
+        'expected': {
+            'foo': {'vars': ['FOO_VAR=1'], 'defines': ['FOO_DEF=1'], 'cxxflags': ['wall'], 'flags': ['wall'], },
         },
     },
-    'bar':{
-        'spec':'\'bar: -V BAR_VAR=1 -D BAR_DEF=1 -X "g3" -C "g3"\'',
-        'expected':{
-            'bar':{'vars':['BAR_VAR=1'], 'defines':['BAR_DEF=1'], 'cxxflags':['g3'], 'flags':['g3'], },
+    'bar': {
+        'spec': '\'bar: -V BAR_VAR=1 -D BAR_DEF=1 -X "g3" -C "g3"\'',
+        'expected': {
+            'bar': {'vars': ['BAR_VAR=1'], 'defines': ['BAR_DEF=1'], 'cxxflags': ['g3'], 'flags': ['g3'], },
         },
     },
 }
