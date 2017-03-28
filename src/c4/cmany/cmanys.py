@@ -700,6 +700,9 @@ class Build:
             util.runsyscmd(cmd)
             os.remove("cmany_build.done")
 
+    def _get_flagseq(self):
+        return (self.flags, self.variant)
+
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
         flags = []
         if append_to_sysinfo_var:
@@ -721,18 +724,23 @@ class Build:
         # we're done
         return flags
 
+    def _gather_cmake_vars(self):
+        flagseq = self._get_flagseq()
+        for fs in flagseq:
+            for v in fs.cmake_vars:
+                spl = v.split('=')
+                vval = ''.join(spl[1:]) if len(spl) > 1 else ''
+                nspl = spl[0].split(':')
+                if len(nspl) == 1:
+                    self.varcache.setvar(nspl[0], vval, from_input=True)
+                elif len(nspl) == 2:
+                    self.varcache.setvar(nspl[0], vval, nspl[1], from_input=True)
+                else:
+                    raise Exception('could not parse variable value: ' + v)
+
     def gather_input_cache_vars(self):
+        self._gather_cmake_vars()
         vc = self.varcache
-        for v in self.flags.cmake_vars:
-            spl = v.split('=')
-            vval = ''.join(spl[1:]) if len(spl) > 1 else ''
-            nspl = spl[0].split(':')
-            if len(nspl) == 1:
-                vc.setvar(nspl[0], vval, from_input=True)
-            elif len(nspl) == 2:
-                vc.setvar(nspl[0], vval, nspl[1], from_input=True)
-            else:
-                raise Exception('could not parse variable value: ' + v)
         #
         def _set(pfn, pname, pval): pfn(pname, pval, from_input=True)
         if not self.generator.is_msvc:
