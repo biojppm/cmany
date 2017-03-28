@@ -108,19 +108,38 @@ class BuildFlags(NamedItem):
     _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")  # single quotes
     _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")    # no quotes
 
+
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
     """A base class for build items."""
 
-    def __init__(self, name):
-        self.name = name
-        self.flags = BuildFlags(name)
+    def __init__(self, name_or_spec):
+        self.name = name_or_spec
+        self.flags = BuildFlags(name_or_spec)
+        self.full_specs = name_or_spec
+        self.flag_specs = []
+        #
+        self.parse_specs(name_or_spec)
 
     def __repr__(self):
         return self.name
 
     def __str__(self):
         return self.name
+
+    def parse_specs(self, spec):
+        spec = util.unquote(spec)
+        spl = spec.split(':')
+        if len(spl) == 1:
+            return
+        name = spl[0]
+        rest = spl[1]
+        super().__init__(name)
+        self.flag_specs = util.splitesc_quoted(rest, ' ')
+        parser = argparse.ArgumentParser()
+        c4args.add_cflags(parser)
+        args = parser.parse_args(self.flag_specs)
+        self.flags = BuildFlags(name, None, **vars(args))
 
 
 # -----------------------------------------------------------------------------
