@@ -77,22 +77,28 @@ def get(name, compiler=None):
 def as_flags(spec, compiler=None):
     out = []
     for s in spec:
-        f = known_flags.get(s)
-        if f is not None:
-            out.append(f)
+        if isinstance(s, CFlag):
+            out.append(s)
         else:
-            ft = CFlag(name=s, desc=s)
-            ft.set(compiler, s)
-            out.append(ft)
+            f = known_flags.get(s)
+            if f is not None:
+                out.append(f)
+            else:
+                ft = CFlag(name=s, desc=s)
+                ft.set(compiler, s)
+                out.append(ft)
     return out
 
 
 def as_defines(spec, compiler=None):
     out = []
     wf = '/D' if _getrealsn(compiler) == 'vs' else '-D'
+    prev = None
     for s in spec:
-        out.append(wf)
+        if prev != wf and not s.startswith(wf):
+            out.append(wf)
         out.append(s)
+        prev = s
     return out
 
 

@@ -561,6 +561,8 @@ class Build:
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
 
+        self.variant.resolve_flag_aliases(self.compiler)
+
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
         self.varcache = CMakeCache(self.builddir)
@@ -568,8 +570,6 @@ class Build:
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
         self.gather_input_cache_vars()
-
-        self.variant.resolve_flag_aliases(self.compiler)
 
         self.deps = kwargs.get('deps', '')
         if self.deps and not os.path.isabs(self.deps):
@@ -719,7 +719,7 @@ class Build:
 
         # append overall build flags
         # append variant flags
-        flagseq = (self.flags, self.variant)
+        flagseq = self._get_flagseq()
         for fs in flagseq:
             wf = getattr(fs, which)
             for f in wf:
@@ -997,7 +997,6 @@ class ProjectConfig:
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
         flags = BuildFlags('all_builds', compiler, **self.kwargs)
-        variant.resolve_flag_aliases(compiler)
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   system, arch, buildtype, compiler, variant, flags,
                   self.num_jobs, dict(self.kwargs))
