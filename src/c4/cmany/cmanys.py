@@ -114,6 +114,7 @@ class BuildItem(NamedItem):
     """A base class for build items."""
 
     def __init__(self, name_or_spec):
+        name_or_spec = util.unquote(name_or_spec)
         self.name = name_or_spec
         self.flags = BuildFlags(name_or_spec)
         self.full_specs = name_or_spec
@@ -121,25 +122,17 @@ class BuildItem(NamedItem):
         #
         self.parse_specs(name_or_spec)
 
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.name
-
-    def parse_specs(self, spec):
-        spec = util.unquote(spec)
+    def parse_specs(self, spec, parse_flags=True):
         spl = spec.split(':')
         if len(spl) == 1:
             return
-        name = spl[0]
-        rest = spl[1]
-        super().__init__(name)
-        self.flag_specs = util.splitesc_quoted(rest, ' ')
-        parser = argparse.ArgumentParser()
-        c4args.add_cflags(parser)
-        args = parser.parse_args(self.flag_specs)
-        self.flags = BuildFlags(name, None, **vars(args))
+        self.name = spl[0]
+        self.flag_specs = util.splitesc_quoted(spl[1], ' ')
+        if parse_flags:
+            parser = argparse.ArgumentParser()
+            c4args.add_cflags(parser)
+            args = parser.parse_args(self.flag_specs)
+            self.flags = BuildFlags(self.name, None, **vars(args))
 
 
 # -----------------------------------------------------------------------------
@@ -389,7 +382,7 @@ class Variant(BuildFlags):
                 refname = s[1:]
                 r = _find_variant(refname)
                 if self.name in r.refs:
-                    msg = "circular reference found in variant definition: '{}'x'{}'"
+                    msg = "circular references found in variant definitions: '{}'x'{}'"
                     raise Exception(msg.format(self.name, r.name))
                 if not r._resolved_references:
                     r.resolve_all(variants)
