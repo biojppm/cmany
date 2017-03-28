@@ -996,9 +996,17 @@ class ProjectConfig:
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
-        flags = BuildFlags('all_builds', compiler, **self.kwargs)
+        # duplicate parameters for each build, as they may be mutated due
+        # to translation of their flags for the compiler
+        s = copy.deepcopy(system)
+        a = copy.deepcopy(arch)
+        t = copy.deepcopy(buildtype)
+        c = copy.deepcopy(compiler)
+        v = copy.deepcopy(variant)
+        f = BuildFlags('all_builds', compiler, **self.kwargs)
+        # create the build
         b = Build(self.root_dir, self.build_dir, self.install_dir,
-                  system, arch, buildtype, compiler, variant, flags,
+                  s, a, t, c, v, f,
                   self.num_jobs, dict(self.kwargs))
         # When a build is created, its parameters may have been adjusted
         # because of an incompatible generator specification.
