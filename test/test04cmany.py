@@ -132,7 +132,7 @@ variant_set = cmany.Variant.create(variant_set)
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def run_projs(testobj, args, check_fn=None):
-    numbuilds = len(compiler_set) * len(build_types)
+    numbuilds = len(compiler_set) * len(build_types) * len(variant_set)
 
     # run with default parameters
     bd = '.test/0--default--build'
@@ -196,7 +196,7 @@ def run_projs(testobj, args, check_fn=None):
                                       '--install-dir', id,
                                       '-c', c.name if c.is_msvc else c.path,
                                       '-t', str(t),
-                                      '-v', v.specs,
+                                      '-v', v.full_specs,
                         ])
                         if check_fn:
                             tb = TestBuild(proj=p, buildroot=bd, installroot=id,
