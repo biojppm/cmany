@@ -18,12 +18,103 @@ from .conan import Conan
 import argparse
 from . import args as c4args
 
+
 # -----------------------------------------------------------------------------
-class BuildItem:
+class NamedItem:
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+
+# -----------------------------------------------------------------------------
+class BuildFlags(NamedItem):
+
+    def __init__(self, name, compiler=None, **kwargs):
+        super().__init__(name)
+        self.cmake_vars = kwargs.get('vars', [])
+        self.defines = kwargs.get('defines', [])
+        self.cflags = kwargs.get('cflags', [])
+        self.cxxflags = kwargs.get('cxxflags', [])
+        # self.include_dirs = kwargs['include_dirs']
+        # self.link_dirs = kwargs['link_dirs']
+        if compiler is not None:
+            self.resolve_flag_aliases(compiler)
+
+    def resolve_flag_aliases(self, compiler):
+        self.defines = c4flags.as_defines(self.defines, compiler)
+        self.cflags = c4flags.as_flags(self.cflags, compiler)
+        self.cxxflags = c4flags.as_flags(self.cxxflags, compiler)
+
+    def append_flags(self, other, append_to_name=True):
+        """other will take precedence, ie, their options will come last"""
+        if append_to_name and other.name:
+            self.name += '_' + other.name
+        self.cmake_vars += other.cmake_vars
+        self.defines += other.defines
+        self.cflags += other.cflags
+        self.cxxflags += other.cxxflags
+        # self.include_dirs += other.include_dirs
+        # self.link_dirs += other.link_dirs
+
+    def log(self, log_fn=print, msg=""):
+        t = "BuildFlags[{}]: {}".format(self.name, msg)
+        log_fn(t, "cmake_vars=", self.cmake_vars)
+        log_fn(t, "defines=", self.defines)
+        log_fn(t, "cxxflags=", self.cxxflags)
+        log_fn(t, "cflags=", self.cflags)
+
+    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')
+    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")
+    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
+
+    @staticmethod
+    def parse_specs(v):
+        """in some cases the shell (or argparse?) removes quotes, so we need
+        to parse variant specifications using regexes. This function implements
+        this parsing for use in argparse. This one was a tough nut to crack."""
+        # remove start and end quotes if there are any
+        if util.is_quoted(v):
+            v = util.unquote(v)
+        # split at commas, but make sure those commas separate variants
+        # (commas inside a variant spec are legitimate)
+        vli = ['']    # the variant list
+        rest = str(v) # the part of the variant specification yet to be read
+        while True:
+            # ... is there a smarter way to deal with the quotes?
+            matches = re.search(__class__._rxdq, rest)  # try double quotes
+            if matches is None:
+                matches = re.search(__class__._rxsq, rest)  # try single quotes
+                if matches is None:
+                    matches = re.search(__class__._rxnq, rest)  # try no quotes
+                    if matches is None:
+                        if rest:
+                            vli[-1] += rest
+                        break
+            (lhs, var, spec, rest) = matches.groups()
+            if lhs:
+                vli[-1] += lhs.strip(',')
+            if var:
+                if vli[-1]:
+                    vli.append(var + spec)
+                else:
+                    vli[-1] += var + spec  # insert into empty specs
+        # unquote split elements
+        vli = [util.unquote(v).strip(',') for v in vli]
+        return vli
+
+# -----------------------------------------------------------------------------
+class BuildItem(NamedItem):
     """A base class for build items."""
 
     def __init__(self, name):
         self.name = name
+        self.flags = BuildFlags(name)
 
     def __repr__(self):
         return self.name
@@ -218,43 +309,6 @@ exit $?
 
 
 # -----------------------------------------------------------------------------
-class BuildFlags(BuildItem):
-
-    def __init__(self, name, compiler=None, **kwargs):
-        super().__init__(name)
-        self.cmake_vars = kwargs.get('vars', [])
-        self.defines = kwargs.get('defines', [])
-        self.cflags = kwargs.get('cflags', [])
-        self.cxxflags = kwargs.get('cxxflags', [])
-        # self.include_dirs = kwargs['include_dirs']
-        # self.link_dirs = kwargs['link_dirs']
-        if compiler is not None:
-            self.resolve_flag_aliases(compiler)
-
-    def resolve_flag_aliases(self, compiler):
-        self.defines = c4flags.as_defines(self.defines, compiler)
-        self.cflags = c4flags.as_flags(self.cflags, compiler)
-        self.cxxflags = c4flags.as_flags(self.cxxflags, compiler)
-
-    def append_flags(self, other, append_to_name=True):
-        """other will take precedence, ie, their options will come last"""
-        if append_to_name and other.name:
-            self.name += '_' + other.name
-        self.cmake_vars += other.cmake_vars
-        self.defines += other.defines
-        self.cflags += other.cflags
-        self.cxxflags += other.cxxflags
-        # self.include_dirs += other.include_dirs
-        # self.link_dirs += other.link_dirs
-
-    def log(self, log_fn=print, msg=""):
-        t = "BuildFlags[{}]: {}".format(self.name, msg)
-        log_fn(t, "cmake_vars=", self.cmake_vars)
-        log_fn(t, "defines=", self.defines)
-        log_fn(t, "cxxflags=", self.cxxflags)
-        log_fn(t, "cflags=", self.cflags)
-
-# -----------------------------------------------------------------------------
 class Variant(BuildFlags):
     """for variations in build flags"""
 
@@ -329,45 +383,6 @@ class Variant(BuildFlags):
                 tmp = BuildFlags('', None, **vars(args))
                 self.append_flags(tmp, append_to_name=False)
         self._resolved_references = True
-
-    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')
-    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")
-    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")
-
-    @staticmethod
-    def parse_specs(v):
-        """in some cases the shell (or argparse?) removes quotes, so we need
-        to parse variant specifications using regexes. This function implements
-        this parsing for use in argparse. This one was a tough nut to crack."""
-        # remove start and end quotes if there are any
-        if util.is_quoted(v):
-            v = util.unquote(v)
-        # split at commas, but make sure those commas separate variants
-        # (commas inside a variant spec are legitimate)
-        vli = ['']    # the variant list
-        rest = str(v) # the part of the variant specification yet to be read
-        while True:
-            # ... is there a smarter way to deal with the quotes?
-            matches = re.search(__class__._rxdq, rest)  # try double quotes
-            if matches is None:
-                matches = re.search(__class__._rxsq, rest)  # try single quotes
-                if matches is None:
-                    matches = re.search(__class__._rxnq, rest)  # try no quotes
-                    if matches is None:
-                        if rest:
-                            vli[-1] += rest
-                        break
-            (lhs, var, spec, rest) = matches.groups()
-            if lhs:
-                vli[-1] += lhs.strip(',')
-            if var:
-                if vli[-1]:
-                    vli.append(var + spec)
-                else:
-                    vli[-1] += var + spec  # insert into empty specs
-        # unquote split elements
-        vli = [util.unquote(v).strip(',') for v in vli]
-        return vli
 
 # -----------------------------------------------------------------------------
 class Generator(BuildItem):
