@@ -33,7 +33,7 @@ def parse(parser, in_args):
     args = parser.parse_args(in_args)
     if not hasattr(args, 'func'):
         argerror(parser, 'missing subcommand')
-    if _handle_hidden_args_and_skip(args):
+    if _handle_hidden_args__skip_rest(args):
         return None
     return args
 
@@ -53,7 +53,7 @@ def add_hidden(parser):
     parser.add_argument('--only-show-args-list', type=cslist, default=[], help=argparse.SUPPRESS)
 
 
-def _handle_hidden_args_and_skip(args):
+def _handle_hidden_args__skip_rest(args):
     if args.show_args or args.only_show_args:
         pprint.pprint(vars(args), indent=4)
         if args.only_show_args:
