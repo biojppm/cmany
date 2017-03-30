@@ -17,10 +17,19 @@ class Test00VariantSpec(ut.TestCase):
             result = getattr(var, k)
             self.assertEqual(result, refval)
 
-    def test01_simple(self):
+    def test00_simple(self):
         v = cmany.Variant.create("somevariant: -X '-fPIC'")
         v = v[0]
         self.c('somevariant', v, cmake_vars=[], defines=[], cflags=[], cxxflags=['-fPIC'])
+
+    def test01_nospecs(self):
+        vars = ['var0','var1','var2']
+        for w in (vars, ','.join(vars)):
+            out = cmany.Variant.create(w)
+            self.assertEquals(len(out), 3)
+            self.c('var0', out[0], cmake_vars=[], defines=[], cflags=[], cxxflags=[])
+            self.c('var1', out[1], cmake_vars=[], defines=[], cflags=[], cxxflags=[])
+            self.c('var2', out[2], cmake_vars=[], defines=[], cflags=[], cxxflags=[])
 
     def test02_norefs(self):
         vars = ['\'var0: -X "-fPIC" -D VAR1,VAR_TYPE=1\'',
@@ -193,16 +202,45 @@ class Test10AsArguments(ut.TestCase):
         self.tp(s, 1, 'just_no_rtti')
         self.tp(s, 2, 'fast')
 
+    def test05_nospecs(self):
+        vars = ["var0", "var1", "var2", "var3"]
+        def comp(input):
+            with self.subTest(input=input):
+                self.r(input, vars)
+                self.rp(input, 0, 'var0', cmake_vars=[], cflags=[], cxxflags=[], defines=[])
+                self.rp(input, 1, 'var1', cmake_vars=[], cflags=[], cxxflags=[], defines=[])
+                self.rp(input, 2, 'var2', cmake_vars=[], cflags=[], cxxflags=[], defines=[])
+                self.rp(input, 3, 'var3', cmake_vars=[], cflags=[], cxxflags=[], defines=[])
+        # all separate
+        comp(vars)
+        for q in ('"', "'"):
+            # join first two
+            j = '{},{quote}{}{quote}'.format(vars[0], vars[1], quote=q)
+            comp([j, vars[2], vars[3]])
+            # join second two
+            j = '{quote}{}{quote},{quote}{}{quote}'.format(vars[1], vars[2], quote=q)
+            comp([vars[0], j, vars[3]])
+            # join third two
+            j = '{quote}{}{quote},{quote}{}{quote}'.format(vars[2], vars[3], quote=q)
+            comp([vars[0], vars[1], j])
+            # join first three
+            j = '{quote}{}{quote},{quote}{}{quote},{quote}{}{quote}'.format(vars[0], vars[1], vars[2], quote=q)
+            comp([j, vars[3]])
+            # join all
+            j = '{quote}{}{quote},{quote}{}{quote},{quote}{}{quote},{quote}{}{quote}'.format(vars[0], vars[1], vars[2], vars[3], quote=q)
+            comp([j])
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class Test11AsUnquotedArguments(ut.TestCase):
-    """the shell removes quotes from the arguments, so variant parsing
-    must be able to deal with unquoted specs"""
+    """sometimes (when?) we received the arguments with even interior quotes
+    removed. So variant parsing must be able to deal with fully unquoted specs.
+    """
 
     def t(self, input, expected):
-        variants = cmany.Variant.parse_specs(input)
+        variants = cmany.BuildItem.parse_args(input)
         with self.subTest(input=input):
             self.assertEqual(variants, expected, msg=input)
 
@@ -215,6 +253,12 @@ class Test11AsUnquotedArguments(ut.TestCase):
         var0 = 'none'
         var1 = 'just_no_rtti: --cxxflags no_rtti'
         var2 = 'fast: @just_no_rtti --cxxflags no_exceptions,no_bufsec,no_iterator_debug,fast_math'
+        self.t(var0 + ',' + var1 + ',' + var2, [var0, var1, var2])
+
+    def test02(self):
+        var0 = 'var0'
+        var1 = 'var1'
+        var2 = 'var2'
         self.t(var0 + ',' + var1 + ',' + var2, [var0, var1, var2])
 
 # -----------------------------------------------------------------------------
