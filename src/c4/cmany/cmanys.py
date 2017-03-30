@@ -623,12 +623,12 @@ class Build:
         self.buildroot = os.path.abspath(build_root)
         self.installroot = os.path.abspath(install_root)
         #
-        self.flags = copy.deepcopy(flags)
-        self.system = copy.deepcopy(system)
-        self.architecture = copy.deepcopy(arch)
-        self.buildtype = copy.deepcopy(buildtype)
-        self.compiler = copy.deepcopy(compiler)
-        self.variant = copy.deepcopy(variant)
+        self.flags = flags
+        self.system = system
+        self.architecture = arch
+        self.buildtype = buildtype
+        self.compiler = compiler
+        self.variant = variant
 
         self.adjusted = False
 
