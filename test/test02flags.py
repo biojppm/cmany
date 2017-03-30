@@ -208,7 +208,7 @@ class Test10Flags(ut.TestCase):
         for a in args_:
             args.append(a.format(opt))
         p = argparse.ArgumentParser()
-        c4args.add_cflags(p)
+        c4args.add_bundle_flags(p)
         out = p.parse_args(args)
         # print(out, kwargs)
         a = getattr(out, name)
@@ -219,7 +219,7 @@ class Test10Flags(ut.TestCase):
         if isinstance(args, str):
             args = util.splitesc_quoted(args, ' ')
         p = argparse.ArgumentParser()
-        c4args.add_cflags(p)
+        c4args.add_bundle_flags(p)
         out = p.parse_args(args)
         # print(out, kwargs)
         for k, refval in ref.items():

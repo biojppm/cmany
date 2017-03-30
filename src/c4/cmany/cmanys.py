@@ -91,7 +91,7 @@ class BuildItem(NamedItem):
         self.flag_specs = util.splitesc_quoted(spl[1], ' ')
         if parse_flags:
             parser = argparse.ArgumentParser()
-            c4args.add_cflags(parser)
+            c4args.add_bundle_flags(parser)
             args = parser.parse_args(self.flag_specs)
             self.flags = BuildFlags(self.name, None, **vars(args))
 
@@ -426,7 +426,7 @@ class Variant(BuildFlags):
                 self.append_flags(r, append_to_name=False)
             else:
                 parser = argparse.ArgumentParser()
-                c4args.add_cflags(parser)
+                c4args.add_bundle_flags(parser)
                 ss = util.splitesc_quoted(s, ' ')
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
