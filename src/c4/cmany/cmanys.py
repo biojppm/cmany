@@ -238,7 +238,11 @@ class Compiler(BuildItem):
             cpp = vs.name if vs is not None else CMakeSysInfo.cxx_compiler()
         return cpp
 
-    def __init__(self, path):
+    def __init__(self, spec):
+        if util.is_quoted(spec):
+            spec = util.unquote(spec)
+        spl = spec.split(':')
+        path = spl[0]
         if path.startswith("vs") or path.startswith("Visual Studio"):
             vs = vsinfo.VisualStudioInfo(path)
             self.vs = vs
@@ -259,7 +263,12 @@ class Compiler(BuildItem):
         self.path = path
         self.version = version
         self.version_full = version_full
-        super().__init__(name)
+        # don't forget: a build item should be initialized with the full spec
+        if len(spl) > 1:
+            # change the spec to reflect the real compiler name
+            spec = name + ": " + ":".join(spl[1:])
+        super().__init__(spec)
+        # maybe we should get the c compiler another way. For now this will do.
         self.c_compiler = __class__.get_c_compiler(self.shortname, self.path)
 
     @staticmethod
