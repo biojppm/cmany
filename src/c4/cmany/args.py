@@ -127,7 +127,9 @@ def add_bundle_flags(parser):
 
 
 def add_combination_flags(parser):
-    pass  # need to set these up
+    # need to set here flags for excluding all or including only some
+    # combinations
+    pass
 
 
 def add_cflags(parser):
@@ -242,7 +244,9 @@ class BuildItemArgument(argparse.Action):
         if not hasattr(parser, 'non_default_args'):
             parser.non_default_args = {}
         if parser.non_default_args.get(self.dest) == None:
-            li = []
+            if self.dest != 'variants':
+                # util.logwarn("parsing: reset current li:", li)
+                li = []
         # util.logwarn("parsing: current li:", li, " + ", vli)
         li += vli
         setattr(namespace, self.dest, li)

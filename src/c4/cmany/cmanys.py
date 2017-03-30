@@ -419,7 +419,7 @@ class Variant(BuildItem):
                     raise Exception(msg.format(self.name, r.name))
                 if not r._resolved_references:
                     r.resolve_all(variants)
-                self.append_flags(r, append_to_name=False)
+                self.flags.append_flags(r.flags, append_to_name=False)
             else:
                 parser = argparse.ArgumentParser()
                 c4args.add_bundle_flags(parser)

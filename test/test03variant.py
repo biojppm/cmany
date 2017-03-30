@@ -14,7 +14,7 @@ class Test00VariantSpec(ut.TestCase):
     def c(self, name, var, **ref):
         self.assertEqual(var.name, name)
         for k, refval in ref.items():
-            result = getattr(var, k)
+            result = getattr(var.flags, k)
             self.assertEqual(result, refval)
 
     def test00_simple(self):
@@ -121,7 +121,7 @@ class Test10AsArguments(ut.TestCase):
         var = vars[which_var]
         self.assertEqual(var.name, expected_name)
         for k, refval in expected_props.items():
-            result = getattr(var, k)
+            result = getattr(var.flags, k)
             with self.subTest(input=input, which_var=which_var, desc='variant properties', prop=k):
                 self.assertEqual(result, refval, msg='property: ' + k)
 
