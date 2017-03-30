@@ -29,8 +29,8 @@ under a ``build`` directory which is under the current working directory::
 Each build tree is obtained by first configuring CMake with the given
 parameters, and then invoking ``cmake --build`` to build the project at once.
 
-You can also just use cmany as a much simpler version of the typical
-cmake usage pattern:
+You can also use cmany just to simplify your daily cmake
+workflow! These two command sequences have the same effect:
 
 +-------------------------------+-------------------------------+
 | typical cmake                 | cmany                         |
