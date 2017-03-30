@@ -171,10 +171,10 @@ def unquote(s):
 
 def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
     """split a string at split_char, but respect (and preserve) all the
-    characters inside a quote_chars pair (including escaped quote_chars).
-    split_char can also be escaped when outside of a quote_chars pair"""
+    characters inside a quote_chars pair (including escaped quote_chars and
+    split_chars). split_char can also be escaped when outside of a
+    quote_chars pair."""
     out = []
-    begin = 0
     i = 0
     l = len(string)
     prev = 0
