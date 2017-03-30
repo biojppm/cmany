@@ -114,7 +114,7 @@ def add_select(parser):
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to \"%(default)s\".""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   default=[], action=VariantArgument,
+                   default=[], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given variants.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")
@@ -238,14 +238,3 @@ class BuildItemArgument(argparse.Action):
         li += vli
         setattr(namespace, self.dest, li)
 
-
-# -----------------------------------------------------------------------------
-class VariantArgument(argparse.Action):
-    """a class to be used by argparse when parsing variant specifications.
-    Note that prettyprint shows variants wrong.
-    """
-    def __call__(self, parser, namespace, values, option_string=None):
-        li = getattr(namespace, self.dest)
-        vli = cmany.BuildItem.parse_args(values)
-        li += vli
-        setattr(namespace, self.dest, li)
