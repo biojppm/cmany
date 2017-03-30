@@ -69,45 +69,6 @@ class BuildFlags(NamedItem):
         log_fn(t, "cxxflags=", self.cxxflags)
         log_fn(t, "cflags=", self.cflags)
 
-    @staticmethod
-    def parse_specs(v):
-        """in some cases the shell (or argparse?) removes quotes, so we need
-        to parse flag specifications using regexes. This function implements
-        this parsing for use in argparse. This one was a tough nut to crack."""
-        # remove start and end quotes if there are any
-        if util.is_quoted(v):
-            v = util.unquote(v)
-        # split at commas, but make sure those commas separate variants
-        # (commas inside a variant spec are legitimate)
-        vli = ['']    # the variant list
-        rest = str(v) # the part of the variant specification yet to be read
-        while True:
-            # ... is there a smarter way to deal with the quotes?
-            matches = re.search(__class__._rxdq, rest)  # try double quotes
-            if matches is None:
-                matches = re.search(__class__._rxsq, rest)  # try single quotes
-                if matches is None:
-                    matches = re.search(__class__._rxnq, rest)  # try no quotes
-                    if matches is None:
-                        if rest:
-                            vli[-1] += rest
-                        break
-            (lhs, var, spec, rest) = matches.groups()
-            if lhs:
-                vli[-1] += lhs.strip(',')
-            if var:
-                if vli[-1]:
-                    vli.append(var + spec)
-                else:
-                    vli[-1] += var + spec  # insert into empty specs
-        # unquote split elements
-        vli = [util.unquote(v).strip(',') for v in vli]
-        return vli
-
-    _rxdq = re.compile(r'(.*?)"([a-zA-Z0-9_]+?:)(.*?)"(.*)')  # double quotes
-    _rxsq = re.compile(r"(.*?)'([a-zA-Z0-9_]+?:)(.*?)'(.*)")  # single quotes
-    _rxnq = re.compile(r"(.*?)([a-zA-Z0-9_]+?:)(.*?)(.*)")    # no quotes
-
 
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
@@ -134,6 +95,82 @@ class BuildItem(NamedItem):
             args = parser.parse_args(self.flag_specs)
             self.flags = BuildFlags(self.name, None, **vars(args))
 
+    @staticmethod
+    def parse_args(v_):
+        """parse comma-separated build item specs from the command line.
+
+        An individual build item spec can have any of the following forms:
+          * name
+          * 'name:'
+          * "name:"
+          * 'name: <flag_specs...>'
+          * "name: <flag_specs...>"
+        So for example, any of these could be valid input to this function:
+          * foo,bar
+          * foo,'bar: -X "-a" "-b" (etc)'
+          * foo,"bar: -X '-a' '-b' (etc)"
+          * 'foo: -DTHIS_IS_FOO -X "-a"','bar: -X "-a" "-b" (etc)'
+          * 'foo: -DTHIS_IS_FOO -X "-a"',bar
+          * etc
+
+        In some cases the shell (or argparse? or what?) removes quotes, so we
+        need to parse flag specifications using regexes. This one was
+        a tough nut to crack.
+        """
+
+        #util.lognotice("parse_args 0: input=____{}____".format(v_))
+
+        # remove start and end quotes if there are any
+        v = v_
+        if util.is_quoted(v_):
+            v = util.unquote(v_)
+
+        # print("parse_args 1: unquoted=____{}____".format(v))
+
+        if util.has_interior_quotes(v):
+            # this is the simple case: we assume everything is duly delimited
+            vli = util.splitesc_quoted(v, ',')
+            # print("parse_args 2: vli=__{}__".format(vli))
+        else:
+            # in the absence of interior quotes, parsing is more complicated.
+            # Does the string have ':'?
+            if v.find(':') == -1:
+                # no ':' was found; a simple split will nicely do
+                vli = v.split(',')
+                # print("parse_args 3.1: vli=__{}__".format(vli))
+            else:
+                # uh oh. we have ':' in the string, which means we have to
+                # do it the hard way. There's probably a less hard way, but
+                # for now this is short enough.
+                # print("parse_args 3.2: parsing manually...")
+                vli = []
+                withc = False
+                b = 0
+                lastcomma = -1
+                for i, c in enumerate(v):
+                    if c == ',':
+                        if not withc:
+                            vli.append(v[b:i])
+                            b = i + 1
+                        # print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
+                        lastcomma = i
+                    elif c == ':':
+                        if not withc:
+                            withc = True
+                        else:
+                            vli.append(v[b:(lastcomma + 1)])
+                        b = lastcomma + 1
+                        # print("parse_args 3.2.2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
+                rest = v[b:]
+                if rest:
+                    vli.append(rest)
+                # print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
+
+        # print("parse_args 4: vli=", vli)
+        # unquote split elements
+        vli = [util.unquote(v).strip(',') for v in vli]
+        # util.logdone("parse_args 4: input=____{}____ output=__{}__".format(v_, vli))
+        return vli
 
 # -----------------------------------------------------------------------------
 class BuildType(BuildItem):
@@ -395,6 +432,7 @@ class Variant(BuildFlags):
                 tmp = BuildFlags('', None, **vars(args))
                 self.append_flags(tmp, append_to_name=False)
         self._resolved_references = True
+
 
 # -----------------------------------------------------------------------------
 class Generator(BuildItem):

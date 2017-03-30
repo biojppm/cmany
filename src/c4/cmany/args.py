@@ -91,25 +91,25 @@ def add_proj(parser):
 def add_select(parser):
     g = parser.add_argument_group(title="Selecting the builds")
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                   default=[cmany.System.default_str()], type=cslist,
+                   default=[cmany.System.default_str()], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given operating systems.
                    Defaults to the current system, \"%(default)s\".
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is a stub only and is still to be implemented.""")
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                   default=[cmany.Architecture.default_str()], type=cslist,
+                   default=[cmany.Architecture.default_str()], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given processor architectures.
                    Defaults to CMake's default architecture, \"%(default)s\" on this system.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature requires os-specific toolchains and is currently a
                    work-in-progress.""")
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                   default=[cmany.Compiler.default_str()], type=cslist,
+                   default=[cmany.Compiler.default_str()], action=BuildItemArgument,
                    help="""restrict actions to the given compilers.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   default=["Release"], type=cslist,
+                   default=["Release"], action=BuildItemArgument,
                    help="""restrict actions to the given build types.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to \"%(default)s\".""")
@@ -191,9 +191,9 @@ def add_cflags(parser):
                    help="""Before configuring, process (ie, configure, build
                    and install) the given CMakeLists.txt project containing
                    needed external project dependencies. This will be done
-                   separately for each build, using the same parameters. The main
-                   project will be configured such that the built dependencies are
-                   found by cmake.""")
+                   separately for each build, using the same parameters. The
+                   main project will be configured such that the built
+                   dependencies are found by cmake.""")
     d.add_argument('--deps-prefix', nargs=1, default="", type=str,
                    metavar='path/to/install/directory',
                    help="""When using --deps set the install directory for
@@ -204,7 +204,8 @@ def add_cflags(parser):
 
 # -----------------------------------------------------------------------------
 class FlagArgument(argparse.Action):
-    """a class to be used by argparse when parsing arguments which are compiler flags"""
+    """a class to be used by argparse when parsing arguments which
+    are compiler flags"""
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
         v = values
@@ -221,12 +222,30 @@ class FlagArgument(argparse.Action):
 
 
 # -----------------------------------------------------------------------------
+class BuildItemArgument(argparse.Action):
+    """a class to be used by argparse when parsing build item specifications.
+    Note that prettyprint shows the specs wrong.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        li = getattr(namespace, self.dest)
+        vli = cmany.BuildItem.parse_args(values)
+        # clear the defaults from the list
+        if not hasattr(parser, 'non_default_args'):
+            parser.non_default_args = {}
+        if parser.non_default_args.get(self.dest) == None:
+            li = []
+        # util.logwarn("parsing: current li:", li, " + ", vli)
+        li += vli
+        setattr(namespace, self.dest, li)
+
+
+# -----------------------------------------------------------------------------
 class VariantArgument(argparse.Action):
     """a class to be used by argparse when parsing variant specifications.
     Note that prettyprint shows variants wrong.
     """
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
-        vli = cmany.Variant.parse_specs(values)
+        vli = cmany.BuildItem.parse_args(values)
         li += vli
         setattr(namespace, self.dest, li)
