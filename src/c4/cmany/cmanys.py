@@ -354,7 +354,7 @@ exit $?
 
 
 # -----------------------------------------------------------------------------
-class Variant(BuildFlags):
+class Variant(BuildItem):
     """for variations in build flags"""
 
     @staticmethod
@@ -426,7 +426,7 @@ class Variant(BuildFlags):
                 ss = util.splitesc_quoted(s, ' ')
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
-                self.append_flags(tmp, append_to_name=False)
+                self.flags.append_flags(tmp, append_to_name=False)
         self._resolved_references = True
 
 
@@ -607,14 +607,12 @@ class Build:
         self.buildroot = os.path.abspath(build_root)
         self.installroot = os.path.abspath(install_root)
         #
-        self.system = system
-        self.architecture = arch
-        self.buildtype = buildtype
-        self.compiler = compiler
-        self.variant = variant
-        self.flags = flags
-        # self.crosscompile = (system != System.default())
-        # self.toolchain = None
+        self.flags = copy.deepcopy(flags)
+        self.system = copy.deepcopy(system)
+        self.architecture = copy.deepcopy(arch)
+        self.buildtype = copy.deepcopy(buildtype)
+        self.compiler = copy.deepcopy(compiler)
+        self.variant = copy.deepcopy(variant)
 
         self.adjusted = False
 
@@ -622,7 +620,12 @@ class Build:
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
 
-        self.variant.resolve_flag_aliases(self.compiler)
+        self.flags.resolve_flag_aliases(self.compiler)
+        self.system.flags.resolve_flag_aliases(self.compiler)
+        self.architecture.flags.resolve_flag_aliases(self.compiler)
+        self.buildtype.flags.resolve_flag_aliases(self.compiler)
+        self.compiler.flags.resolve_flag_aliases(self.compiler)
+        self.variant.flags.resolve_flag_aliases(self.compiler)
 
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
@@ -768,7 +771,14 @@ class Build:
             os.remove("cmany_build.done")
 
     def _get_flagseq(self):
-        return (self.flags, self.variant)
+        return (
+            self.flags,
+            self.system.flags,
+            self.architecture.flags,
+            self.compiler.flags,
+            self.buildtype.flags,
+            self.variant.flags
+        )
 
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
         flags = []
@@ -777,7 +787,6 @@ class Build:
                 flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
             except:
                 pass
-
         # append overall build flags
         # append variant flags
         flagseq = self._get_flagseq()
