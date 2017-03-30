@@ -114,35 +114,27 @@ class BuildItem(NamedItem):
           * etc
 
         In some cases the shell (or argparse? or what?) removes quotes, so we
-        need to parse flag specifications using regexes. This one was
-        a tough nut to crack.
+        have to deal with that too
         """
-
-        #util.lognotice("parse_args 0: input=____{}____".format(v_))
 
         # remove start and end quotes if there are any
         v = v_
         if util.is_quoted(v_):
             v = util.unquote(v_)
 
-        # print("parse_args 1: unquoted=____{}____".format(v))
-
         if util.has_interior_quotes(v):
             # this is the simple case: we assume everything is duly delimited
             vli = util.splitesc_quoted(v, ',')
-            # print("parse_args 2: vli=__{}__".format(vli))
         else:
             # in the absence of interior quotes, parsing is more complicated.
             # Does the string have ':'?
             if v.find(':') == -1:
                 # no ':' was found; a simple split will nicely do
                 vli = v.split(',')
-                # print("parse_args 3.1: vli=__{}__".format(vli))
             else:
                 # uh oh. we have ':' in the string, which means we have to
                 # do it the hard way. There's probably a less hard way, but
                 # for now this is short enough.
-                # print("parse_args 3.2: parsing manually...")
                 vli = []
                 withc = False
                 b = 0
@@ -152,7 +144,6 @@ class BuildItem(NamedItem):
                         if not withc:
                             vli.append(v[b:i])
                             b = i + 1
-                        # print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                         lastcomma = i
                     elif c == ':':
                         if not withc:
@@ -160,13 +151,9 @@ class BuildItem(NamedItem):
                         else:
                             vli.append(v[b:(lastcomma + 1)])
                         b = lastcomma + 1
-                        # print("parse_args 3.2.2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                 rest = v[b:]
                 if rest:
                     vli.append(rest)
-                # print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
-
-        # print("parse_args 4: vli=", vli)
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
         # util.logdone("parse_args 4: input=____{}____ output=__{}__".format(v_, vli))
