@@ -114,27 +114,34 @@ class BuildItem(NamedItem):
           * etc
 
         In some cases the shell (or argparse? or what?) removes quotes, so we
-        have to deal with that too
+        have to deal with that too.
         """
+
+        #util.lognotice("parse_args 0: input=____{}____".format(v_))
 
         # remove start and end quotes if there are any
         v = v_
         if util.is_quoted(v_):
             v = util.unquote(v_)
 
+        # print("parse_args 1: unquoted=____{}____".format(v))
+
         if util.has_interior_quotes(v):
             # this is the simple case: we assume everything is duly delimited
             vli = util.splitesc_quoted(v, ',')
+            # print("parse_args 2: vli=__{}__".format(vli))
         else:
             # in the absence of interior quotes, parsing is more complicated.
             # Does the string have ':'?
             if v.find(':') == -1:
                 # no ':' was found; a simple split will nicely do
                 vli = v.split(',')
+                # print("parse_args 3.1: vli=__{}__".format(vli))
             else:
-                # uh oh. we have ':' in the string, which means we have to
-                # do it the hard way. There's probably a less hard way, but
-                # for now this is short enough.
+                # uh oh. we have ':' in the string, but no quotes in it. This
+                # means we have to do it the hard way. There's probably a
+                # less hard way, but for now this is short enough.
+                # print("parse_args 3.2: parsing manually...")
                 vli = []
                 withc = False
                 b = 0
@@ -144,6 +151,7 @@ class BuildItem(NamedItem):
                         if not withc:
                             vli.append(v[b:i])
                             b = i + 1
+                        # print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                         lastcomma = i
                     elif c == ':':
                         if not withc:
@@ -151,9 +159,13 @@ class BuildItem(NamedItem):
                         else:
                             vli.append(v[b:(lastcomma + 1)])
                         b = lastcomma + 1
+                        # print("parse_args 3.2.2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                 rest = v[b:]
                 if rest:
                     vli.append(rest)
+                # print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
+
+        # print("parse_args 4: vli=", vli)
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
         # util.logdone("parse_args 4: input=____{}____ output=__{}__".format(v_, vli))
@@ -267,8 +279,11 @@ class Compiler(BuildItem):
         if len(spl) > 1:
             # change the spec to reflect the real compiler name
             spec = name + ": " + ":".join(spl[1:])
+        else:
+            spec = name
         super().__init__(spec)
-        # maybe we should get the c compiler another way. For now this will do.
+        # maybe we should use a different way to get the c compiler.
+        # For now this will do.
         self.c_compiler = __class__.get_c_compiler(self.shortname, self.path)
 
     @staticmethod
@@ -455,7 +470,8 @@ class Generator(BuildItem):
         if build.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(build.compiler.name)
             g = Generator(vsi.gen, build, num_jobs)
-            build.adjust(architecture=Architecture(vsi.architecture))
+            arch = Architecture(vsi.architecture)
+            build.adjust(architecture=arch)
             return g
         else:
             if build.architecture.is32:
@@ -598,8 +614,8 @@ class Build:
     pfile = "cmany_preload.cmake"
 
     def __init__(self, proj_root, build_root, install_root,
-               system, arch, buildtype, compiler, variant, flags,
-               num_jobs, kwargs):
+                 system, arch, buildtype, compiler, variant, flags,
+                 num_jobs, kwargs):
         #
         self.kwargs = kwargs
         #
