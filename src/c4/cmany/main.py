@@ -5,7 +5,10 @@ import argcomplete
 
 from collections import OrderedDict as odict
 
-from c4.cmany import cmanys as cmany, util, args as c4args, help as c4help
+from c4.cmany import cmanys as cmany
+from c4.cmany import util as util
+from c4.cmany import args as c4args
+from c4.cmany import help as c4help
 
 
 cmds = odict([
@@ -24,13 +27,15 @@ cmds = odict([
 
 
 def cmany_main(in_args=None):
-    if in_args is None: in_args = sys.argv[1:]
+    if in_args is None:
+        in_args = sys.argv[1:]
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
     argcomplete.autocomplete(parser)
     args = c4args.parse(parser, in_args)
     if args:
         args.func(args)
+
 
 # -----------------------------------------------------------------------------
 class cmdbase:
@@ -49,7 +54,6 @@ class help(cmdbase):
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
-
     def _exec(self, proj, args):
         sct = args.subcommand_or_topic
         if not sct:
