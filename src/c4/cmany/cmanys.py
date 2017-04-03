@@ -655,6 +655,8 @@ class Build:
         if self.deps and not os.path.isabs(self.deps):
             self.deps = os.path.abspath(self.deps)
         self.deps_prefix = kwargs.get('deps_prefix')
+        if self.deps_prefix and not os.path.isabs(self.deps_prefix):
+            self.deps_prefix = os.path.abspath(self.deps_prefix)
         if not self.deps_prefix:
             self.deps_prefix = self.builddir
 
@@ -908,9 +910,26 @@ message(STATUS "cmany:preload----------------------")
 message(STATUS "cmany: nothing to preload...")
 """
 
+    @property
+    def deps_done(self):
+        dmark = os.path.join(self.builddir, "cmany_deps.done")
+        exists = os.path.exists(dmark)
+        return exists
+
+    def mark_deps_done(self):
+        with util.setcwd(self.builddir):
+            with open("cmany_deps.done", "w") as f:
+                s = ''
+                if self.deps: s += self.deps + '\n'
+                if self.deps_prefix: s += self.deps_prefix + '\n'
+                f.write(s)
+
     def handle_deps(self):
+        if self.deps_done:
+            return
         if not self.deps:
             self.handle_conan()
+            self.mark_deps_done()
             return
         util.lognotice(self.tag + ': building dependencies', self.deps)
         dup = copy.copy(self)
@@ -932,6 +951,7 @@ message(STATUS "cmany: nothing to preload...")
         util.logdone(self, ': building dependencies: done')
         util.logwarn('installdir:', dup.installdir)
         self.varcache.p('CMAKE_PREFIX_PATH', self.installdir)
+        self.mark_deps_done()
 
     def handle_conan(self):
         if not self.kwargs.get('with_conan'):
