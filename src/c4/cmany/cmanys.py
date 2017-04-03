@@ -455,10 +455,6 @@ class Generator(BuildItem):
     """
 
     @staticmethod
-    def default():
-        return Generator(__class__.default_str(), cpu_count())
-
-    @staticmethod
     def default_str():
         """get the default generator from cmake"""
         s = CMakeSysInfo.generator()
