@@ -205,7 +205,7 @@ def add_cflags(parser):
                    separately for each build, using the same parameters. The
                    main project will be configured such that the built
                    dependencies are found by cmake.""")
-    d.add_argument('--deps-prefix', nargs=1, default="", type=str,
+    d.add_argument('--deps-prefix', default="", type=str,
                    metavar='path/to/install/directory',
                    help="""When using --deps set the install directory for
                    external dependencies to the given dir.""")
@@ -250,4 +250,3 @@ class BuildItemArgument(argparse.Action):
         # util.logwarn("parsing: current li:", li, " + ", vli)
         li += vli
         setattr(namespace, self.dest, li)
-
