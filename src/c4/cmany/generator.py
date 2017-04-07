@@ -1,4 +1,5 @@
 import re
+import os.path
 
 from .cmake import CMakeSysInfo
 from . import vsinfo
