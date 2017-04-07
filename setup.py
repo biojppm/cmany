@@ -11,10 +11,6 @@ if sys.version_info < (3, 3):
     # this is because of subprocess. That code is in c4/cmany/util.py.
     msg = 'cmany requires at least Python 3.3. Current version is {}. Sorry.'
     sys.exit(msg.format(sys.version_info))
-#if sys.version_info < (3, 4):
-#    # this is because of unittest.subTest()
-#    msg = 'cmany requires at least Python 3.4. Current version is {}. Sorry.'
-#    sys.exit(msg.format(sys.version_info))
 
 
 def read(*rnames):
