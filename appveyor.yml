@@ -101,3 +101,13 @@ test_script:
 #on_success:
 #  - TODO: upload the content of dist/*.whl to a public wheelhouse
 #
+
+skip_commits:
+  files:
+    - .gitignore
+    - LICENSE.txt
+    - README.md
+    - .ci/travis*
+    - .ci/dev_*
+    - .ci/show_*
+    - doc/*
