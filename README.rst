@@ -65,8 +65,9 @@ Features
 
 Installing
 ----------
-cmany is written in Python 3. It will eventually be added to the PyPI repository, but for
-now you can install it from a repo clone::
+
+cmany is written in Python 3. It will eventually be added to the PyPI
+repository, but for now you can install it from a repo clone::
 
   $ git clone https://github.com/biojppm/cmany
   $ cd cmany
@@ -76,6 +77,11 @@ If you want to install and develop cmany, use the ``-e`` option for pip::
 
   $ pip3 install -e .
 
+Requirements
+^^^^^^^^^^^^
+ * CMake 3.3
+ * Python 3.3+
+   * pip
 
 Getting started
 ---------------
@@ -108,8 +114,11 @@ Known issues
   tested. Some bugs may be present.
 
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
+    :alt: Linux + OS X unit test status
     :target: https://travis-ci.org/biojppm/cmany
 .. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
+    :alt: Windows unit test status
     :target: https://ci.appveyor.com/project/biojppm/cmany
-.. |readthedocs| image:: https://cmany.readthedocs.io/en/latest/?badge=latest
+.. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
+    :alt: Documentation status
     :target: https://cmany.readthedocs.io/
