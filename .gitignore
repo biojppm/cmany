@@ -16,6 +16,7 @@ __cmake_systeminformation
 __pycache__
 .noseids
 .tox
+.python-version
 
 # setup.py files
 .eggs
