@@ -6,13 +6,14 @@ from datetime import datetime
 from .generator import Generator
 from . import util
 from .cmake import CMakeCache, CMakeSysInfo
+from .named_item import NamedItem
 
-# experimental, don't think it will stay unless conan starts accepting args
+# experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
 
 
 # -----------------------------------------------------------------------------
-class Build:
+class Build(NamedItem):
     """Holds a build's settings"""
 
     pfile = "cmany_preload.cmake"
@@ -37,6 +38,8 @@ class Build:
         self.adjusted = False
 
         self._set_paths()
+        super().__init__(self.tag)
+
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
 
@@ -83,9 +86,6 @@ class Build:
             self.adjusted = True
             self.compiler = c
         self._set_paths()
-
-    def __repr__(self):
-        return self.tag
 
     def _cat(self, sep):
         s = "{1}{0}{2}{0}{3}{0}{4}"
