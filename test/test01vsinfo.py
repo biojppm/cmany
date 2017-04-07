@@ -2,7 +2,6 @@
 
 import unittest as ut
 import os.path
-import sys
 
 import c4.cmany.util as util
 import c4.cmany.vsinfo as vsinfo

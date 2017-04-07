@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest as ut
+import subtest_fix
 import tempfile
 import os
 import argparse

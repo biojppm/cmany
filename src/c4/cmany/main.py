@@ -6,7 +6,6 @@ import argcomplete
 from collections import OrderedDict as odict
 
 from c4.cmany import cmanys as cmany
-from c4.cmany import util as util
 from c4.cmany import args as c4args
 from c4.cmany import help as c4help
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest as ut
+import subtest_fix
 import os
 import sys
 import glob
@@ -12,6 +13,8 @@ import c4.cmany.util as util
 import c4.cmany.main as main
 import c4.cmany.cmanys as cmany
 import c4.cmany.cmake as cmake
+
+from multiprocessing import cpu_count as cpu_count
 
 srcdir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
 sys.path.insert(0, srcdir)
@@ -229,7 +232,7 @@ class TestBuild:
                                      compiler=compiler,
                                      variant=variant,
                                      flags=self.flags,
-                                     num_jobs=cmany.cpu_count(),
+                                     num_jobs=cpu_count(),
                                      kwargs={}
                                      )
 

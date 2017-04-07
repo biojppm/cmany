@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import unittest as ut
+import subtest_fix
 import argparse
 
 from c4.cmany import cmanys as cmany, util, args as c4args
-
+from c4.cmany import variant
+from c4.cmany import build_item
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -18,14 +20,14 @@ class Test00VariantSpec(ut.TestCase):
             self.assertEqual(result, refval)
 
     def test00_simple(self):
-        v = cmany.Variant.create("somevariant: -X '-fPIC'")
+        v = variant.Variant.create("somevariant: -X '-fPIC'")
         v = v[0]
         self.c('somevariant', v, cmake_vars=[], defines=[], cflags=[], cxxflags=['-fPIC'])
 
     def test01_nospecs(self):
         vars = ['var0','var1','var2']
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 3)
             self.c('var0', out[0], cmake_vars=[], defines=[], cflags=[], cxxflags=[])
             self.c('var1', out[1], cmake_vars=[], defines=[], cflags=[], cxxflags=[])
@@ -37,7 +39,7 @@ class Test00VariantSpec(ut.TestCase):
                 '\'var2: -X nortti,c++14 -D VAR3,VAR_TYPE=3\'',
         ]
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 3)
             self.c('var0', out[0], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
             self.c('var1', out[1], cmake_vars=[], defines=['VAR2', 'VAR_TYPE=2'], cflags=[], cxxflags=['-Wall'])
@@ -50,7 +52,7 @@ class Test00VariantSpec(ut.TestCase):
             '\'var2: @var1 -X nortti,c++14 -D VAR3,VAR_TYPE=3\'',
         ]
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 3)
             self.c('var0', out[0], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
             self.c('var1', out[1], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1', 'VAR2', 'VAR_TYPE=2'], cflags=[], cxxflags=['-fPIC', '-Wall'])
@@ -63,7 +65,7 @@ class Test00VariantSpec(ut.TestCase):
             '\'var2: -X nortti,c++14 @var1 -D VAR3,VAR_TYPE=3\'',
         ]
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 3)
             self.c('var0', out[0], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
             self.c('var1', out[1], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1', 'VAR2', 'VAR_TYPE=2'], cflags=[], cxxflags=['-Wall', '-fPIC'])
@@ -76,7 +78,7 @@ class Test00VariantSpec(ut.TestCase):
             '\'var2: -X nortti,c++14 -D VAR3,VAR_TYPE=3 @var1\'',
         ]
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 3)
             self.c('var0', out[0], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
             self.c('var1', out[1], cmake_vars=[], defines=['VAR2', 'VAR_TYPE=2', 'VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-Wall', '-fPIC'])
@@ -91,7 +93,7 @@ class Test00VariantSpec(ut.TestCase):
             '\'var4: @var0 @var1 @var2\'',
         ]
         for w in (vars, ','.join(vars)):
-            out = cmany.Variant.create(w)
+            out = variant.Variant.create(w)
             self.assertEquals(len(out), 5)
             self.c('var0', out[0], cmake_vars=[], defines=['VAR1', 'VAR_TYPE=1'], cflags=[], cxxflags=['-fPIC'])
             self.c('var1', out[1], cmake_vars=[], defines=['VAR2', 'VAR_TYPE=2'], cflags=[], cxxflags=['-Wall'])
@@ -116,7 +118,7 @@ class Test10AsArguments(ut.TestCase):
         parser = argparse.ArgumentParser()
         c4args.add_select(parser)
         args = parser.parse_args(input)
-        vars = cmany.Variant.create(args.variants)
+        vars = variant.Variant.create(args.variants)
         self.assertTrue(which_var < len(vars))
         var = vars[which_var]
         self.assertEqual(var.name, expected_name)
@@ -240,7 +242,7 @@ class Test11AsUnquotedArguments(ut.TestCase):
     """
 
     def t(self, input, expected):
-        variants = cmany.BuildItem.parse_args(input)
+        variants = build_item.BuildItem.parse_args(input)
         with self.subTest(input=input):
             self.assertEqual(variants, expected, msg=input)
 

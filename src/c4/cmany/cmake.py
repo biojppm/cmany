@@ -246,7 +246,7 @@ class CMakeSysInfo:
     @staticmethod
     def system_info(gen):
         """generator can be a string or a cmany.Generator object"""
-        from .cmanys import Generator
+        from .generator import Generator
         # print("CMakeSystemInfo: asked info for", which_generator)
         p = _genid(gen)
         d = os.path.join(CMANY_DIR, 'cmake_info', p)
@@ -283,7 +283,7 @@ class CMakeSysInfo:
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 def _genid(gen):
-    from .cmanys import Generator
+    from .generator import Generator
     p = gen.sysinfo_name if isinstance(gen, Generator) else gen
     p = re.sub(r'[() ]', '_', p)
     return p

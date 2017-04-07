@@ -3,9 +3,14 @@
 import argparse
 import pprint
 
-from . import util, cmanys as cmany, help
+from . import util
+from . import help
+from . import system
+from . import build_item
+from . import architecture
+from . import compiler
 from .util import cslist
-from .cmanys import cpu_count
+from multiprocessing import cpu_count as cpu_count
 
 
 # -----------------------------------------------------------------------------
@@ -91,20 +96,20 @@ def add_proj(parser):
 def add_select(parser):
     g = parser.add_argument_group(title="Selecting the builds")
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                   default=[cmany.System.default_str()], action=BuildItemArgument,
+                   default=[system.System.default_str()], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given operating systems.
                    Defaults to the current system, \"%(default)s\".
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is a stub only and is still to be implemented.""")
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                   default=[cmany.Architecture.default_str()], action=BuildItemArgument,
+                   default=[architecture.Architecture.default_str()], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given processor architectures.
                    Defaults to CMake's default architecture, \"%(default)s\" on this system.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature requires os-specific toolchains and is currently a
                    work-in-progress.""")
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                   default=[cmany.Compiler.default_str()], action=BuildItemArgument,
+                   default=[compiler.Compiler.default_str()], action=BuildItemArgument,
                    help="""restrict actions to the given compilers.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
@@ -239,7 +244,7 @@ class BuildItemArgument(argparse.Action):
     """
     def __call__(self, parser, namespace, values, option_string=None):
         li = getattr(namespace, self.dest)
-        vli = cmany.BuildItem.parse_args(values)
+        vli = build_item.BuildItem.parse_args(values)
         # clear the defaults from the list
         if not hasattr(parser, 'non_default_args'):
             parser.non_default_args = {}
