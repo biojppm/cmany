@@ -82,6 +82,8 @@ Features
 More info
 =========
 
+* Project home
+
 * Installing
 
 * Getting started

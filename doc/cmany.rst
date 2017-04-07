@@ -8,9 +8,10 @@ cmany
 
 Easily batch-build cmake projects!
 
-cmany is a command line tool to easily build variations of a CMake C/C++ project.
-It combines different compilers, cmake build types, compilation flags,
-processor architectures (WIP) and operating systems (also WIP).
+`cmany <https://github.com/biojppm/cmany>`_ is a command line tool to easily
+build variations of a CMake C/C++ project. It combines different compilers,
+cmake build types, compilation flags, processor architectures (WIP) and
+operating systems (also WIP).
 
 For example, to configure and build a project combining clang++ and g++
 with both Debug and Release::
@@ -64,6 +65,7 @@ Features
 
 More info
 ---------
+* `Project home <https://github.com/biojppm/cmany>`_
 * `Installing <https://cmany.readthedocs.io/en/latest/installing/>`_
 * `Getting started <https://cmany.readthedocs.io/en/latest/quick_tour/>`_
 
