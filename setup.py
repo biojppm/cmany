@@ -40,20 +40,28 @@ def readreqs(*rnames):
 def get_binaries_directory():
     """Return the installation directory, or None
     http://stackoverflow.com/questions/36187264"""
-    print("setup: site-packages", site.getsitepackages())
-    print("setup: site-user-packages", site.getusersitepackages())
-    print("setup: site-prefix", os.path.dirname(sys.executable))
     if '--user' in sys.argv:
         paths = (site.getusersitepackages(),)
     else:
+        if hasattr(site, 'getsitepackages'):
+            print("setup: site-packages", site.getsitepackages())
+            print("setup: site-user-packages", site.getusersitepackages())
+            print("setup: site-prefix", os.path.dirname(sys.executable))
+            paths = site.getsitepackages()
+        else:
+            print("setup: no site.getsitepackages()...")
+            py_prefix = os.path.dirname(sys.executable)
+            paths = [
+                py_prefix + '/lib/site-packages',
+                py_prefix + '/lib/site-packages',
+                py_prefix + '/lib',
+            ]
         py_version = '{}.{}'.format(sys.version_info[0], sys.version_info[1])
-        py_prefix = os.path.dirname(sys.executable)
-        paths = site.getsitepackages()
         paths += (s.format(py_version) for s in (
-            sys.prefix + '/lib/python{}/dist-packages/',
             sys.prefix + '/lib/python{}/site-packages/',
-            sys.prefix + '/local/lib/python{}/dist-packages/',
+            sys.prefix + '/lib/python{}/dist-packages/',
             sys.prefix + '/local/lib/python{}/site-packages/',
+            sys.prefix + '/local/lib/python{}/dist-packages/',
             '/Library/Python/{}/site-packages/',
         ))
     for path in paths:
