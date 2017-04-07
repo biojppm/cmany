@@ -4,7 +4,9 @@
 from setuptools import setup, find_packages
 import os.path
 import sys
+import site
 import re
+import glob
 
 
 if sys.version_info < (3, 3):
@@ -35,6 +37,45 @@ def readreqs(*rnames):
     return l
 
 
+def get_binaries_directory():
+    """Return the installation directory, or None
+    http://stackoverflow.com/questions/36187264"""
+    if '--user' in sys.argv:
+        paths = (site.getusersitepackages(),)
+    else:
+        py_version = '{}.{}'.format(sys.version_info[0], sys.version_info[1])
+        paths = (s.format(py_version) for s in (
+            sys.prefix + '/lib/python{}/dist-packages/',
+            sys.prefix + '/lib/python{}/site-packages/',
+            sys.prefix + '/local/lib/python{}/dist-packages/',
+            sys.prefix + '/local/lib/python{}/site-packages/',
+            '/Library/Python/{}/site-packages/',
+        ))
+    for path in paths:
+        if os.path.exists(path):
+            return path
+    print('no installation path found', file=sys.stderr)
+    return None
+
+
+def get_data_files():
+    dest = get_binaries_directory()
+    d = lambda d: os.path.join(dest, d)
+    return [
+          (d("c4/cmany/"), [
+              "LICENSE.txt",
+              "README.rst",
+              "requirements.txt",
+              "requirements_test.txt"
+          ]),
+          (d("c4/cmany/conf"), [
+              "src/c4/cmany/flags.yml"
+          ]),
+          (d("c4/cmany/doc"),
+              glob.glob("doc/_build/text/*.txt")),
+      ]
+
+
 setup(name="cmany",
       version="0.1",
       description="CMake build tree batching tool",
@@ -54,7 +95,7 @@ setup(name="cmany",
           "Topic :: Software Development :: Libraries :: Python Modules",
           "Topic :: Utilities",
       ],
-      keywords=["cmake", "c", "c++"],
+      keywords=["cmake", "c++", "c"],
       author="Joao Paulo Magalhaes",
       author_email="dev@jpmag.me",
       zip_safe=False,
@@ -64,21 +105,9 @@ setup(name="cmany",
       entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
       install_requires=readreqs('requirements.txt'),
       tests_require=readreqs('requirements_test.txt'),
-      #include_package_data=True,
-      #package_data={'c4.cmany':read_manifest()},
-      data_files = [
-          ("", [
-              "LICENSE.txt",
-              "README.rst",
-              "requirements.txt",
-              "requirements_test.txt"]),
-          ("conf", [
-              "src/c4/cmany/flags.yml"]),
-          ("doc", [
-              "doc/_build/text/flags.txt",
-              "doc/_build/text/index.txt",
-              "doc/_build/text/quick_tour.txt",
-              "doc/_build/text/variants.txt",
-          ])
-      ]
+      # include_package_data=True,
+      # package_data={'c4.cmany':read_manifest()},
+      data_files=get_data_files()
 )
+
+dir()

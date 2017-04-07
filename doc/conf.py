@@ -157,4 +157,3 @@ texinfo_documents = [
      author, 'cmany', 'One line description of project.',
      'Miscellaneous'),
 ]
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os.path
+import os.path as osp
 import sys
 from collections import OrderedDict as odict
 
@@ -29,9 +29,15 @@ def create_topic(id, title, txt, disabled=False):
 
 
 def _get_doc(topic_name):
-    txtdocs = os.path.abspath(os.path.dirname(__file__) +
-                              "/../../../doc/_build/text")
-    with open(os.path.join(txtdocs, topic_name + ".txt")) as f:
+    df = osp.abspath(osp.dirname(__file__))
+    dd = osp.join(df, "doc")
+    if osp.exists(dd):
+        txtdocs = dd
+    else:
+        txtdocs = osp.abspath(osp.join(df, "../../../doc/_build/text"))
+    if not osp.exists(txtdocs):
+        raise Exception("df=" + df + " ..... txtdocs=" + txtdocs)
+    with open(osp.join(txtdocs, topic_name + ".txt")) as f:
         txt = "".join(f.readlines())
     return txt
 
