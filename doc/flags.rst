@@ -7,7 +7,7 @@ variables. Specifying flags is an important cmany usage pattern, which is
 used also when specifying :doc:`variants` or :ref:`Per-parameter flags`.
 
 .. note::
-   All the examples below apply the flags across the board to all the
+   The examples below apply the flags across the board to all the
    individual builds produced with the cmany command. For example, this will
    add ``-Wall`` to all of the 9 resulting builds::
 
@@ -15,12 +15,12 @@ used also when specifying :doc:`variants` or :ref:`Per-parameter flags`.
                --build-types Debug,Release,MinSizeRel \
                --cxxflags "-Wall"
 
-   If you to add flags only to certain builds, it's cool! One of the main
-   motivations of cmany is being able to easily do that, and it offers two
-   different solutions. You can :doc:`use
-   variants </variants>`. You can also set flags per :ref:`Per-parameter
-   flags`, so that when one specific item is used, then the flags are also
-   used in the resulting build.
+   If you want to add flags only to certain builds, it's cool! One of the
+   main motivations of cmany is being able to easily do that, and it offers
+   two different solutions. You can :doc:`use variants </variants>`. You can
+   also set flags per :ref:`Per-parameter flags`, so that when one specific
+   build item (such as a compiler or operating system) is used, then the
+   flags are also used in the resulting build.
 
 CMake cache variables
 ---------------------
@@ -35,7 +35,7 @@ This is equivalent to the following sequence of commands::
     $ cmake --build .
 
 Note the use of the comma to separate the variables. This is for consistency
-with the rest of the cmany options, namely (for example) those selecting,
+with the rest of the cmany options, namely (for example) those selecting
 compilers or build types. You can also use separate invocations::
 
     $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1 -V PROJECT_FOO=BAR
