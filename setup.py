@@ -48,9 +48,8 @@ def get_binaries_directory():
     else:
         py_version = '{}.{}'.format(sys.version_info[0], sys.version_info[1])
         py_prefix = os.path.dirname(sys.executable)
-        paths = (s.format(py_version) for s in (
-            site.getsitepackages(),
-            py_prefix + '/Lib',
+        paths = site.getsitepackages()
+        paths += (s.format(py_version) for s in (
             sys.prefix + '/lib/python{}/dist-packages/',
             sys.prefix + '/lib/python{}/site-packages/',
             sys.prefix + '/local/lib/python{}/dist-packages/',
