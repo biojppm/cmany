@@ -5,7 +5,7 @@ import argcomplete
 
 from collections import OrderedDict as odict
 
-from c4.cmany import cmanys as cmany
+from c4.cmany.project import ProjectConfig as ProjectConfig
 from c4.cmany import args as c4args
 from c4.cmany import help as c4help
 
@@ -81,7 +81,7 @@ class projcmd(cmdbase):
     '''a command which refers to a project'''
     def proj(self, args):
         '''create a project given the configuration.'''
-        return cmany.ProjectConfig(**vars(args))
+        return ProjectConfig(**vars(args))
     def add_args(self, parser):
         super().add_args(parser)
         c4args.add_proj(parser)

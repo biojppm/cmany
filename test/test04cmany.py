@@ -9,9 +9,9 @@ import argparse
 import copy
 from itertools import combinations
 
+import c4.cmany as cmany
 import c4.cmany.util as util
 import c4.cmany.main as main
-import c4.cmany.cmanys as cmany
 import c4.cmany.cmake as cmake
 
 from multiprocessing import cpu_count as cpu_count
@@ -206,7 +206,6 @@ def run_projs(testobj, args, check_fn=None):
                                            compiler=c, buildtype=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
-
 
 
 # -----------------------------------------------------------------------------

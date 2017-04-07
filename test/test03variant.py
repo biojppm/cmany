@@ -4,9 +4,11 @@ import unittest as ut
 import subtest_fix
 import argparse
 
-from c4.cmany import cmanys as cmany, util, args as c4args
+import c4.cmany as cmany
+from c4.cmany import util, args as c4args
 from c4.cmany import variant
 from c4.cmany import build_item
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
