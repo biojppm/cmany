@@ -270,8 +270,8 @@ building and ``bar`` for installing::
     foo/linux-x86_64-icc16.1-Release/
 
 Note that ``foo`` and ``bar`` will still be placed under the current working
-directory, since they are given as relative paths. cmany also accepts if they
-are given as absolute paths.
+directory, since they are given as relative paths. cmany also accepts
+absolute paths here.
 
 
 Using flags/defines/cache vars
@@ -357,7 +357,7 @@ Per-parameter flags
 The pattern ``item_name: <flag_specs>`` which is used for specifying the
 flags to use in :doc:`a variant </variants>` can also be used for making a
 bundle of flags be used whenever a certain build combination parameter is
-used. In other words, the variant mechanism also applies to the following
+used. To be clear, the variant mechanism also applies to the following
 parameters:
 
  * operating system (``--systems/-s``)

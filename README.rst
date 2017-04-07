@@ -29,8 +29,8 @@ under a ``build`` directory placed in the current working directory::
 Each build tree is obtained by first configuring CMake with the given
 parameters, and then invoking ``cmake --build`` to build the project at once.
 
-You can also use cmany just to simplify your daily cmake
-workflow! These two command sequences have the same effect:
+You can also use cmany just to simplify your cmake workflow! These two
+command sequences have the same effect:
 
 +-------------------------------+-------------------------------+
 | typical cmake                 | cmany                         |
@@ -49,12 +49,12 @@ Features
 * Saves the tedious work of dealing with many build trees by hand.
 * Sensible defaults: ``cmany build`` will create and build a single project using CMake's
   defaults.
-* Transparently pass flags (compiler flags, processor defines  or cmake cache
+* Transparently pass flags (compiler flags, processor defines or cmake cache
   variables) to any or all of the builds.
-* Useful for build comparisons. You can easily setup bundles of flags, aka variants.
+* Useful for build comparison and benchmarking. You can easily setup bundles of flags, aka variants.
 * Useful for validating and unit-testing your project with different
   compilers and flags.
-* Useful for creating distributions.
+* Useful for creating distributions of your project.
 * Avoids a full rebuild when the build type is changed. Although this feature
   already exists in multi-configuration cmake generators like Visual
   Studio, it is missing from mono-configuration generators like Unix
@@ -62,51 +62,22 @@ Features
 * Run arbitrary commands in every build tree or install tree.
 * Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
-
-Installing
-----------
-
-Requirements
-^^^^^^^^^^^^
-* CMake
-* Python 3.3+
-* pip
-
-PyPI
-^^^^
-cmany will eventually be added to the PyPI repository so that you can install
-via pip, but for now you can install it from source; see below.
-
-From source
-^^^^^^^^^^^
-::
-  $ git clone https://github.com/biojppm/cmany
-  $ cd cmany
-  $ pip install .
-
-If you want to develop cmany, use the ``-e`` option for pip so that any
-changes you make are always reflected to the installed version::
-
-  $ pip install -e .
-
-Getting started
----------------
-Read `the quick tour <https://cmany.readthedocs.io/>`_ in cmany's documentation.
-
-Status
-------
-This project is a pre-alpha under development.
-
-Contribute
-----------
-Send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
+More info
+---------
+* `Installing <https://cmany.readthedocs.io/en/latest/installing/>`_
+* `Getting started <https://cmany.readthedocs.io/en/latest/quick_tour/>`_
 
 Support
 -------
-Send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
+* send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
+* send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
+
+Status
+------
+cmany is in alpha state, under current development.
 
 Known issues
-------------
+^^^^^^^^^^^^
 * cmany will invoke the compilers given to it to find their name and
   version. So far, this successfully works with Visual Studio, gcc, clang,
   icc and zapcc. However, the current implementation of this logic is fragile
@@ -117,7 +88,7 @@ Known issues
 
 License
 -------
-This project is permissively licensed under the `MIT license`_.
+cmany is permissively licensed under the `MIT license`_.
 
 .. _MIT license: LICENSE.txt
 
