@@ -1,5 +1,6 @@
 import re
 import os.path
+import glob
 
 from .cmake import CMakeSysInfo
 from . import vsinfo
@@ -86,7 +87,8 @@ class Generator(BuildItem):
         else:
             bt = str(self.build.buildtype)
             if len(targets) > 1:
-                msg = ("Building multiple targets with this generator is not implemented. "
+                msg = ("Building multiple targets with this generator is not "
+                       "implemented. "
                        "cmake --build cannot handle multiple --target " +
                        "invokations. A generator-specific command must be "
                        "written to handle multiple targets with this "
