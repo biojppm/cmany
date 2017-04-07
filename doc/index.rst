@@ -112,6 +112,7 @@ Contents
    :maxdepth: 2
    :caption: Contents:
 
+   index
    installing
    quick_tour
    flags

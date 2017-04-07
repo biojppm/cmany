@@ -43,10 +43,10 @@ where:
 
           * from "vs2008": "v80"
 
-Note that not every combination is valid. For example, you cannot use
-toolsets newer than your chosen VS version. arm is not available in VS
-versions older than VS2012; also ia64 is not available in VS versions
-later than VS2012. clang is not available in versions older than
+Note that not every combination is valid: * you cannot use toolsets
+newer than your chosen VS version * "arm" is not available in VS
+versions older than VS2012 * "ia64" is not available in VS versions
+later than VS2012 * "clang" is not available in versions older than
 VS2015.
 
 Note: cmany defaults to using the native architecture when no target
