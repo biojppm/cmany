@@ -1,7 +1,7 @@
 
-========================  ======================  ======================
- Linux + OS X: |travis|    Windows: |appveyor|    Docs: |readthedocs|
-========================  ======================  ======================
+===========  ===============  ========================  ======================
+ |license|    |readthedocs|    Linux + OS X: |travis|    Windows: |appveyor|
+===========  ===============  ========================  ======================
 
 cmany
 =====
@@ -18,7 +18,7 @@ with both Debug and Release::
     $ cmany build -c clang++,g++ -t Debug,Release path/to/CMakeLists.txt
 
 The command above will result in four different build trees, placed by default
-under a ``build`` directory which is under the current working directory::
+under a ``build`` directory placed in the current working directory::
 
     $ ls build/*
     build/linux-x86_64-clang3.9-Debug
@@ -66,30 +66,32 @@ Features
 Installing
 ----------
 
-cmany is written in Python 3. It will eventually be added to the PyPI
-repository, but for now you can install it from a repo clone::
-
-  $ git clone https://github.com/biojppm/cmany
-  $ cd cmany
-  $ pip3 install .
-
-If you want to install and develop cmany, use the ``-e`` option for pip::
-
-  $ pip3 install -e .
-
 Requirements
 ^^^^^^^^^^^^
- * CMake 3.3
- * Python 3.3+
-   * pip
+* CMake
+* Python 3.3+
+* pip
+
+PyPI
+^^^^
+cmany will eventually be added to the PyPI repository so that you can install
+via pip, but for now you can install it from source; see below.
+
+From source
+^^^^^^^^^^^
+::
+  $ git clone https://github.com/biojppm/cmany
+  $ cd cmany
+  $ pip install .
+
+If you want to develop cmany, use the ``-e`` option for pip so that any
+changes you make are always reflected to the installed version::
+
+  $ pip install -e .
 
 Getting started
 ---------------
 Read `the quick tour <https://cmany.readthedocs.io/>`_ in cmany's documentation.
-
-License
--------
-This project is licensed under the MIT license.
 
 Status
 ------
@@ -113,11 +115,20 @@ Known issues
 * Pure C projects (ie not C++) should work but have not yet been extensively
   tested. Some bugs may be present.
 
+License
+-------
+This project is permissively licensed under the `MIT license`_.
+
+.. _MIT license: LICENSE.txt
+
+.. |license| image:: https://img.shields.io/badge/License-MIT-yellow.svg
+   :alt: License: MIT
+   :target: https://opensource.org/licenses/MIT
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
-    :alt: Linux + OS X unit test status
+    :alt: Linux+OSX build status
     :target: https://travis-ci.org/biojppm/cmany
 .. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
-    :alt: Windows unit test status
+    :alt: Windows build status
     :target: https://ci.appveyor.com/project/biojppm/cmany
 .. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
     :alt: Documentation status
