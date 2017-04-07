@@ -279,7 +279,7 @@ installing:
 
 Note that "foo" and "bar" will still be placed under the current
 working directory, since they are given as relative paths. cmany also
-accepts if they are given as absolute paths.
+accepts absolute paths here.
 
 
 Using flags/defines/cache vars
@@ -370,7 +370,7 @@ Per-parameter flags
 The pattern "item_name: <flag_specs>" which is used for specifying the
 flags to use in a variant can also be used for making a bundle of
 flags be used whenever a certain build combination parameter is used.
-In other words, the variant mechanism also applies to the following
+To be clear, the variant mechanism also applies to the following
 parameters:
 
    * operating system ("--systems/-s")
