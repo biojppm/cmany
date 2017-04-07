@@ -40,11 +40,17 @@ def readreqs(*rnames):
 def get_binaries_directory():
     """Return the installation directory, or None
     http://stackoverflow.com/questions/36187264"""
+    print("setup: site-packages", site.getsitepackages())
+    print("setup: site-user-packages", site.getusersitepackages())
+    print("setup: site-prefix", os.path.dirname(sys.executable))
     if '--user' in sys.argv:
         paths = (site.getusersitepackages(),)
     else:
         py_version = '{}.{}'.format(sys.version_info[0], sys.version_info[1])
+        py_prefix = os.path.dirname(sys.executable)
         paths = (s.format(py_version) for s in (
+            site.getsitepackages(),
+            py_prefix + '/Lib',
             sys.prefix + '/lib/python{}/dist-packages/',
             sys.prefix + '/lib/python{}/site-packages/',
             sys.prefix + '/local/lib/python{}/dist-packages/',
@@ -53,8 +59,9 @@ def get_binaries_directory():
         ))
     for path in paths:
         if os.path.exists(path):
+            print('setup: installation path:', path)
             return path
-    print('no installation path found', file=sys.stderr)
+    raise Exception('setup: no installation path found', file=sys.stderr)
     return None
 
 
