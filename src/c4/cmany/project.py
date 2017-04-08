@@ -19,7 +19,7 @@ from .build import Build
 
 
 # -----------------------------------------------------------------------------
-class ProjectConfig:
+class Project:
 
     def __init__(self, **kwargs):
 

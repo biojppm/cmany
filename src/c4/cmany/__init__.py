@@ -10,4 +10,4 @@ from .architecture import Architecture as Architecture
 from .compiler import Compiler as Compiler
 from .variant import Variant as Variant
 from .build import Build as Build
-from .project import ProjectConfig as ProjectConfig
+from .project import Project as Project
