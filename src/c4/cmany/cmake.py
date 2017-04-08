@@ -4,7 +4,7 @@ import os
 
 from collections import OrderedDict as odict
 
-from .conf import CMANY_DIR
+from .conf import USER_DIR
 from .util import cacheattr, setcwd, runsyscmd
 from . import util
 
@@ -249,7 +249,7 @@ class CMakeSysInfo:
         from .generator import Generator
         # print("CMakeSystemInfo: asked info for", which_generator)
         p = _genid(gen)
-        d = os.path.join(CMANY_DIR, 'cmake_info', p)
+        d = os.path.join(USER_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
         if os.path.exists(p):
             # print("CMakeSystemInfo: asked info for", which_generator, "... found", p)

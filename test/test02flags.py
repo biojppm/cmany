@@ -306,7 +306,7 @@ def f(name, *args, **kwargs):
     return name, flags.CFlag(name, *args, **kwargs)
 
 from c4.cmany import conf
-kc, kf = flags.load(conf.KNOWN_FLAGS_FILE)
+kc, kf = flags.load(conf.CONF_FLAGS_FILE)
 kyml = flags.dump_yml(kc, kf)
 
 test_cases = d(

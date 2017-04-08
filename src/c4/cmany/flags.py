@@ -228,11 +228,11 @@ def load_known_flags(additional_flag_files=[], read_defaults=True):
     global known_compilers, known_flags
     comps = known_compilers if read_defaults else []
     flags = known_flags if read_defaults else odict()
-    filenames = [conf.KNOWN_FLAGS_FILE, conf.USER_FLAGS_FILE] if read_defaults else []
+    filenames = [conf.CONF_FLAGS_FILE, conf.USER_FLAGS_FILE] if read_defaults else []
     filenames += additional_flag_files
     for f in filenames:
         if os.path.exists(f):
-            c, f = load(conf.KNOWN_FLAGS_FILE)
+            c, f = load(conf.CONF_FLAGS_FILE)
             comps, flags = merge(c, f, comps, flags)
     known_compilers, known_flags = comps, flags
     #for _, v in known_flags.items():

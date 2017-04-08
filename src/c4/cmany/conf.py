@@ -1,6 +1,11 @@
+import os.path as osp
 
-import os.path
+CONF_DIR = osp.join(osp.dirname(__file__), "conf")
+if not osp.exists(CONF_DIR):
+    CONF_DIR = osp.abspath(osp.join(osp.dirname(__file__), "../../../conf"))
+    assert osp.exists(CONF_DIR)
 
-CMANY_DIR = os.path.expanduser("~/.cmany/")
-KNOWN_FLAGS_FILE = os.path.join(os.path.dirname(__file__), 'flags.yml')
-USER_FLAGS_FILE = os.path.join(CMANY_DIR, 'flags.yml')
+USER_DIR = osp.expanduser("~/.cmany/")
+
+CONF_FLAGS_FILE = osp.join(CONF_DIR, 'flags.yml')
+USER_FLAGS_FILE = osp.join(USER_DIR, 'flags.yml')
