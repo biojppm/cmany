@@ -109,7 +109,7 @@ class Project:
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
-        # duplicate parameters for each build, as they may be mutated due
+        # duplicate the build items, as they may be mutated due
         # to translation of their flags for the compiler
         s = copy.deepcopy(system)
         a = copy.deepcopy(arch)
@@ -187,42 +187,6 @@ class Project:
                 util.runsyscmd(cmds)
         self._execute(_run_cmd, "Run cmd", silent=False, **restrict_to)
 
-    def _execute(self, fn, msg, silent, **restrict_to):
-        builds = self.select(**restrict_to)
-        num = len(builds)
-        if not silent:
-            if num == 0:
-                print("no builds selected")
-        if num == 0:
-            return
-        if not silent:
-            util.lognotice("")
-            util.lognotice("===============================================")
-            if num > 1:
-                util.lognotice(msg + ": start", num, "builds:")
-                for b in builds:
-                    util.lognotice(b)
-                util.lognotice("===============================================")
-        for i, b in enumerate(builds):
-            if not silent:
-                if i > 0:
-                    util.lognotice("\n")
-                util.lognotice("-----------------------------------------------")
-                if num > 1:
-                    util.lognotice(msg + ": build #{} of {}:".format(i+1, num), b)
-                else:
-                    util.lognotice(msg, b)
-                util.lognotice("-----------------------------------------------")
-            fn(b)
-            util.logdone(msg + ": finished build #{} of {}:".format(i + 1, num), b)
-        if not silent:
-            if num > 1:
-                util.lognotice("-----------------------------------------------")
-                util.logdone(msg + ": finished", num, "builds:")
-                for b in builds:
-                    util.logdone(b)
-            util.lognotice("===============================================")
-
     def create_projfile(self):
         confs = []
         for b in self.builds:
@@ -265,3 +229,39 @@ class Project:
     def showtargets(self):
         for t in self.builds[0].get_targets():
             print(t)
+
+    def _execute(self, fn, msg, silent, **restrict_to):
+        builds = self.select(**restrict_to)
+        num = len(builds)
+        if not silent:
+            if num == 0:
+                print("no builds selected")
+        if num == 0:
+            return
+        if not silent:
+            util.lognotice("")
+            util.lognotice("===============================================")
+            if num > 1:
+                util.lognotice(msg + ": start", num, "builds:")
+                for b in builds:
+                    util.lognotice(b)
+                util.lognotice("===============================================")
+        for i, b in enumerate(builds):
+            if not silent:
+                if i > 0:
+                    util.lognotice("\n")
+                util.lognotice("-----------------------------------------------")
+                if num > 1:
+                    util.lognotice(msg + ": build #{} of {}:".format(i+1, num), b)
+                else:
+                    util.lognotice(msg, b)
+                util.lognotice("-----------------------------------------------")
+            fn(b)
+            util.logdone(msg + ": finished build #{} of {}:".format(i + 1, num), b)
+        if not silent:
+            if num > 1:
+                util.lognotice("-----------------------------------------------")
+                util.logdone(msg + ": finished", num, "builds:")
+                for b in builds:
+                    util.logdone(b)
+            util.lognotice("===============================================")

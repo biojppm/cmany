@@ -80,7 +80,7 @@ no_rtti:
 no_exceptions:
     desc: disable exceptions
     gcc,clang,icc: -fno-exceptions
-    vs: /EHsca-     # 
+    vs: /EHsca-
 libstdc++11:
     desc: use the C++11 standard library ABI.
     gcc,clang,icc: -stdlib=libstdc++ -D_GLIBCXX_USE_CXX11_ABI=1

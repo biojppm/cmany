@@ -41,20 +41,21 @@ class CFlag:
                 s = getattr(self, sn)
                 break
         if s is None:
-            util.logwarn('compiler not found: ', compiler, self.compilers, self.__dict__)
+            util.logwarn('compiler not found: ', compiler, self.compilers,
+                         self.__dict__)
             s = ''
         # print(self, sn, s)
         return s
 
     def set(self, compiler, val=''):
         sn = _getrealsn(compiler)
-        if not sn in self.compilers:
+        if sn not in self.compilers:
             self.compilers.append(sn)
         setattr(self, sn, val)
 
     def add_compiler(self, compiler):
         sn = _getrealsn(compiler)
-        if not sn in self.compilers:
+        if sn not in self.compilers:
             self.compilers.append(sn)
         if not hasattr(self, sn):
             self.set(sn)

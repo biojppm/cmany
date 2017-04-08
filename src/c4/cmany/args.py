@@ -15,11 +15,13 @@ from multiprocessing import cpu_count as cpu_count
 
 # -----------------------------------------------------------------------------
 def setup(subcommands, module):
-    p = argparse.ArgumentParser(prog='cmany',
-                                description='''Easily process several build trees of a CMake project''',
-                                usage='%(prog)s',
-                                formatter_class=argparse.RawDescriptionHelpFormatter,
-                                epilog=help.epilog)
+    p = argparse.ArgumentParser(
+        prog='cmany',
+        description='''Easily process several build trees of a CMake project''',
+        usage='%(prog)s',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=help.epilog
+    )
     sp = p.add_subparsers(help='')
     add_hidden(p)
     for cmd, aliases in subcommands.items():
@@ -138,6 +140,18 @@ def add_combination_flags(parser):
 
 
 def add_cflags(parser):
+    g = parser.add_argument_group('Configuration files')
+    g.add_argument("--flags-file", default=['cmany_flags.yml'], action="append",
+                   help="""Specify a file containing flag aliases. Relative
+                   paths are assumed from the top level CMakeLists.txt file.
+                   Run `cmany help flags` to get help about flag aliases.
+                   Multiple invokations are possible, in which case flags
+                   given in latter files will prevail over those of earlier
+                   files.""")
+    g.add_argument("--no-default-flags", default=False, action="store_true",
+                   help="""Do not read the default cmany flag alias file. Run
+                   `cmany help flags` to get help about this.""")
+
     g = parser.add_argument_group('CMake variables, build flags and defines')
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
@@ -178,16 +192,6 @@ def add_cflags(parser):
                    Can also be given as a comma-separated list, including in
                    each invokation.
                    To escape commas, use a backslash \\.""")
-    g.add_argument("--flags-file", default=['cmany_flags.yml'], action="append",
-                   help="""Specify a file containing flag aliases. Relative
-                   paths are assumed from the top level CMakeLists.txt file.
-                   Run `cmany help flags` to get help about flag aliases.
-                   Multiple invokations are possible, in which case flags
-                   given in latter files will prevail over those of earlier
-                   files.""")
-    g.add_argument("--no-default-flags", default=False, action="store_true",
-                   help="""Do not read the default cmany flag alias file. Run
-                   `cmany help flags` to get help about this.""")
     # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
     #                help="""add dirs to the include path of all builds
     #                Multiple invokations of -I are possible, in which case arguments will be appended and not overwritten.
