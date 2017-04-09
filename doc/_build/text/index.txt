@@ -87,6 +87,10 @@ Contents:
 
   * Alias list
 
+* Project dependencies
+
+* Project mode
+
 
 Indices and tables
 ******************

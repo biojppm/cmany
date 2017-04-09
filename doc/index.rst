@@ -11,6 +11,8 @@ Contents
    flags
    variants
    vs
+   dependencies
+   project_mode
 
 Indices and tables
 ==================
