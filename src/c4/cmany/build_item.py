@@ -24,6 +24,8 @@ class BuildItem(NamedItem):
         self.name = spl[0]
         self.flag_specs = util.splitesc_quoted(spl[1], ' ')
         if parse_flags:
+            from . import args as c4args
+            import argparse
             parser = argparse.ArgumentParser()
             c4args.add_bundle_flags(parser)
             args = parser.parse_args(self.flag_specs)
