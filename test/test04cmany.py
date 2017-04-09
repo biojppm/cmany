@@ -14,6 +14,7 @@ import c4.cmany.util as util
 import c4.cmany.main as main
 import c4.cmany.cmake as cmake
 
+
 from multiprocessing import cpu_count as cpu_count
 
 srcdir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')

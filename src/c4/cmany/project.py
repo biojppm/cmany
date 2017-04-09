@@ -46,17 +46,7 @@ class Project:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
 
-        self.configfile = os.path.join(proj_dir, "CMakeSettings.json")
-        # self.configfile = None
-        # if os.path.exists(configfile):
-        #     self.parse_file(configfile)
-        #     self.configfile = configfile
-        flag_files = []
-        for f in kwargs['flags_file']:
-            if not os.path.isabs(f):
-                f = os.path.join(self.root_dir, f)
-            flag_files.append(f)
-        c4flags.load_known_flags(flag_files, not kwargs['no_default_flags'])
+        self.load_configs(**kwargs)
 
         vars = kwargs.get('variants')
         if not vars:
@@ -103,8 +93,21 @@ class Project:
             l.append(class_(i))
         return l
 
-    # def parse_file(self, configfile):
-    #     raise Exception("not implemented")
+    def load_configs(self, **kwargs):
+
+        # self.configfile = None
+        # if os.path.exists(configfile):
+        #     self.parse_file(configfile)
+        #     self.configfile = configfile
+        flag_files = []
+        for f in kwargs['config_file']:
+            if not os.path.isabs(f):
+                f = os.path.join(self.root_dir, f)
+            flag_files.append(f)
+        c4flags.load_known_flags(flag_files, not kwargs['no_default_config'])
+
+    def load_config_file(self, file):
+        pass
 
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):

@@ -93,6 +93,18 @@ def add_proj(parser):
                         help="""build with the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
 
+    g = parser.add_argument_group('Configuration files')
+    g.add_argument("--config-file", default=['cmany.yml'], action="append",
+                   help="""Specify a file containing flag aliases. Relative
+                   paths are taken from the project's CMakeLists.txt directory.
+                   Run `cmany help flags` to get help about flag aliases.
+                   Multiple invokations are possible, in which case flags
+                   given in latter files will prevail over those of earlier
+                   files.""")
+    g.add_argument("--no-default-config", default=False, action="store_true",
+                   help="""Do not read the default config file. Run
+                   `cmany help flags` to get help about this.""")
+
 
 # -----------------------------------------------------------------------------
 def add_select(parser):
@@ -140,18 +152,6 @@ def add_combination_flags(parser):
 
 
 def add_cflags(parser):
-    g = parser.add_argument_group('Configuration files')
-    g.add_argument("--flags-file", default=['cmany_flags.yml'], action="append",
-                   help="""Specify a file containing flag aliases. Relative
-                   paths are assumed from the top level CMakeLists.txt file.
-                   Run `cmany help flags` to get help about flag aliases.
-                   Multiple invokations are possible, in which case flags
-                   given in latter files will prevail over those of earlier
-                   files.""")
-    g.add_argument("--no-default-flags", default=False, action="store_true",
-                   help="""Do not read the default cmany flag alias file. Run
-                   `cmany help flags` to get help about this.""")
-
     g = parser.add_argument_group('CMake variables, build flags and defines')
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,

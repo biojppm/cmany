@@ -291,7 +291,7 @@ def same_flags(f1, f2):
     return True
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def tc(name, comps, flags, **kwargs):
     yml = kwargs['yml']
@@ -311,36 +311,31 @@ kyml = flags.dump_yml(kc, kf)
 
 test_cases = d(
 
-    tc('gcc-g', ['gcc'], d(f('g', gcc='-g')),
-yml="""compilers: [gcc]
+    tc('gcc-g', ['gcc'], d(f('g', gcc='-g')), yml="""compilers: [gcc]
 ---
 g:
     gcc: -g
 """),
 
-    tc('gcc-g3', ['gcc'], d(f('g3', gcc='-g3')),
-yml="""compilers: [gcc]
+    tc('gcc-g3', ['gcc'], d(f('g3', gcc='-g3')), yml="""compilers: [gcc]
 ---
 g3:
     gcc: -g3
 """),
 
-    tc('clang-g3', ['clang'], d(f('g3', clang='-g3')),
-       yml="""compilers: [clang]
+    tc('clang-g3', ['clang'], d(f('g3', clang='-g3')), yml="""compilers: [clang]
 ---
 g3:
     clang: -g3
 """),
 
-    tc('gcc, clang-g3', ['gcc', 'clang'], d(f('g3', gcc='-g3', clang='-g3')),
-       yml="""compilers: [gcc, clang]
+    tc('gcc, clang-g3', ['gcc', 'clang'], d(f('g3', gcc='-g3', clang='-g3')), yml="""compilers: [gcc, clang]
 ---
 g3:
     gcc,clang: -g3
 """),
 
-    tc('clang, gcc-g3', ['clang', 'gcc'], d(f('g3', clang='-g3', gcc='-g3')),
-       yml="""compilers: [clang, gcc]
+    tc('clang, gcc-g3', ['clang', 'gcc'], d(f('g3', clang='-g3', gcc='-g3')), yml="""compilers: [clang, gcc]
 ---
 g3:
     clang,gcc: -g3
