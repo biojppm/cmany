@@ -8,6 +8,7 @@ from . import util
 from . import vsinfo
 
 
+
 # -----------------------------------------------------------------------------
 class Compiler(BuildItem):
     """Specifies a compiler"""
@@ -50,6 +51,12 @@ class Compiler(BuildItem):
         self.path = path
         self.version = version
         self.version_full = version_full
+        self.name_for_flags = self.shortname
+        if self.is_msvc:
+            if self.vs.is_clang:
+                self.name_for_flags = 'clang'
+            else:
+                self.name_for_flags = 'vs'
         # don't forget: a build item should be initialized with the full spec
         if len(spl) > 1:
             # change the spec to reflect the real compiler name
