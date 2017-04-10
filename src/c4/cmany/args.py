@@ -78,6 +78,7 @@ def _handle_hidden_args__skip_rest(args):
             return True
     return False
 
+
 # -----------------------------------------------------------------------------
 def add_proj(parser):
     parser.add_argument("proj_dir", nargs="?", default=".",
@@ -94,8 +95,8 @@ def add_proj(parser):
                         (defaults to %(default)s on this machine).""")
 
     g = parser.add_argument_group('Configuration files')
-    g.add_argument("--config-file", default=['cmany.yml'], action="append",
-                   help="""Specify a file containing flag aliases. Relative
+    g.add_argument("--config-file", default=[], action="append",
+                   help="""Specify a file containing configurations. Relative
                    paths are taken from the project's CMakeLists.txt directory.
                    Run `cmany help flags` to get help about flag aliases.
                    Multiple invokations are possible, in which case flags

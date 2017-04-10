@@ -85,7 +85,7 @@ create_topic(
 # -----------------------------------------------------------------------------
 create_topic(
     "project_mode",
-    title="Permanently storing all the input to cmany",
+    title="Permanently storing the input to cmany",
     txt=_get_doc("project_mode")
 )
 
