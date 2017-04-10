@@ -7,7 +7,7 @@ import copy
 from collections import OrderedDict as odict
 
 from . import util
-from . import flags as c4flags
+from . import conf
 
 from .build_flags import BuildFlags
 from .build_type import BuildType
@@ -94,20 +94,17 @@ class Project:
         return l
 
     def load_configs(self, **kwargs):
-
-        # self.configfile = None
-        # if os.path.exists(configfile):
-        #     self.parse_file(configfile)
-        #     self.configfile = configfile
-        flag_files = []
+        seq = [os.path.join(d, "cmany.yml") for d in (
+            conf.CONF_DIR, conf.USER_DIR, self.root_dir)]
+        if kwargs.get('no_default_config'):
+            seq = []
         for f in kwargs['config_file']:
             if not os.path.isabs(f):
                 f = os.path.join(self.root_dir, f)
-            flag_files.append(f)
-        c4flags.load_known_flags(flag_files, not kwargs['no_default_config'])
-
-    def load_config_file(self, file):
-        pass
+            if not os.path.exists(f):
+                raise Exception(f + ": does not exist")
+            seq.append(f)
+        self.configs = conf.Configs.load(seq)
 
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):

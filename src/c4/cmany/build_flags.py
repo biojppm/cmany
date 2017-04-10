@@ -16,10 +16,10 @@ class BuildFlags(NamedItem):
         if compiler is not None:
             self.resolve_flag_aliases(compiler)
 
-    def resolve_flag_aliases(self, compiler):
-        self.defines = c4flags.as_defines(self.defines, compiler)
-        self.cflags = c4flags.as_flags(self.cflags, compiler)
-        self.cxxflags = c4flags.as_flags(self.cxxflags, compiler)
+    def resolve_flag_aliases(self, compiler, aliases):
+        self.defines = aliases.as_defines(self.defines, compiler)
+        self.cflags = aliases.as_flags(self.cflags, compiler)
+        self.cxxflags = aliases.as_flags(self.cxxflags, compiler)
 
     def append_flags(self, other, append_to_name=True):
         """other will take precedence, ie, their options will come last"""

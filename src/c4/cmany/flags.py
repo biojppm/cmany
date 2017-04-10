@@ -2,13 +2,14 @@ from collections import OrderedDict as odict
 from ruamel import yaml
 import copy
 
-from . import conf, util
+from .named_item import NamedItem
+from . import util
 
 
-def _getrealsn(compiler):
+def get_name_for_flags(compiler):
     if isinstance(compiler, str):
         return compiler
-    sn = compiler.shortname
+    sn = compiler.name_for_flags
     if compiler.is_msvc:
         if compiler.vs.is_clang:
             sn = 'clang'
@@ -17,90 +18,101 @@ def _getrealsn(compiler):
     return sn
 
 
-class CFlag:
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class FlagAliases:
 
-    def __repr__(self):
-        return self.name
+    def __init__(self, **kwargs):
+        if kwargs.get('yml') is not None:
+            self.compilers, self.flags = load_yml(kwargs.get('yml'))
+        else:
+            self.flags = odict(**kwargs)
+            self.compilers = get_all_compilers(self.flags)
 
-    def __str__(self):
-        return self.name
+    def merge_from(self, other):
+        self.flags = merge(self.flags, other)
+        self.compilers = get_all_compilers(self.flags)
+
+    def get(self, name, compiler=None):
+        opt = self.flags.get(name)
+        if opt is None:
+            raise Exception("could not find flag alias: " + name)
+        if compiler is not None:
+            return opt.get(compiler)
+        return opt
+
+    def as_flags(self, spec, compiler=None):
+        out = []
+        for s in spec:
+            if isinstance(s, CFlag):
+                out.append(s)
+            else:
+                f = self.flags.get(s)
+                if f is not None:
+                    out.append(f)
+                else:
+                    ft = CFlag(name=s, desc=s)
+                    ft.set(compiler, s)
+                    out.append(ft)
+        return out
+
+    def as_defines(self, spec, compiler=None):
+        out = []
+        wf = '/D' if get_name_for_flags(compiler) == 'vs' else '-D'
+        prev = None
+        for s in spec:
+            if prev != wf and not s.startswith(wf):
+                out.append(wf)
+            out.append(s)
+            prev = s
+        return out
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class CFlag(NamedItem):
 
     def __init__(self, name, desc='', **kwargs):
-        self.name = name
+        super().__init__(name)
         self.desc = desc
-        self.compilers = kwargs.get('compilers', [])
         for k, v in kwargs.items():
             self.set(k, v)
 
     def get(self, compiler):
-        compseq = (compiler, 'gcc', 'g++', 'vs')
+        compseq = (compiler, 'gcc', 'g++', 'vs')  # not really sure about this
         s = None
         for c in compseq:
-            sn = _getrealsn(c)
+            sn = get_name_for_flags(c)
             if hasattr(self, sn):
                 s = getattr(self, sn)
                 break
         if s is None:
-            util.logwarn('compiler not found: ', compiler, self.compilers,
-                         self.__dict__)
+            util.logwarn('compiler not found: ', compiler, self.__dict__)
             s = ''
         # print(self, sn, s)
         return s
 
     def set(self, compiler, val=''):
-        sn = _getrealsn(compiler)
-        if sn not in self.compilers:
-            self.compilers.append(sn)
+        sn = get_name_for_flags(compiler)
         setattr(self, sn, val)
 
     def add_compiler(self, compiler):
-        sn = _getrealsn(compiler)
-        if sn not in self.compilers:
-            self.compilers.append(sn)
+        sn = get_name_for_flags(compiler)
         if not hasattr(self, sn):
             self.set(sn)
 
     def merge_from(self, that):
-        for c in that.compilers:
+        for k, v in that.__dict__.items():
+            if not __class__.is_compiler_name(k):
+                continue
             v = that.get(c)
             self.set(c, v)
 
-
-def get(name, compiler=None):
-    opt = known_flags.get(name)
-    if opt is None:
-        raise Exception("could not find compile option preset: " + name)
-    if compiler is not None:
-        return opt.get(compiler)
-    return opt
-
-
-def as_flags(spec, compiler=None):
-    out = []
-    for s in spec:
-        if isinstance(s, CFlag):
-            out.append(s)
-        else:
-            f = known_flags.get(s)
-            if f is not None:
-                out.append(f)
-            else:
-                ft = CFlag(name=s, desc=s)
-                ft.set(compiler, s)
-                out.append(ft)
-    return out
-
-
-def as_defines(spec, compiler=None):
-    out = []
-    wf = '/D' if _getrealsn(compiler) == 'vs' else '-D'
-    prev = None
-    for s in spec:
-        if prev != wf and not s.startswith(wf):
-            out.append(wf)
-        out.append(s)
-        prev = s
-    return out
+    @staticmethod
+    def is_compiler_name(s):
+        return not (s.startswith('__') or s == 'name' or s == 'desc')
 
 
 # -----------------------------------------------------------------------------
@@ -109,8 +121,6 @@ def as_defines(spec, compiler=None):
 def dump_yml(comps, flags):
     """dump the given compilers and flags pair into a yml string"""
     txt = ""
-    txt += 'compilers: ' + yaml.dump(comps)
-    txt += '---\n'
     for n, f in flags.items():
         txt += n + ':\n'
         if f.desc:
@@ -147,21 +157,25 @@ def dump_yml(comps, flags):
 
 def load_yml(txt):
     """load a yml txt into a compilers, flags pair"""
-    comps = []
-    flags = odict()
     dump = list(yaml.load_all(txt, yaml.RoundTripLoader))
-    if len(dump) != 2:
-        msg = 'There must be two yaml documents. Did you forget to use --- to separate the compiler list from the flags?'
-        raise Exception(msg)
-    comps, fs = dump
-    comps = list(comps['compilers'])
-    #print("load yml: compilers=", comps)
-    flags0 = odict(fs)
-    for n, yf in flags0.items():
+    if len(dump) != 1:
+        raise Exception('The flags must be in one yaml document')
+    fd = odict(dump[0])
+    # gather the list of compilers
+    comps = []
+    for n, yf in fd.items():
+        for c in yf:
+            c = str(c)
+            if CFlag.is_compiler_name(c):
+                for cc in c.split(','):
+                    if cc not in comps:
+                        comps.append(cc)
+    # now load flags, making sure that all have the same compiler names
+    flags = odict()
+    for n, yf in fd.items():
         f = CFlag(n)
         for c in comps:
             f.add_compiler(c)
-        #print("load yml: flag compilers=", f.compilers)
         for comp_, val in yf.items():
             for comp in comp_.split(','):
                 if comp == 'desc':
@@ -173,68 +187,27 @@ def load_yml(txt):
     return comps, flags
 
 
-def save(comps, flags, filename):
-    """save the given compilers and flags into a yml file"""
-    yml = dump_yml(comps, flags)
-    with open(filename, 'w') as f:
-        f.write(yml)
-
-
-def load(filename):
-    with open(filename, 'r') as f:
-        txt = f.read()
-        comps, flags = load_yml(txt)
-        return comps, flags
-
-
-def merge(comps=None, flags=None, into_comps=None, into_flags=None):
-    """merge a compilers and flags pair into a previously existing compilers and flags pair"""
-    into_comps = into_comps if into_comps is not None else known_compilers
+def merge(flags, into_flags=None):
+    """merge flags into the previously existing flags"""
     into_flags = into_flags if into_flags is not None else known_flags
-    result_comps = into_comps
     result_flags = into_flags
-    if comps:
-        result_comps = copy.deepcopy(into_comps)
+    comps = get_all_compilers(flags, into_flags)
+    result_flags = copy.deepcopy(into_flags)
+    for k, v in flags.items():
+        if k in result_flags:
+            result_flags[k].merge_from(v)
+        else:
+            result_flags[k] = copy.deepcopy(v)
+    for f in result_flags:
         for c in comps:
-            if not c in into_comps:
-                result_comps.append(c)
-    if flags:
-        result_flags = copy.deepcopy(into_flags)
-        for k, v in flags.items():
-            if k in result_flags:
-                result_flags[k].merge_from(v)
-            else:
-                result_flags[k] = copy.deepcopy(v)
-                for c in result_comps:
-                    result_flags[k].add_compiler(c)
-    return result_comps, result_flags
+            result_flags[k].add_compiler(c)
+    return result_flags
 
 
-def load_and_merge(filename, into_comps=None, into_flags=None):
-    comps, flags = load(filename)
-    return merge(comps, flags, into_comps, into_flags)
-
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-known_compilers = []
-known_flags = odict()
-
-def load_known_flags(additional_flag_files=[], read_defaults=True):
-    """reads first the cmany's known flags file, then the user's
-    known flags file, then the given flag files first to last.
-    Flags given in latter files will prevail over those of earlier files."""
-    import os.path
-    global known_compilers, known_flags
-    comps = known_compilers if read_defaults else []
-    flags = known_flags if read_defaults else odict()
-    filenames = [conf.CONF_FLAGS_FILE, conf.USER_FLAGS_FILE] if read_defaults else []
-    filenames += additional_flag_files
-    for f in filenames:
-        if os.path.exists(f):
-            c, f = load(conf.CONF_FLAGS_FILE)
-            comps, flags = merge(c, f, comps, flags)
-    known_compilers, known_flags = comps, flags
-    #for _, v in known_flags.items():
-    #    print(v, v.desc, v.gcc, v.vs)
+def get_all_compilers(*flag_dicts):
+    comps = set()
+    for f in flag_dicts:
+        for k, v in f.items():
+            for c in v.compilers:
+                comps.add(c)
+    return comps

@@ -1,5 +1,3 @@
-compilers: [gcc, clang, icc, vs]
----
 c++11:
     desc: enable C++11 mode
     gcc,clang,icc: -std=c++11
