@@ -17,6 +17,8 @@ from .compiler import Compiler
 from .variant import Variant
 from .build import Build
 
+from .cmake import getcachevars
+
 
 # -----------------------------------------------------------------------------
 class Project:
