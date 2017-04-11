@@ -72,7 +72,7 @@ variant_tests = {
 }
 
 def _get_variant_spec(test_name):
-    blueprint = variant_tests[name]
+    blueprint = variant_tests[test_name]
     if not blueprint:
         return []
     li = ['-v'] + [','.join(flag_bundle_set[v]['spec']) for v in blueprint]
@@ -311,6 +311,7 @@ class Test03Install(ut.TestCase):
 
 class Test04Variants(ut.TestCase):
     pass
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
