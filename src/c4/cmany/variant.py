@@ -39,7 +39,9 @@ class Variant(BuildItem):
             return
         name = spl[0]
         rest = spl[1]
-        super().__init__(name)
+        # super().__init__(name)  # DON'T!!! will overwrite
+        self.name = name
+        self.flags = BuildFlags(name)
         spl = util.splitesc_quoted(rest, ' ')
         curr = ""
         for s in spl:
