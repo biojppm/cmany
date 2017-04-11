@@ -83,7 +83,7 @@ def get_data_files():
               "requirements_test.txt"
           ]),
           (d("c4/cmany/conf"), [
-              "src/c4/cmany/flags.yml"
+              "conf/cmany.yml"
           ]),
           (d("c4/cmany/doc"),
               glob.glob("doc/_build/text/*.txt")),
@@ -123,5 +123,3 @@ setup(name="cmany",
       # package_data={'c4.cmany':read_manifest()},
       data_files=get_data_files()
 )
-
-dir()
