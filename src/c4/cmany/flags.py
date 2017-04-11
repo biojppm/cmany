@@ -55,6 +55,8 @@ class FlagAliases:
                     ft = CFlag(name=s, desc=s)
                     ft.set(compiler, s)
                     out.append(ft)
+        if compiler is not None:
+            out = [f.get(compiler) for f in out]
         return out
 
     def as_defines(self, spec, compiler=None):

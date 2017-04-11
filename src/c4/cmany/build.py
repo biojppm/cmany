@@ -208,7 +208,10 @@ class Build(NamedItem):
         for fs in flagseq:
             wf = getattr(fs, which)
             for f in wf:
-                r = f.get(self.compiler)
+                if isinstance(f, str):
+                    r = f
+                elif isinstance(f, CFlag):
+                    r = f.get(self.compiler)
                 flags.append(r)
             if with_defines:
                 flags += fs.defines
@@ -310,9 +313,9 @@ class Build(NamedItem):
             # external projects, there won't be an install target.
             dup.install()
         except:
+            util.logwarn(self.name + ": could not install. Maybe there's no install target?")
             pass
-        util.logdone(self, ': building dependencies: done')
-        util.logwarn('installdir:', dup.installdir)
+        util.logdone(self.name + ': finished building dependencies. Install dir=', self.installdir)
         self.varcache.p('CMAKE_PREFIX_PATH', self.installdir)
         self.mark_deps_done()
 
