@@ -5,7 +5,7 @@ from . import flags as c4flags
 # -----------------------------------------------------------------------------
 class BuildFlags(NamedItem):
 
-    def __init__(self, name, compiler=None, **kwargs):
+    def __init__(self, name, compiler=None, aliases=None, **kwargs):
         super().__init__(name)
         self.cmake_vars = kwargs.get('vars', [])
         self.defines = kwargs.get('defines', [])
@@ -14,7 +14,7 @@ class BuildFlags(NamedItem):
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
         if compiler is not None:
-            self.resolve_flag_aliases(compiler)
+            self.resolve_flag_aliases(compiler, aliases)
 
     def resolve_flag_aliases(self, compiler, aliases):
         self.defines = aliases.as_defines(self.defines, compiler)

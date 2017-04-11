@@ -43,13 +43,6 @@ class Build(NamedItem):
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
 
-        self.flags.resolve_flag_aliases(self.compiler)
-        self.system.flags.resolve_flag_aliases(self.compiler)
-        self.architecture.flags.resolve_flag_aliases(self.compiler)
-        self.buildtype.flags.resolve_flag_aliases(self.compiler)
-        self.compiler.flags.resolve_flag_aliases(self.compiler)
-        self.variant.flags.resolve_flag_aliases(self.compiler)
-
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
         self.varcache = CMakeCache(self.builddir)

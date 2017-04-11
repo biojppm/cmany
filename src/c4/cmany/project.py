@@ -48,7 +48,7 @@ class Project:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
 
-        self.load_configs(**kwargs)
+        self.load_configs()
 
         vars = kwargs.get('variants')
         if not vars:
@@ -95,12 +95,12 @@ class Project:
             l.append(class_(i))
         return l
 
-    def load_configs(self, **kwargs):
+    def load_configs(self):
         seq = [os.path.join(d, "cmany.yml") for d in (
             conf.CONF_DIR, conf.USER_DIR, self.root_dir)]
-        if kwargs.get('no_default_config'):
+        if self.kwargs.get('no_default_config'):
             seq = []
-        for f in kwargs['config_file']:
+        for f in self.kwargs['config_file']:
             if not os.path.isabs(f):
                 f = os.path.join(self.root_dir, f)
             if not os.path.exists(f):
@@ -111,25 +111,36 @@ class Project:
     def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
         if not self.is_valid(system, arch, buildtype, compiler, variant):
             return False
+
         # duplicate the build items, as they may be mutated due
         # to translation of their flags for the compiler
-        s = copy.deepcopy(system)
-        a = copy.deepcopy(arch)
-        t = copy.deepcopy(buildtype)
-        c = copy.deepcopy(compiler)
-        v = copy.deepcopy(variant)
-        f = BuildFlags('all_builds', compiler, **self.kwargs)
+        def _dup_item(item):
+            i = copy.deepcopy(item)
+            i.flags.resolve_flag_aliases(compiler, aliases=self.configs.flag_aliases)
+            return i
+        s = _dup_item(system)
+        a = _dup_item(arch)
+        t = _dup_item(buildtype)
+        c = _dup_item(compiler)
+        v = _dup_item(variant)
+        #
+        f = BuildFlags('all_builds', compiler, aliases=self.configs.flag_aliases, **self.kwargs)
+        f.resolve_flag_aliases(compiler, aliases=self.configs.flag_aliases)
+
         # create the build
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   s, a, t, c, v, f,
                   self.num_jobs, dict(self.kwargs))
+
         # When a build is created, its parameters may have been adjusted
         # because of an incompatible generator specification.
         # So drop this build if an equal one already exists
         if b.adjusted and self.exists(b):
-            return False
+            return False  # a similar build already exists
+
+        # finally, this.
         self.builds.append(b)
-        return True
+        return True  # build successfully added
 
     def exists(self, build):
         for b in self.builds:
