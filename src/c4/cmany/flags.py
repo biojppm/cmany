@@ -107,13 +107,20 @@ class CFlag(NamedItem):
         for k, v in that.__dict__.items():
             if not __class__.is_compiler_name(k):
                 continue
-            v = that.get(c)
-            self.set(c, v)
+            v = that.get(k)
+            self.set(k, v)
 
     @staticmethod
     def is_compiler_name(s):
         return not (s.startswith('__') or s == 'name' or s == 'desc')
 
+    @property
+    def compilers(self):
+        comps = []
+        for c, _ in self.__dict__.items():
+            if __class__.is_compiler_name(c):
+                comps.append(c)
+        return comps
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -159,7 +166,8 @@ def load_yml(txt):
     """load a yml txt into a compilers, flags pair"""
     dump = list(yaml.load_all(txt, yaml.RoundTripLoader))
     if len(dump) != 1:
-        raise Exception('The flags must be in one yaml document')
+        raise Exception('The flags must be in one yaml document. len='
+                        + str(len(dump)) + "\n" + str(dump))
     fd = odict(dump[0])
     # gather the list of compilers
     comps = []
@@ -205,9 +213,10 @@ def merge(flags, into_flags=None):
 
 
 def get_all_compilers(*flag_dicts):
-    comps = set()
+    comps = []
     for f in flag_dicts:
         for k, v in f.items():
             for c in v.compilers:
-                comps.add(c)
+                if c not in comps:
+                    comps.append(c)
     return comps
