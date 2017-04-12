@@ -26,7 +26,7 @@ class Generator(BuildItem):
 
     @staticmethod
     def create(build, num_jobs, fallback_generator="Unix Makefiles"):
-        """create a generator"""
+        """create a generator, adjusting the build parameters if necessary"""
         if build.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(build.compiler.name)
             g = Generator(vsi.gen, build, num_jobs)

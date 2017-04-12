@@ -4,6 +4,7 @@ import os
 import glob
 import json
 import copy
+import re
 from collections import OrderedDict as odict
 
 from . import util
@@ -62,12 +63,11 @@ class Project:
         self.variants = Variant.create(vars)
 
         self.builds = []
-        for s in self.systems:
-            for a in self.architectures:
-                for c in self.compilers:
-                    for m in self.buildtypes:
-                        for v in self.variants:
-                            self.add_build_if_valid(s, a, m, c, v)
+        self.combination_rules = CombinationRules(kwargs.get('combination_rules'))
+        items = self.combination_rules.create_builds(
+            self.systems, self.architectures, self.compilers, self.buildtypes, self.variants)
+        for s, a, c, t, v in items:
+            self.add_build(s, a, c, t, v)
 
         # add new build params as needed to deal with adjusted builds
         def _addnew(b, name):
@@ -108,10 +108,7 @@ class Project:
             seq.append(f)
         self.configs = conf.Configs.load(seq)
 
-    def add_build_if_valid(self, system, arch, buildtype, compiler, variant):
-        if not self.is_valid(system, arch, buildtype, compiler, variant):
-            return False
-
+    def add_build(self, system, arch, compiler, buildtype, variant):
         # duplicate the build items, as they may be mutated due
         # to translation of their flags for the compiler
         def _dup_item(item):
@@ -147,10 +144,6 @@ class Project:
             if str(b.tag) == str(build.tag):
                 return True
         return False
-
-    def is_valid(self, sys, arch, mode, compiler, variant):
-        # TODO
-        return True
 
     def select(self, **kwargs):
         out = [b for b in self.builds]
@@ -278,3 +271,69 @@ class Project:
                 for b in builds:
                     util.logdone(b)
             util.lognotice("===============================================")
+
+
+# -----------------------------------------------------------------------------
+class CombinationRule:
+
+    def __init__(self, spec):
+        self.rule = spec
+
+    def matches(self, s, a, c, t, v):
+        for i in (s, a, c, t, v):
+            if re.search(self.rule, i):
+                return True
+        return False
+
+
+class CombinationRuleContainer:
+
+    def __init__(self, specs, x_or_i, any_or_all):
+        assert x_or_i in ('x', 'i')
+        assert any_or_all in ('any', 'all')
+        self.specs = specs
+        self.rules = []
+        self.x_or_i = x_or_i
+        self.any_or_all = 'y' if any_or_all == 'any' else 'l'
+        for s in specs:
+            cr = CombinationRule(s)
+            self.rules.append(cr)
+
+    def is_valid(self, s, a, c, t, v):
+        for r in self.rules:
+            if r.matches(s, a, c, t, v):
+                if self.x_or_i == 'x':
+                    if self.any_or_all == 'y':
+                        return False
+            else:
+                if self.x_or_i == 'i':
+                    return False
+        return True
+
+
+class CombinationRules:
+    """x=exclude / i=include"""
+
+    def __init__(self, specs):
+        self.rules = []
+        for x_or_i, any_or_all, rules in specs:
+            crc = CombinationRuleContainer(specs, x_or_i, any_or_all)
+            self.rules.append(crc)
+
+    def is_valid(self, s, a, c, t, v):
+        r = 1
+        for r in self.rules:
+            r = r & r.is_valid(s, a, c, t, v)
+        return r
+
+    def valid_combinations(self, systems, archs, comps, types, variants):
+        combs = []
+        for s in systems:
+            for a in archs:
+                for c in comps:
+                    for t in types:
+                        for v in variants:
+                            if not self.is_valid(s, a, c, t, v):
+                                continue
+                            combs.append((s, a, c, t, v))
+        return combs

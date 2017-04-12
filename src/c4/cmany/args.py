@@ -147,9 +147,27 @@ def add_bundle_flags(parser):
 
 
 def add_combination_flags(parser):
-    # need to set here flags for excluding all or including only some
-    # combinations
-    pass
+    g = parser.add_argument_group('Combination settings')
+    g.add_argument("--exclude-any", metavar="item1,item2,...",
+                   action=CombinationRules, type=cslist, default=[],
+                   help="""Exclude any combinations with items matching ANY
+                   rule in the list. Multiple invokations are possible, in
+                   which case arguments are appended and not overwritten.""")
+    g.add_argument("--include-any", metavar="item1,item2,...",
+                   action=CombinationRules, type=cslist, default=[],
+                   help="""Only allow combinations with items matching ANY
+                   rule in the list. Multiple invokations are possible, in
+                   which case arguments are appended and not overwritten.""")
+    g.add_argument("--exclude-all", metavar="item1,item2,...",
+                   action=CombinationRules, type=cslist, default=[],
+                   help="""Exclude any combinations with items matching ALL
+                   rules in the list. Multiple invokations are possible, in
+                   which case arguments are appended and not overwritten.""")
+    g.add_argument("--include-all", metavar="item1,item2,...",
+                   action=CombinationRules, type=cslist, default=[],
+                   help="""Only allow combinations with items matching ALL
+                   rules in the list. Multiple invokations are possible, in
+                   which case arguments are appended and not overwritten.""")
 
 
 def add_cflags(parser):
@@ -262,3 +280,31 @@ class BuildItemArgument(argparse.Action):
         # util.logwarn("parsing: current li:", li, " + ", vli)
         li += vli
         setattr(namespace, self.dest, li)
+
+
+# -----------------------------------------------------------------------------
+class CombinationRules(argparse.Action):
+    """parse combination arguments in order, putting them all into a single
+    entry (combination_rules), which retains the original order. Maybe there's
+    a cleverer way to do this but for now this is fast to implement."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        util.logwarn("parsing combinations: receive", self.dest, values)
+        li = util.splitesc_quoted(values, ',')
+        prev = getattr(namespace, self.dest)
+        util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", prev + li)
+        setattr(namespace, self.dest, prev + li)
+        if not hasattr(namespace, 'combination_rules'):
+            setattr(namespace, 'combination_rules', [])
+        prev = getattr(namespace, 'combination_rules')
+        if self.dest == 'exclude_any':
+            li = ('x', 'any', li)
+        elif self.dest == 'include_any':
+            li = ('i', 'any', li)
+        elif self.dest == 'exclude_all':
+            li = ('x', 'all', li)
+        elif self.dest == 'include_all':
+            li = ('i', 'all', li)
+        curr = prev
+        curr.append(li)
+        util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
+        setattr(namespace, 'combination_rules', curr)
