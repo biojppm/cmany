@@ -73,11 +73,11 @@ class Compiler(BuildItem):
         #     cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
         if shortname.startswith('vs') or re.search(r'sual Studio', cxx_compiler):
             cc = cxx_compiler
-        elif shortname == "icc":
+        elif shortname == "icc" or shortname == "icpc":
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
-        elif shortname == "gcc":
+        elif shortname == "gcc" or shortname == "g++":
             cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
-        elif shortname == "clang":
+        elif shortname == "clang" or shortname == "clang++":
             cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
         elif shortname == "c++":
             cc = "cc"
@@ -97,21 +97,23 @@ class Compiler(BuildItem):
         # is this visual studio?
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name
-        # # other compilers
-        # print("cmp: found compiler:", name, path)
+        # other compilers
+        # print("cmp: found compiler:", path)
         out = slntout([path, '--version'])
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
-        # print("cmp: version:", name, "---", firstline, "---")
+        # print("cmp: version:", name, "---", version_full, "---")
         vregex = r'(\d+\.\d+)\.\d+'
         if name.startswith("g++") or name.startswith("gcc"):
+            # print("g++: version:", name, name.find('++'))
             name = "g++" if name.find('++') != -1 else 'gcc'
+            # print("g++: version:", name, name.find('++'))
             version = slntout([path, '-dumpversion'])
             version = re.sub(vregex, r'\1', version)
             # print("gcc version:", version, "---")
         elif name.startswith("clang"):
-            name = "clang++" if name.find('++') != -1 else 'clang'
+            name = "clang++" if path.find('clang++') != -1 else 'clang'
             version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
             # print("clang version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
