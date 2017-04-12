@@ -3,7 +3,9 @@ Using cmany with Visual Studio
 
 TL;DR
 -----
-The general form for choosing the Visual Studio version with cmany is::
+
+The general form for choosing the Visual Studio compiler version with cmany
+is::
 
     <vs_version>[_<architecture>][_<vs_toolset>]
 
@@ -29,10 +31,10 @@ where:
         * from ``vs2008``: ``v80``
   
 Note that not every combination is valid:
-* you cannot use toolsets newer than your chosen VS version
-* ``arm`` is not available in VS versions older than VS2012
-* ``ia64`` is not available in VS versions later than VS2012
-* ``clang`` is not available in versions older than VS2015.
+  * you cannot use toolsets newer than your chosen VS version
+  * ``arm`` is not available in VS versions older than VS2012
+  * ``ia64`` is not available in VS versions later than VS2012
+  * ``clang`` is not available in versions older than VS2015.
 
 .. note:: cmany defaults to using the native architecture when no target
           architecture is specified. For example, the command ``cmany b -c
