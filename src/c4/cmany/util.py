@@ -402,8 +402,17 @@ else:
             self.stderr = stderr
         def check_returncode(self):
             if self.returncode:
-                raise subprocess.CalledProcessError(
-                    self.returncode, self.args, self.stdout, self.stderr)
+                if sys.version_info >= (3, 5):
+                    raise subprocess.CalledProcessError(
+                        self.returncode, self.args, self.stdout, self.stderr)
+                else:
+                    out = ""
+                    if self.stdout:
+                        out += self.stdout
+                    if self.stderr:
+                        out += self.stderr
+                    raise subprocess.CalledProcessError(
+                        self.returncode, self.args, out)
 
     def subprocess_run_impl(*popenargs, input=None, check=False, **kwargs):
         if input is not None:
