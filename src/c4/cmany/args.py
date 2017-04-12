@@ -135,7 +135,7 @@ def add_select(parser):
                    Defaults to \"%(default)s\".""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
                    default=[], action=BuildItemArgument,
-                   help="""(WIP) restrict actions to the given variants.
+                   help="""specify variants as build items.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")
 
@@ -154,6 +154,8 @@ def add_combination_flags(parser):
 
 def add_cflags(parser):
     g = parser.add_argument_group('CMake variables, build flags and defines')
+    g.add_argument("-T", "--toolchain", metavar='toolchain_file', default=None,
+                   help="""Specify a cmake toolchain file.""")
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
                    help="""Add CMake cache variables to all builds.
@@ -253,7 +255,7 @@ class BuildItemArgument(argparse.Action):
         # clear the defaults from the list
         if not hasattr(parser, 'non_default_args'):
             parser.non_default_args = {}
-        if parser.non_default_args.get(self.dest) == None:
+        if parser.non_default_args.get(self.dest) is None:
             if self.dest != 'variants':
                 # util.logwarn("parsing: reset current li:", li)
                 li = []

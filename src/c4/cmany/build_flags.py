@@ -11,6 +11,7 @@ class BuildFlags(NamedItem):
         self.defines = kwargs.get('defines', [])
         self.cflags = kwargs.get('cflags', [])
         self.cxxflags = kwargs.get('cxxflags', [])
+        self.toolchain = kwargs.get('toolchain')
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
         if compiler is not None:
@@ -31,6 +32,12 @@ class BuildFlags(NamedItem):
         self.cxxflags += other.cxxflags
         # self.include_dirs += other.include_dirs
         # self.link_dirs += other.link_dirs
+        if ((self.toolchain != other.toolchain) and
+            (self.toolchain is not None and other.toolchain is not None)):
+            raise Exception("conflicting toolchains: "
+                            + self.toolchain + " vs. " + other.toolchain)
+        if self.toolchain is None and other.toolchain is not None:
+            self.toolchain = other.toolchain
 
     def log(self, log_fn=print, msg=""):
         t = "BuildFlags[{}]: {}".format(self.name, msg)
