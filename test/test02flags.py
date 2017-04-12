@@ -82,7 +82,7 @@ class Test03Merge(ut.TestCase):
                 compsv = flags.get_all_compilers(cflagsv)
                 ymlv = flags.dump_yml(compsv, cflagsv)
                 self.assertTrue(same_elements_in_list(compsv, compsr), tcn)
-                self.assertEqual(set(compsv), set(compsr), tcn)
+                self.assertEqual(compsv, compsr, tcn)
                 self.assertEqual(ymlv, ymlr, tcn)
 
 
@@ -117,7 +117,7 @@ class Test04FlagsIO(ut.TestCase):
                 self.assertEqual(len(f), len(rflags))
                 self.assertEqual(list(f.keys()), list(rflags.keys()))
                 for (rname, rf), (vname, vf) in zip(rflags.items(), f.items()):
-                    self.assertEqual(set(rcomps), set(vf.compilers))
+                    self.assertEqual(rcomps, vf.compilers)
                     for kc in self.comps:
                         #print(rname, c, rf.get(c), vf.get(c))
                         self.assertEqual(rf.get(kc), vf.get(kc))

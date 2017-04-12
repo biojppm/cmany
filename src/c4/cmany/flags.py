@@ -79,6 +79,7 @@ class CFlag(NamedItem):
     def __init__(self, name, desc='', **kwargs):
         super().__init__(name)
         self.desc = desc
+        self.compilers = []
         for k, v in kwargs.items():
             self.set(k, v)
 
@@ -99,11 +100,15 @@ class CFlag(NamedItem):
     def set(self, compiler, val=''):
         sn = get_name_for_flags(compiler)
         setattr(self, sn, val)
+        if sn not in self.compilers:
+            self.compilers.append(sn)
 
     def add_compiler(self, compiler):
         sn = get_name_for_flags(compiler)
         if not hasattr(self, sn):
             self.set(sn)
+        if sn not in self.compilers:
+            self.compilers.append(sn)
 
     def merge_from(self, that):
         for k, v in that.__dict__.items():
@@ -114,15 +119,9 @@ class CFlag(NamedItem):
 
     @staticmethod
     def is_compiler_name(s):
-        return not (s.startswith('__') or s == 'name' or s == 'desc')
+        return not (s.startswith('__') or s == 'name' or s == 'desc'
+                    or s == 'compilers')
 
-    @property
-    def compilers(self):
-        comps = []
-        for c, _ in self.__dict__.items():
-            if __class__.is_compiler_name(c):
-                comps.append(c)
-        return comps
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
