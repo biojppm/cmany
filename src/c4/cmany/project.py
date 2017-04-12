@@ -63,8 +63,8 @@ class Project:
         self.variants = Variant.create(vars)
 
         self.builds = []
-        self.combination_rules = CombinationRules(kwargs.get('combination_rules'))
-        items = self.combination_rules.create_builds(
+        self.combination_rules = CombinationRules(kwargs.get('combination_rules', []))
+        items = self.combination_rules.valid_combinations(
             self.systems, self.architectures, self.compilers, self.buildtypes, self.variants)
         for s, a, c, t, v in items:
             self.add_build(s, a, c, t, v)
