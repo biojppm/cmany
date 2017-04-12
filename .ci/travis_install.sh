@@ -16,7 +16,15 @@ if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
          cmake \
          build-essential \
          gcc-arm-linux-gnueabihf \
-         binutils-arm-linux-gnueabihf
+         g++-arm-linux-gnueabihf \
+         binutils-arm-linux-gnueabihf \
+         gcc-mips-linux-gnu \
+         g++-mips-linux-gnu \
+         binutils-mips-linux-gnu \
+         gcc-mipsel-linux-gnu \
+         g++-mipsel-linux-gnu \
+         binutils-mipsel-linux-gnu \
+         qemu-system
 
     PYTHON=python3
     PIP=pip3
@@ -49,10 +57,14 @@ fi
 
 cmake --version
 cmake --help
-which cc && cc --version
-which c++ && c++ --version
-which g++ && (g++ -dumpversion ; g++ --version)
-which clang++ && (clang++ -dumpversion ; clang++ --version)
+which cc
+cc --version
+which c++
+c++ --version
+which g++
+(g++ -dumpversion ; g++ --version)
+which clang++
+(clang++ -dumpversion ; clang++ --version)
 
 which $PYTHON
 which $PIP
