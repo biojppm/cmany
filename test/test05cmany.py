@@ -193,7 +193,8 @@ def run_projs(testobj, args, check_fn=None):
         for c in compiler_set:
             for t in build_types:
                 for v in variant_set:
-                    with testobj.subTest(msg="run all combinations individually", proj=p.proj, compiler=c, build_type=t, variant=v):
+                    with testobj.subTest(msg="run all combinations individually",
+                                         proj=p.proj, compiler=c, build_type=t, variant=v):
                         bd = '.test/3--{}--{}--{}--build'.format(c, t, v.name)
                         id = '.test/3--{}--{}--{}--install'.format(c, t, v.name)
                         p.run(args + ['--build-dir', bd,
@@ -309,7 +310,7 @@ class Test03Install(ut.TestCase):
         run_projs(self, ['i'], lambda tb: tb.checki(self))
 
 
-class Test04Variants(ut.TestCase):
+class Test04Dependencies(ut.TestCase):
     pass
 
 # -----------------------------------------------------------------------------
