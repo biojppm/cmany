@@ -8,10 +8,9 @@ from . import util
 from . import vsinfo
 
 
-
 # -----------------------------------------------------------------------------
 class Compiler(BuildItem):
-    """Specifies a compiler"""
+    """Represents a compiler choice"""
 
     @staticmethod
     def default():
@@ -82,11 +81,14 @@ class Compiler(BuildItem):
             cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
         elif shortname == "c++":
             cc = "cc"
+        elif shortname.startswith("arm-"):
+            cc = re.sub(r'g\+\+', 'gcc', shortname)
         else:
             cc = "cc"
         return cc
 
     def get_version(self, path):
+        # a function to silently run a system command
         def slntout(cmd):
             out = util.runsyscmd(cmd, echo_cmd=False,
                                  echo_output=False, capture_output=True)
@@ -104,17 +106,20 @@ class Compiler(BuildItem):
         # print("cmp: version:", name, "---", firstline, "---")
         vregex = r'(\d+\.\d+)\.\d+'
         if name.startswith("g++") or name.startswith("gcc"):
-            name = "gcc"
+            name = "g++" if name.find('++') != -1 else 'gcc'
             version = slntout([path, '-dumpversion'])
             version = re.sub(vregex, r'\1', version)
             # print("gcc version:", version, "---")
         elif name.startswith("clang"):
-            name = "clang"
+            name = "clang++" if name.find('++') != -1 else 'clang'
             version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
             # print("clang version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
-            name = "icc"
-            version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
+            name = "icc" if name.startswith("icc") else "icpc"
+            if re.search(r'icpc \(ICC\) ' + vregex + '.*'):
+                version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
+            else:
+                version = re.sub(r'icc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             # print("icc version:", version, "---")
         else:
             version = slntout([path, '-dumpversion'])
