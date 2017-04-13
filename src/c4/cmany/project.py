@@ -273,25 +273,27 @@ class Project:
                 else:
                     util.lognotice(msg, b)
                 util.lognotice("-----------------------------------------------")
-            durations[b] = timeit.default_timer()
+            t = timeit.default_timer()
             fn(b)
-            durations[b] = timeit.default_timer() - durations[b]
+            t = timeit.default_timer() - t
+            hrt = util.human_readable_time(t)
+            durations[b] = (t, hrt)
             if num > 1:
-                info = "finished build #{} of {} ({:.3g}s)".format(i + 1, num, durations[b])
+                info = "finished build #{} of {} ({})".format(i + 1, num, hrt)
             else:
-                info = "finished building ({:.3g}s)".format(durations[b])
+                info = "finished building ({})".format(hrt)
             util.logdone(msg + ": " + info + ":",  b)
         if not silent:
             util.lognotice("-----------------------------------------------")
             if num > 1:
                 util.logdone(msg + ": finished", num, "builds:")
                 tot = 0.
-                for _, d in durations.items():
+                for _, (d, _) in durations.items():
                     tot += d
                 for b in builds:
-                    dur = durations[b]
-                    util.logdone(b, "({:.3g}s, {:.3f}x)".format(dur, dur/(tot/float(num))))
-                util.logdone("total time {:.3g}s".format(tot))
+                    dur, hrt = durations[b]
+                    util.logdone(b, "({}, {:.3f}%, {:.3f}x avg)".format(hrt, dur/tot*100., dur/(tot/float(num))))
+                util.logdone("total time: {}".format(util.human_readable_time(tot)))
                 util.lognotice("===============================================")
 
 
