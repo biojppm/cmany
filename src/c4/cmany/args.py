@@ -7,10 +7,9 @@ from . import util
 from . import help
 from . import system
 from . import build_item
-from . import build_type
 from . import architecture
 from . import compiler
-from . import variant
+
 from .util import cslist
 from multiprocessing import cpu_count as cpu_count
 
@@ -131,12 +130,14 @@ def add_select(parser):
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   default=[build_type.BuildType.default_str()], action=BuildItemArgument,
+                   # default=[build_type.BuildType.default_str()], action=BuildItemArgument,  # avoid a circular dependency
+                   default=["Release"], action=BuildItemArgument,
                    help="""restrict actions to the given build types.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to \"%(default)s\".""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   default=[variant.Variant.default_str()], action=BuildItemArgument,
+                   # default=[variant.Variant.default_str()], action=BuildItemArgument,  # avoid a circular dependency
+                   default=["none"], action=BuildItemArgument,
                    help="""specify variants as build items.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")
