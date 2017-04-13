@@ -293,11 +293,14 @@ class CombinationPattern:
     def matches(self, s, a, c, t, v):
         for i in (s, a, c, t, v):
             if re.search(self.rule, str(i)):
+                # print("GOT A MATCH:", self.rule, i)
                 return True
         s = Build.get_tag(s, a, c, t, v)
         print(s, type(s))
         if re.search(self.rule, s):
+            # print("GOT A TAG MATCH:", self.rule, s)
             return True
+        # print("NO MATCH:", self.rule, s)
         return False
 
 
@@ -349,7 +352,6 @@ class CombinationRule:
 class CombinationRules:
 
     def __init__(self, specs):
-        util.logerr(specs)
         self.rules = []
         for x_or_i, any_or_all, rules in specs:
             crc = CombinationRule(rules, x_or_i, any_or_all)
