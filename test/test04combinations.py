@@ -122,7 +122,7 @@ class Test10AsArguments(ut.TestCase):
 
         self.t(
             # args
-            ["-a", "x86,x86_64", "--exclude-all", "x86_64.*foo", "-v", vspec],
+            ["-a", "x86,x86_64", "-v", vspec, "--exclude-all", "x86_64.*foo"],
             # expected items
             odict([
                 ('systems', [ds]),
@@ -136,6 +136,28 @@ class Test10AsArguments(ut.TestCase):
                 (ds, 'x86', dc, dt, vnone),
                 (ds, 'x86', dc, dt, vfoo),
                 (ds, 'x86', dc, dt, vbar),
+                (ds, 'x86_64', dc, dt, vnone),
+                # (ds, 'x86_64', dc, dt, vfoo),
+                (ds, 'x86_64', dc, dt, vbar),
+            ]
+        )
+
+        self.t(
+            # args
+            ["-a", "x86,x86_64", "-v", vspec, "--exclude-any", "'x86_64.*foo','x86-.*bar'"],
+            # expected items
+            odict([
+                ('systems', [ds]),
+                ('architectures', ['x86', 'x86_64']),
+                ('compilers', [dc]),
+                ('build_types', [dt]),
+                ('variants', [vnone, vfoo, vbar])
+            ]),
+            # expected combinations
+            [
+                (ds, 'x86', dc, dt, vnone),
+                (ds, 'x86', dc, dt, vfoo),
+                # (ds, 'x86', dc, dt, vbar),
                 (ds, 'x86_64', dc, dt, vnone),
                 # (ds, 'x86_64', dc, dt, vfoo),
                 (ds, 'x86_64', dc, dt, vbar),
