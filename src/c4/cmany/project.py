@@ -360,7 +360,7 @@ class CombinationRules:
     def is_valid(self, s, a, c, t, v):
         result = 1
         for r in self.rules:
-            result = result & r.is_valid(s, a, c, t, v)
+            result = r.is_valid(s, a, c, t, v)
         return result
 
     def valid_combinations(self, systems, archs, comps, types, variants):
