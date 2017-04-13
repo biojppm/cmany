@@ -61,7 +61,7 @@ def logerr(*args, **kwargs):
 
 
 def logcmd(*args, **kwargs):
-    #print(*args, **kwargs)
+    # print(*args, **kwargs)
     print("--------")
     color_log(colorama.Fore.WHITE + colorama.Style.BRIGHT, *args, **kwargs)
     # this print here is needed to prevent the command output
@@ -152,7 +152,7 @@ def is_quoted(s):
     # with matching quotes. But we don't know if the last quote
     # closes the first one.
     level = 0
-    open  = False
+    open = False
     for i, c in enumerate(s):
         is_escaped = i > 0 and s[i - 1] == '\\'
         if c == s[0] and not is_escaped:
