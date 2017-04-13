@@ -5,6 +5,7 @@ import glob
 import json
 import copy
 import re
+import timeit
 from collections import OrderedDict as odict
 
 from . import util
@@ -247,6 +248,7 @@ class Project:
 
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)
+        durations = odict()
         num = len(builds)
         if not silent:
             if num == 0:
@@ -254,9 +256,9 @@ class Project:
         if num == 0:
             return
         if not silent:
-            util.lognotice("")
-            util.lognotice("===============================================")
             if num > 1:
+                util.lognotice("")
+                util.lognotice("===============================================")
                 util.lognotice(msg + ": start", num, "builds:")
                 for b in builds:
                     util.lognotice(b)
@@ -271,15 +273,26 @@ class Project:
                 else:
                     util.lognotice(msg, b)
                 util.lognotice("-----------------------------------------------")
+            durations[b] = timeit.default_timer()
             fn(b)
-            util.logdone(msg + ": finished build #{} of {}:".format(i + 1, num), b)
-        if not silent:
+            durations[b] = timeit.default_timer() - durations[b]
             if num > 1:
-                util.lognotice("-----------------------------------------------")
+                info = "finished build #{} of {} ({:.3g}s)".format(i + 1, num, durations[b])
+            else:
+                info = "finished building ({:.3g}s)".format(durations[b])
+            util.logdone(msg + ": " + info + ":",  b)
+        if not silent:
+            util.lognotice("-----------------------------------------------")
+            if num > 1:
                 util.logdone(msg + ": finished", num, "builds:")
+                tot = 0.
+                for _, d in durations.items():
+                    tot += d
                 for b in builds:
-                    util.logdone(b)
-            util.lognotice("===============================================")
+                    dur = durations[b]
+                    util.logdone(b, "({:.3g}s, {:.3f}x)".format(dur, dur/(tot/float(num))))
+                util.logdone("total time {:.3g}s".format(tot))
+                util.lognotice("===============================================")
 
 
 # -----------------------------------------------------------------------------
