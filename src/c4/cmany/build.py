@@ -7,6 +7,7 @@ from .generator import Generator
 from . import util
 from .cmake import CMakeCache, CMakeSysInfo
 from .named_item import NamedItem
+from .variant import Variant
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -81,10 +82,17 @@ class Build(NamedItem):
         self._set_paths()
 
     def _cat(self, sep):
-        s = "{1}{0}{2}{0}{3}{0}{4}"
-        s = s.format(sep, self.system, self.architecture, self.compiler, self.buildtype)
-        if self.variant and self.variant.name and self.variant.name != "none":
-            s += "{0}{1}".format(sep, self.variant)
+        s =  __class__.get_tag(
+            self.system, self.architecture, self.compiler, self.buildtype, self.variant, sep)
+        return s
+
+    @staticmethod
+    def get_tag(s, a, c, t, v, sep='-'):
+        s = str(s) + sep + str(a) + sep + str(c) + sep + str(t)
+        if v is not None and isinstance(v, Variant):
+            v = v.name
+        if v and v != "none":
+            s += "{sep}{var}".format(sep=sep, var=str(v))
         return s
 
     def create_dir(self):
