@@ -15,16 +15,16 @@ if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
          python3-dev \
          cmake \
          build-essential \
+         qemu-system \
          gcc-arm-linux-gnueabihf \
          g++-arm-linux-gnueabihf \
          binutils-arm-linux-gnueabihf \
-         gcc-mips-linux-gnu \
-         g++-mips-linux-gnu \
-         binutils-mips-linux-gnu \
-         gcc-mipsel-linux-gnu \
-         g++-mipsel-linux-gnu \
-         binutils-mipsel-linux-gnu \
-         qemu-system
+         #gcc-mips-linux-gnu \
+         #g++-mips-linux-gnu \
+         #binutils-mips-linux-gnu \
+         #gcc-mipsel-linux-gnu \
+         #g++-mipsel-linux-gnu \
+         #binutils-mipsel-linux-gnu
 
     PYTHON=python3
     PIP=pip3
