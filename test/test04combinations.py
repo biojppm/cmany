@@ -29,26 +29,51 @@ class Test10AsArguments(ut.TestCase):
             c4args.add_bundle_flags(parser)
 
         args = parser.parse_args(input)
-        print(args)
+        util.logcmd(args)
         assert isinstance(expected_items, odict)
 
         for i in ('systems', 'architectures', 'compilers', 'build_types', 'variants'):
             expected = expected_items[i]
             actual = getattr(args, i)
-            util.lognotice(i, "actual=", actual)
-            util.lognotice(i, "expected=", expected)
+            print(i, "actual=", actual)
+            print(i, "expected=", expected)
             with self.subTest(msg="expected count of "+i, input=input):
                 self.assertEqual(len(actual), len(expected))
-            with self.subTest(msg="expected set of "+i, input=input):
-                self.assertEqual(set(actual), set(expected))
+            with self.subTest(msg="expected list of "+i, input=input):
+                self.assertEqual(actual, expected)
 
+        # expected combinations (constructed with their types)
+        expected_combinations = [(
+            cmany.System(s),
+            cmany.Architecture(a),
+            cmany.Compiler(c),
+            cmany.BuildType(t),
+            cmany.Variant(v)
+        ) for s, a, c, t, v in expected_combinations]
+
+        # actual combinations
+        s, a, c, t, v = cmany.Project.get_build_items(**vars(args))
         cr = []
         if hasattr(args, 'combination_rules'):
             cr = args.combination_rules
         cr = CombinationRules(cr)
-        items = cr.valid_combinations(
-            args.systems, args.architectures, args.compilers,
-            args.build_types, args.variants)
+        actual_combinations = cr.valid_combinations(s, a, c, t, v)
+
+        print("expected_combinations", expected_combinations)
+        print("actual_combinations", actual_combinations)
+        with self.subTest(msg="expected count of combinations", input=input):
+            self.assertEqual(len(expected_combinations), len(actual_combinations))
+        for exp, act in zip(expected_combinations, actual_combinations):
+            with self.subTest(msg="combination architecture", input=input):
+                self.assertEqual(act[0].name, exp[0].name)
+            with self.subTest(msg="combination system", input=input):
+                self.assertEqual(act[1].name, exp[1].name)
+            with self.subTest(msg="combination compiler", input=input):
+                self.assertEqual(act[2].name, exp[2].name)
+            with self.subTest(msg="combination build type", input=input):
+                self.assertEqual(act[3].name, exp[3].name)
+            with self.subTest(msg="combination variant", input=input):
+                self.assertEqual(act[4].name, exp[4].name)
 
     def test00(self):
         self.t(

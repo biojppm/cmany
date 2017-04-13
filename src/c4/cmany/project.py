@@ -283,6 +283,8 @@ class Project:
 
 
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 class CombinationPattern:
 
     def __init__(self, spec):
@@ -299,6 +301,7 @@ class CombinationPattern:
         return False
 
 
+# -----------------------------------------------------------------------------
 class CombinationRule:
     """x=exclude / i=include"""
 
@@ -313,6 +316,7 @@ class CombinationRule:
             self.patterns.append(cr)
 
     def is_valid(self, s, a, c, t, v):
+        result = True
         matches_all = True
         matches_none = True
         matches_any = False
@@ -322,17 +326,30 @@ class CombinationRule:
                 matches_none = False
             else:
                 matches_all = False
-        x_or_i = False if self.x_or_i == 'x' else True
-        if self.any_or_all == 'y':
-            return (x_or_i and matches_any)
-        else:  # if self.any_or_all == 'l':
-            return (x_or_i and matches_all)
-        return True
+        if self.x_or_i == 'x':
+            if matches_none:
+                result = True
+            else:
+                if self.any_or_all == 'y':
+                    result = not matches_any
+                else:
+                    result = not matches_all
+        elif self.x_or_i == 'i':
+            if matches_none:
+                result = False
+            else:
+                if self.any_or_all == 'y':
+                    result = matches_any
+                else:
+                    result = matches_all
+        return result
 
 
+# -----------------------------------------------------------------------------
 class CombinationRules:
 
     def __init__(self, specs):
+        util.logerr(specs)
         self.rules = []
         for x_or_i, any_or_all, rules in specs:
             crc = CombinationRule(rules, x_or_i, any_or_all)
