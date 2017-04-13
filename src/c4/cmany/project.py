@@ -53,7 +53,7 @@ class Project:
 
         s, a, c, t, v = __class__.get_build_items(**kwargs)
 
-        cr = CombinationRules(kwargs.get('combination_rules'))
+        cr = CombinationRules(kwargs.get('combination_rules', []))
         combs = cr.valid_combinations(s, a, c, t, v)
         self.combination_rules = cr
 
