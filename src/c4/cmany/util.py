@@ -28,7 +28,12 @@ def supports_color():
     return True
     # also this: https://gist.github.com/ssbarnea/1316877
 
-cmany_colored_output = supports_color()
+_suppress_colors = False
+def suppress_colors():
+    global _suppress_colors
+    _suppress_colors = True
+
+cmany_colored_output = (not _suppress_colors) and supports_color()
 
 
 def color_log(style, *args, **kwargs):
