@@ -137,7 +137,7 @@ class Compiler(BuildItem):
             # print("gcc version:", version, "---")
         elif name.startswith("clang"):
             name = "clang++" if path.find('clang++') != -1 else 'clang'
-            if re.search('Apple LLVM'):
+            if re.search('Apple LLVM', version_full):
                 name = "apple_llvm"
                 version = re.sub(r'Apple LLVM version ' + vregex + '.*', r'\1', version_full)
                 print("apple_llvm version:", version, "---")
