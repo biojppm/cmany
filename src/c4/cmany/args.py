@@ -7,8 +7,10 @@ from . import util
 from . import help
 from . import system
 from . import build_item
+from . import build_type
 from . import architecture
 from . import compiler
+from . import variant
 from .util import cslist
 from multiprocessing import cpu_count as cpu_count
 
