@@ -1,5 +1,6 @@
 import os
 import re
+import tempfile
 
 from .build_item import BuildItem
 from .system import System
@@ -105,6 +106,19 @@ class Compiler(BuildItem):
         name = splits[0].lower()
         # print("cmp: version:", name, "---", version_full, "---")
         vregex = r'(\d+\.\d+)\.\d+'
+        base = os.path.basename(path)
+        # print("cmp base:", base)
+        if base.startswith("c++") or base.startswith("cc"):
+            with tempfile.NamedTemporaryFile(suffix=".cc", prefix="cmany.", delete=False) as f:
+                macros = slntout([path, '-dM', '-E', f.name])
+                os.unlink(f.name)
+            macros = macros.split("\n")
+            for m in sorted(macros):
+                if re.search("#define __GNUC__", m):
+                    name = "g++" if base.startswith("c++") else "gcc"
+                elif re.search("#define __clang__", m):
+                    name = "clang++" if base.startswith("c++") else "clang"
+                    break
         if name.startswith("g++") or name.startswith("gcc"):
             # print("g++: version:", name, name.find('++'))
             name = "g++" if name.find('++') != -1 else 'gcc'
