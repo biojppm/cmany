@@ -51,23 +51,21 @@ class Project:
 
         self.load_configs()
 
-        vars = kwargs.get('variants')
-        if not vars:
-            vars = ['none']
+        s, a, c, t, v = __class__.get_build_items(**kwargs)
 
-        _get = lambda n,c: __class__._getarglist(n, c, **kwargs)
-        self.systems = _get('systems', System)
-        self.architectures = _get('architectures', Architecture)
-        self.buildtypes = _get('build_types', BuildType)
-        self.compilers = _get('compilers', Compiler)
-        self.variants = Variant.create(vars)
+        cr = CombinationRules(kwargs.get('combination_rules'))
+        combs = cr.valid_combinations(s, a, c, t, v)
+        self.combination_rules = cr
 
         self.builds = []
-        self.combination_rules = CombinationRules(kwargs.get('combination_rules', []))
-        items = self.combination_rules.valid_combinations(
-            self.systems, self.architectures, self.compilers, self.buildtypes, self.variants)
-        for s, a, c, t, v in items:
-            self.add_build(s, a, c, t, v)
+        for s_, a_, c_, t_, v_ in combs:
+            self.add_build(s_, a_, c_, t_, v_)
+
+        self.systems = s
+        self.architectures = a
+        self.compilers = c
+        self.buildtypes = t
+        self.variants = v
 
         # add new build params as needed to deal with adjusted builds
         def _addnew(b, name):
@@ -85,9 +83,20 @@ class Project:
             _addnew(b, 'variant')
 
     @staticmethod
-    def _getarglist(name, class_, **kwargs):
+    def get_build_items(**kwargs):
+        _get = lambda name_, class_: __class__._get_build_item_arg(name_, class_, **kwargs)
+        s = _get('systems', System)
+        a = _get('architectures', Architecture)
+        c = _get('compilers', Compiler)
+        t = _get('build_types', BuildType)
+        v = Variant.create(kwargs.get('variants'))
+        return s, a, c, t, v
+
+    @staticmethod
+    def _get_build_item_arg(name, class_, **kwargs):
         g = kwargs.get(name)
         if g is None or not g:
+            raise Exception("is this ever reached?")
             g = [class_.default()]
             return g
         l = []
@@ -274,57 +283,66 @@ class Project:
 
 
 # -----------------------------------------------------------------------------
-class CombinationRule:
+class CombinationPattern:
 
     def __init__(self, spec):
         self.rule = spec
 
     def matches(self, s, a, c, t, v):
         for i in (s, a, c, t, v):
-            if re.search(self.rule, i):
+            if re.search(self.rule, str(i)):
                 return True
+        s = Build.get_tag(s, a, c, t, v)
+        print(s, type(s))
+        if re.search(self.rule, s):
+            return True
         return False
 
 
-class CombinationRuleContainer:
+class CombinationRule:
+    """x=exclude / i=include"""
 
     def __init__(self, specs, x_or_i, any_or_all):
         assert x_or_i in ('x', 'i')
         assert any_or_all in ('any', 'all')
-        self.specs = specs
-        self.rules = []
+        self.patterns = []
         self.x_or_i = x_or_i
         self.any_or_all = 'y' if any_or_all == 'any' else 'l'
         for s in specs:
-            cr = CombinationRule(s)
-            self.rules.append(cr)
+            cr = CombinationPattern(s)
+            self.patterns.append(cr)
 
     def is_valid(self, s, a, c, t, v):
-        for r in self.rules:
-            if r.matches(s, a, c, t, v):
-                if self.x_or_i == 'x':
-                    if self.any_or_all == 'y':
-                        return False
+        matches_all = True
+        matches_none = True
+        matches_any = False
+        for pattern in self.patterns:
+            if pattern.matches(s, a, c, t, v):
+                matches_any = True
+                matches_none = False
             else:
-                if self.x_or_i == 'i':
-                    return False
+                matches_all = False
+        x_or_i = False if self.x_or_i == 'x' else True
+        if self.any_or_all == 'y':
+            return (x_or_i and matches_any)
+        else:  # if self.any_or_all == 'l':
+            return (x_or_i and matches_all)
         return True
 
 
 class CombinationRules:
-    """x=exclude / i=include"""
 
     def __init__(self, specs):
         self.rules = []
         for x_or_i, any_or_all, rules in specs:
-            crc = CombinationRuleContainer(specs, x_or_i, any_or_all)
+            crc = CombinationRule(rules, x_or_i, any_or_all)
             self.rules.append(crc)
 
     def is_valid(self, s, a, c, t, v):
-        r = 1
+        result = 1
         for r in self.rules:
-            r = r & r.is_valid(s, a, c, t, v)
-        return r
+            result = result & r.is_valid(s, a, c, t, v)
+        return result
 
     def valid_combinations(self, systems, archs, comps, types, variants):
         combs = []
