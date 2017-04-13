@@ -32,12 +32,7 @@ class BuildFlags(NamedItem):
         self.cxxflags += other.cxxflags
         # self.include_dirs += other.include_dirs
         # self.link_dirs += other.link_dirs
-        if ((self.toolchain != other.toolchain) and
-            (self.toolchain is not None and other.toolchain is not None)):
-            raise Exception("conflicting toolchains: "
-                            + self.toolchain + " vs. " + other.toolchain)
-        if self.toolchain is None and other.toolchain is not None:
-            self.toolchain = other.toolchain
+        self.toolchain = __class__.merge_toolchains(self.toolchain, other.toolchain)
 
     def log(self, log_fn=print, msg=""):
         t = "BuildFlags[{}]: {}".format(self.name, msg)
@@ -45,3 +40,13 @@ class BuildFlags(NamedItem):
         log_fn(t, "defines=", self.defines)
         log_fn(t, "cxxflags=", self.cxxflags)
         log_fn(t, "cflags=", self.cflags)
+
+    @staticmethod
+    def merge_toolchains(tc1, tc2):
+        if ((tc1 != tc2) and
+            (tc1 is not None and tc2 is not None)):
+            raise Exception("conflicting toolchains: "
+                            + tc1 + " vs. " + tc2)
+        if tc1 is None and tc2 is not None:
+            tc1 = tc2
+        return tc1

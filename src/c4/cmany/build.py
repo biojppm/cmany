@@ -8,6 +8,7 @@ from . import util
 from .cmake import CMakeCache, CMakeSysInfo
 from .named_item import NamedItem
 from .variant import Variant
+from .build_flags import BuildFlags
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -40,6 +41,8 @@ class Build(NamedItem):
 
         self._set_paths()
         super().__init__(self.tag)
+
+        self.toolchain_file = self._get_toolchain()
 
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
@@ -107,8 +110,9 @@ class Build(NamedItem):
                + self.generator.configure_args())
         if self.kwargs.get('export_compile', False):
             cmd.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=1')
-        cmd += [  # '-DCMAKE_TOOLCHAIN_FILE='+toolchain_file,
-            self.projdir]
+        if self.toolchain_file:
+            cmd.append('-DCMAKE_TOOLCHAIN_FILE=' + self.toolchain_file)
+        cmd.append(self.projdir)
         return cmd
 
     def configure(self):
@@ -202,6 +206,16 @@ class Build(NamedItem):
             self.buildtype.flags,
             self.variant.flags
         )
+
+    def _get_toolchain(self):
+        tc = None
+        for fs in self._get_flagseq():
+            tc = BuildFlags.merge_toolchains(tc, fs.toolchain)
+        if not os.path.isabs(tc):
+            tc = os.path.join(os.cwd(), tc)
+        if not os.path.exists(tc):
+            raise Exception("file not found: " + tc)
+        return tc
 
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
         flags = []
