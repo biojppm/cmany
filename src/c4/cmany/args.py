@@ -151,22 +151,22 @@ def add_bundle_flags(parser):
 def add_combination_flags(parser):
     g = parser.add_argument_group('Combination settings')
     g.add_argument("--exclude-any", metavar="item1,item2,...",
-                   default=[], action=CombinationRules,
+                   default=[], action=CombinationArgument,
                    help="""Exclude any combinations with items matching ANY
                    rule in the list. Multiple invokations are possible, in
                    which case arguments are appended and not overwritten.""")
     g.add_argument("--include-any", metavar="item1,item2,...",
-                   default=[], action=CombinationRules,
+                   default=[], action=CombinationArgument,
                    help="""Only allow combinations with items matching ANY
                    rule in the list. Multiple invokations are possible, in
                    which case arguments are appended and not overwritten.""")
     g.add_argument("--exclude-all", metavar="item1,item2,...",
-                   default=[], action=CombinationRules,
+                   default=[], action=CombinationArgument,
                    help="""Exclude any combinations with items matching ALL
                    rules in the list. Multiple invokations are possible, in
                    which case arguments are appended and not overwritten.""")
     g.add_argument("--include-all", metavar="item1,item2,...",
-                   default=[], action=CombinationRules,
+                   default=[], action=CombinationArgument,
                    help="""Only allow combinations with items matching ALL
                    rules in the list. Multiple invokations are possible, in
                    which case arguments are appended and not overwritten.""")
@@ -284,7 +284,7 @@ class BuildItemArgument(argparse.Action):
 
 
 # -----------------------------------------------------------------------------
-class CombinationRules(argparse.Action):
+class CombinationArgument(argparse.Action):
     """parse combination arguments in order, putting them all into a single
     entry (combination_rules), which retains the original order. Maybe there's
     a cleverer way to do this but for now this is fast to implement."""
