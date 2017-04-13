@@ -142,7 +142,7 @@ class Test10AsArguments(ut.TestCase):
         self.tp(isl, which_var, expected_name, **expected_props)
 
     def test00(self):
-        self.t([], [])
+        self.t([], ['none'])
         self.t(["-v", "none"], ['none'])
 
     def test01(self):
