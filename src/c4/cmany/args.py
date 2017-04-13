@@ -292,11 +292,11 @@ class CombinationArgument(argparse.Action):
     entry (combination_rules), which retains the original order. Maybe there's
     a cleverer way to do this but for now this is fast to implement."""
     def __call__(self, parser, namespace, values, option_string=None):
-        util.logwarn("parsing combinations: receive", self.dest, values)
+        # util.logwarn("parsing combinations: receive", self.dest, values)
         li = util.splitesc_quoted(values, ',')
         li = [util.unquote(item) for item in li]
         prev = getattr(namespace, self.dest)
-        util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", prev + li)
+        # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", prev + li)
         setattr(namespace, self.dest, prev + li)
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
@@ -311,5 +311,5 @@ class CombinationArgument(argparse.Action):
             li = ('i', 'all', li)
         curr = prev
         curr.append(li)
-        util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
+        # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
         setattr(namespace, 'combination_rules', curr)

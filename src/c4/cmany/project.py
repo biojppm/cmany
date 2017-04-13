@@ -296,7 +296,7 @@ class CombinationPattern:
                 # print("GOT A MATCH:", self.rule, i)
                 return True
         s = Build.get_tag(s, a, c, t, v)
-        print(s, type(s))
+        # print(s, type(s))
         if re.search(self.rule, s):
             # print("GOT A TAG MATCH:", self.rule, s)
             return True

@@ -29,14 +29,14 @@ class Test10AsArguments(ut.TestCase):
             c4args.add_bundle_flags(parser)
 
         args = parser.parse_args(input)
-        util.logcmd(args)
+        # util.logcmd(args)
         assert isinstance(expected_items, odict)
 
         for i in ('systems', 'architectures', 'compilers', 'build_types', 'variants'):
             expected = expected_items[i]
             actual = getattr(args, i)
-            print(i, "actual=", actual)
-            print(i, "expected=", expected)
+            # print(i, "actual=", actual)
+            # print(i, "expected=", expected)
             with self.subTest(msg="expected count of "+i, input=input):
                 self.assertEqual(len(actual), len(expected))
             with self.subTest(msg="expected list of "+i, input=input):
@@ -59,8 +59,8 @@ class Test10AsArguments(ut.TestCase):
         cr = CombinationRules(cr)
         actual_combinations = cr.valid_combinations(s, a, c, t, v)
 
-        print("expected_combinations", expected_combinations)
-        print("actual_combinations", actual_combinations)
+        # print("expected_combinations", expected_combinations)
+        # print("actual_combinations", actual_combinations)
         with self.subTest(msg="expected count of combinations", input=input):
             self.assertEqual(len(expected_combinations), len(actual_combinations))
         for exp, act in zip(expected_combinations, actual_combinations):
@@ -122,7 +122,7 @@ class Test10AsArguments(ut.TestCase):
 
         self.t(
             # args
-            ["-a", "x86,x86_64", "-v", vspec, "--exclude-all", "x86_64.*foo"],
+            ["-a", "x86,x86_64", "-v", vspec, "--exclude-any", "x86_64.*foo"],
             # expected items
             odict([
                 ('systems', [ds]),
@@ -136,6 +136,50 @@ class Test10AsArguments(ut.TestCase):
                 (ds, 'x86', dc, dt, vnone),
                 (ds, 'x86', dc, dt, vfoo),
                 (ds, 'x86', dc, dt, vbar),
+                (ds, 'x86_64', dc, dt, vnone),
+                # (ds, 'x86_64', dc, dt, vfoo),
+                (ds, 'x86_64', dc, dt, vbar),
+            ]
+        )
+
+        self.t(
+            # args
+            ["-a", "x86,x86_64", "-v", vspec, "--exclude-any", "x86.*foo"],
+            # expected items
+            odict([
+                ('systems', [ds]),
+                ('architectures', ['x86', 'x86_64']),
+                ('compilers', [dc]),
+                ('build_types', [dt]),
+                ('variants', [vnone, vfoo, vbar])
+            ]),
+            # expected combinations
+            [
+                (ds, 'x86', dc, dt, vnone),
+                # (ds, 'x86', dc, dt, vfoo),
+                (ds, 'x86', dc, dt, vbar),
+                (ds, 'x86_64', dc, dt, vnone),
+                # (ds, 'x86_64', dc, dt, vfoo),
+                (ds, 'x86_64', dc, dt, vbar),
+            ]
+        )
+
+        self.t(
+            # args
+            ["-a", "x86,x86_64", "-v", vspec, "--exclude-any", "'x86_64.*foo','x86-.*bar'"],
+            # expected items
+            odict([
+                ('systems', [ds]),
+                ('architectures', ['x86', 'x86_64']),
+                ('compilers', [dc]),
+                ('build_types', [dt]),
+                ('variants', [vnone, vfoo, vbar])
+            ]),
+            # expected combinations
+            [
+                (ds, 'x86', dc, dt, vnone),
+                (ds, 'x86', dc, dt, vfoo),
+                # (ds, 'x86', dc, dt, vbar),
                 (ds, 'x86_64', dc, dt, vnone),
                 # (ds, 'x86_64', dc, dt, vfoo),
                 (ds, 'x86_64', dc, dt, vbar),
