@@ -109,10 +109,13 @@ class Compiler(BuildItem):
         base = os.path.basename(path)
         # print("cmp base:", base)
         if base.startswith("c++") or base.startswith("cc"):
-            with tempfile.NamedTemporaryFile(suffix=".cc", prefix="cmany.", delete=False) as f:
-                macros = slntout([path, '-dM', '-E', f.name])
-                os.unlink(f.name)
-            macros = macros.split("\n")
+            try:  # if this fails, just go on. It's not really needed.
+                with tempfile.NamedTemporaryFile(suffix=".cc", prefix="cmany.", delete=False) as f:
+                    macros = slntout([path, '-dM', '-E', f.name])
+                    os.unlink(f.name)
+                macros = macros.split("\n")
+            except:
+                macros = []
             for m in sorted(macros):
                 if re.search("#define __GNUC__", m):
                     name = "g++" if base.startswith("c++") else "gcc"
