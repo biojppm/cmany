@@ -69,7 +69,22 @@ def logcmd(*args, **kwargs):
     print("--------")
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+def human_readable_time(seconds):
+    if seconds < 60.:
+        return '{:.3g}s'.format(seconds)
+    elif seconds < 3600.:
+        mins = int(seconds / 60.)
+        secs = int(seconds-60.*mins)
+        return '{}m {}s'.format(mins, secs)
+    else:
+        hours = int(seconds / 3600.)
+        mins = int((seconds - hours*3600.)/60.)
+        secs = int(seconds - hours*3600. - mins*60.)
+        return '{}:{} {}\''.format(hours, mins, secs)
+
+
+# -----------------------------------------------------------------------------
 def sys_str():
     if sys.platform == "linux" or sys.platform == "linux2":
         return "linux"
