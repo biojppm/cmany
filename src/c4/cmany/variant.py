@@ -11,8 +11,12 @@ class Variant(BuildItem):
     """for variations in build flags"""
 
     @staticmethod
+    def default_str():
+        return 'none'
+
+    @staticmethod
     def default():
-        return Variant('none')
+        return Variant(__class__.default_str())
 
     @staticmethod
     def create(spec_list):

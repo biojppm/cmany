@@ -129,12 +129,12 @@ def add_select(parser):
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   default=["Release"], action=BuildItemArgument,
+                   default=[build_type.BuildType.default_str()], action=BuildItemArgument,
                    help="""restrict actions to the given build types.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    Defaults to \"%(default)s\".""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   default=[], action=BuildItemArgument,
+                   default=[variant.Variant.default_str()], action=BuildItemArgument,
                    help="""specify variants as build items.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")

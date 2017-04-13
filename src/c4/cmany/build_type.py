@@ -6,5 +6,9 @@ class BuildType(BuildItem):
     """Specifies a build type, ie, one of Release, Debug, etc"""
 
     @staticmethod
+    def default_str():
+        return "Release"
+
+    @staticmethod
     def default():
-        return BuildType("Release")
+        return BuildType(__class__.default_str())
