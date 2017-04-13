@@ -278,8 +278,10 @@ class BuildItemArgument(argparse.Action):
         if parser.non_default_args.get(self.dest) is None:
             # util.logwarn("parsing: reset current li:", li)
             li = []
+            parser.non_default_args[self.dest] = True
         # util.logwarn("parsing: current li:", li, " + ", vli)
         li += vli
+        # util.logwarn("parsing: resulting li:", li)
         setattr(namespace, self.dest, li)
 
 
