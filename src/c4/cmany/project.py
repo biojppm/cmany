@@ -273,8 +273,9 @@ class Project:
                 else:
                     util.lognotice(msg, b)
                 util.lognotice("-----------------------------------------------")
+            # this is where it happens
             t = timeit.default_timer()
-            fn(b)
+            fn(b)  # <-- here
             t = timeit.default_timer() - t
             hrt = util.human_readable_time(t)
             durations[b] = (t, hrt)
@@ -292,7 +293,10 @@ class Project:
                     tot += d
                 for b in builds:
                     dur, hrt = durations[b]
-                    util.logdone(b, "({}, {:.3f}%, {:.3f}x avg)".format(hrt, dur/tot*100., dur/(tot/float(num))))
+                    times = "({}, {:.3f}%, {:.3f}x avg)".format(
+                        hrt, dur/tot*100., dur/(tot/float(num))
+                    )
+                    util.logdone(b, times)
                 util.logdone("total time: {}".format(util.human_readable_time(tot)))
                 util.lognotice("===============================================")
 
