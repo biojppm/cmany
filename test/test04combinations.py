@@ -94,47 +94,51 @@ class Test10AsArguments(ut.TestCase):
         )
 
     def test01(self):
+        vnone = 'none'
+        vfoo = 'foo: -X wall'
+        vbar = 'bar: -D BAR_DEF=1'
+        vspec = "'{}','{}','{}'".format(vnone, vfoo, vbar)
         self.t(
             # args
-            ["-a", "x86,x86_64", "-v", "none,'foo: -X wall','bar: -D BAR_DEF=1'"],
+            ["-a", "x86,x86_64", "-v", vspec],
             # expected items
             odict([
                 ('systems', [ds]),
                 ('architectures', ['x86', 'x86_64']),
                 ('compilers', [dc]),
                 ('build_types', [dt]),
-                ('variants', ['none', 'foo', 'bar'])
+                ('variants', [vnone, vfoo, vbar])
             ]),
             # expected combinations
             [
-                (ds, 'x86', dc, dt, 'none'),
-                (ds, 'x86', dc, dt, 'foo'),
-                (ds, 'x86', dc, dt, 'var'),
-                (ds, 'x86_64', dc, dt, 'none'),
-                (ds, 'x86_64', dc, dt, 'foo'),
-                (ds, 'x86_64', dc, dt, 'var'),
+                (ds, 'x86', dc, dt, vnone),
+                (ds, 'x86', dc, dt, vfoo),
+                (ds, 'x86', dc, dt, vbar),
+                (ds, 'x86_64', dc, dt, vnone),
+                (ds, 'x86_64', dc, dt, vfoo),
+                (ds, 'x86_64', dc, dt, vbar),
             ]
         )
 
         self.t(
             # args
-            ["-a", "x86,x86_64", "--exclude-all", "foo.*64.*", "-v", "none,'foo: -X wall','bar: -D BAR_DEF=1 --exclude-all 64'"],
+            ["-a", "x86,x86_64", "--exclude-all", "x86_64.*foo", "-v", vspec],
             # expected items
             odict([
                 ('systems', [ds]),
                 ('architectures', ['x86', 'x86_64']),
                 ('compilers', [dc]),
                 ('build_types', [dt]),
-                ('variants', ['none', 'foo', 'bar'])
+                ('variants', [vnone, vfoo, vbar])
             ]),
             # expected combinations
             [
-                (ds, 'x86', dc, dt, 'none'),
-                (ds, 'x86', dc, dt, 'foo'),
-                (ds, 'x86', dc, dt, 'var'),
-                (ds, 'x86_64', dc, dt, 'none'),
-                #(ds, 'x86_64', dc, dt, 'foo'), # excluded
-                (ds, 'x86_64', dc, dt, 'var'),
+                (ds, 'x86', dc, dt, vnone),
+                (ds, 'x86', dc, dt, vfoo),
+                (ds, 'x86', dc, dt, vbar),
+                (ds, 'x86_64', dc, dt, vnone),
+                # (ds, 'x86_64', dc, dt, vfoo),
+                (ds, 'x86_64', dc, dt, vbar),
             ]
         )
 
