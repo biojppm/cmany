@@ -88,7 +88,7 @@ class Compiler(BuildItem):
                 cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
         elif shortname.startswith("arm-"):
             cc = re.sub(r'g\+\+', 'gcc', cxx_compiler)
-        elif re.search(r"c\+\+", shortname):
+        elif re.search(r"c\+\+", shortname) or re.search(r'apple_llvm', shortname):
             cc = re.sub(r"c\+\+", "cc", cxx_compiler)
         else:
             cc = "cc"
