@@ -293,6 +293,7 @@ class CombinationArgument(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         util.logwarn("parsing combinations: receive", self.dest, values)
         li = util.splitesc_quoted(values, ',')
+        li = [util.unquote(item) for item in li]
         prev = getattr(namespace, self.dest)
         util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", prev + li)
         setattr(namespace, self.dest, prev + li)
