@@ -77,13 +77,19 @@ class Compiler(BuildItem):
         elif shortname == "icc" or shortname == "icpc":
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
         elif shortname == "gcc" or shortname == "g++":
-            cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
+            if re.search(r'g\+\+', cxx_compiler):
+                cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
+            else:
+                cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
         elif shortname == "clang" or shortname == "clang++":
-            cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
-        elif shortname == "c++":
-            cc = "cc"
+            if re.search(r'clang\+\+', cxx_compiler):
+                cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
+            else:
+                cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
         elif shortname.startswith("arm-"):
-            cc = re.sub(r'g\+\+', 'gcc', shortname)
+            cc = re.sub(r'g\+\+', 'gcc', cxx_compiler)
+        elif re.search(r"c\+\+", shortname):
+            cc = re.sub(r"c\+\+", "cc", cxx_compiler)
         else:
             cc = "cc"
         return cc
