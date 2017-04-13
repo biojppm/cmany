@@ -22,10 +22,10 @@ The command above will result in four different build trees, placed by default
 under a ``build`` directory placed in the current working directory::
 
     $ ls build/*
-    build/linux-x86_64-clang3.9-Debug
-    build/linux-x86_64-clang3.9-Release
-    build/linux-x86_64-gcc6.1-Debug
-    build/linux-x86_64-gcc6.1-Release
+    build/linux-x86_64-clang++3.9-Debug
+    build/linux-x86_64-clang++3.9-Release
+    build/linux-x86_64-gcc++6.1-Debug
+    build/linux-x86_64-gcc++6.1-Release
 
 Each build tree is obtained by first configuring CMake with the given
 parameters, and then invoking ``cmake --build`` to build the project at once.
@@ -36,8 +36,6 @@ command sequences have the same effect:
 +-------------------------------+-------------------------------+
 | typical cmake                 | cmany                         |
 +===============================+===============================+
-| | ``$ git clone <some-repo>`` | | ``$ git clone <some-repo>`` |
-| | ``$ cd <some-repo>``        | | ``$ cd <some-repo>``        |
 | | ``$ mkdir build``           | | ``$ cmany b``               |
 | | ``$ cd build``              |                               |
 | | ``$ cmake ..``              |                               |
@@ -74,19 +72,24 @@ Support
 * send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
 * send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 
-Status
-------
+Current status
+--------------
 cmany is in alpha state, under current development.
 
 Known issues
 ^^^^^^^^^^^^
-* cmany will invoke the compilers given to it to find their name and
-  version. So far, this successfully works with Visual Studio, gcc, clang,
-  icc and zapcc. However, the current implementation of this logic is fragile
-  and may fail in some cases. Please submit a bug or PR if you experience
-  such a failure.
-* Pure C projects (ie not C++) should work but have not yet been extensively
-  tested. Some bugs may be present.
+
+* cmany invokes the compilers given to it to find their name and version. So
+  far, this successfully works with Visual Studio, gcc (also with arm-linux and
+  mips-linux counterparts), clang, icc and zapcc. However, the current
+  implementation for guessing the name and version is fragile and may fail in
+  some compilers which were not tested. Please submit a bug or PR if you
+  see such a failure.
+* Though cmany works in OS X with gcc and clang, using Xcode has not been
+  tested at all. Get in touch if you are interested in getting cmany to work
+  with Xcode.
+* Pure C projects (ie not C++) should work but have not yet been tested. Some
+  bugs may be present.
 
 License
 -------
