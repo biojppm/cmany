@@ -2,7 +2,7 @@ import re
 import os.path
 import glob
 
-from .cmake import CMakeSysInfo
+from . import cmake
 from . import vsinfo
 
 from .build_item import BuildItem
@@ -21,12 +21,16 @@ class Generator(BuildItem):
     @staticmethod
     def default_str():
         """get the default generator from cmake"""
-        s = CMakeSysInfo.generator()
+        s = cmake.CMakeSysInfo.generator()
         return s
 
     @staticmethod
     def create(build, num_jobs, fallback_generator="Unix Makefiles"):
         """create a generator, adjusting the build parameters if necessary"""
+        #if build.toolchain_file is not None:
+        #    toolchain_cache = cmake.get_toolchain_cache(build.toolchain_file)
+        #    print(toolchain_cache)
+        #    build.adjust(compiler=toolchain_cache['CMAKE_CXX_COMPILER'])
         if build.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(build.compiler.name)
             g = Generator(vsi.gen, build, num_jobs)

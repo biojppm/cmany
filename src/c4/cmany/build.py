@@ -4,11 +4,11 @@ import glob
 from datetime import datetime
 
 from .generator import Generator
-from . import util
-from .cmake import CMakeCache, CMakeSysInfo
+from . import util, cmake
 from .named_item import NamedItem
 from .variant import Variant
 from .build_flags import BuildFlags
+from .compiler import Compiler
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -43,13 +43,17 @@ class Build(NamedItem):
         super().__init__(self.tag)
 
         self.toolchain_file = self._get_toolchain()
+        if self.toolchain_file:
+            comps = cmake.extract_toolchain_compilers(self.toolchain_file)
+            c = Compiler(comps['CMAKE_CXX_COMPILER'])
+            self.adjust(compiler=c)
 
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = Generator.create(self, num_jobs)
 
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
-        self.varcache = CMakeCache(self.builddir)
+        self.varcache = cmake.CMakeCache(self.builddir)
         # ... and this will overwrite (in memory) the vars with the input
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
@@ -211,6 +215,8 @@ class Build(NamedItem):
         tc = None
         for fs in self._get_flagseq():
             tc = BuildFlags.merge_toolchains(tc, fs.toolchain)
+        if not tc:
+            return None
         if not os.path.isabs(tc):
             tc = os.path.join(os.cwd(), tc)
         if not os.path.exists(tc):
@@ -221,7 +227,7 @@ class Build(NamedItem):
         flags = []
         if append_to_sysinfo_var:
             try:
-                flags = [CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
+                flags = [cmake.CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
             except:
                 pass
         # append overall build flags
@@ -259,7 +265,7 @@ class Build(NamedItem):
         vc = self.varcache
         #
         def _set(pfn, pname, pval): pfn(pname, pval, from_input=True)
-        if not self.generator.is_msvc:
+        if (not self.generator.is_msvc) and (not self.toolchain_file):
             _set(vc.f, 'CMAKE_C_COMPILER', self.compiler.c_compiler)
             _set(vc.f, 'CMAKE_CXX_COMPILER', self.compiler.path)
         _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
