@@ -39,8 +39,7 @@ class Build(NamedItem):
 
         self.adjusted = False
 
-        self._set_paths()
-        super().__init__(self.tag)
+        self._set_paths()  # calls super().__init__(self.tag)
 
         self.toolchain_file = self._get_toolchain()
         if self.toolchain_file:
@@ -87,6 +86,8 @@ class Build(NamedItem):
             self.adjusted = True
             self.compiler = c
         self._set_paths()
+        super().__init__(self.tag)
+
 
     def _cat(self, sep):
         s =  __class__.get_tag(
