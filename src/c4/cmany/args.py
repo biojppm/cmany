@@ -175,7 +175,7 @@ def add_combination_flags(parser):
 
 def add_cflags(parser):
     g = parser.add_argument_group('CMake variables, build flags and defines')
-    g.add_argument("-T", "--toolchain", metavar='toolchain_file', default=None,
+    g.add_argument("-T", "--toolchain", metavar='toolchain_file', type=str, default=None,
                    help="""Specify a cmake toolchain file.""")
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
