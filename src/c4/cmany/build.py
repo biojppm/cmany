@@ -39,7 +39,7 @@ class Build(NamedItem):
 
         self.adjusted = False
 
-        self._set_paths()  # calls super().__init__(self.tag)
+        self._set_name_and_paths()  # calls super().__init__(self.tag)
 
         self.toolchain_file = self._get_toolchain()
         if self.toolchain_file:
@@ -67,8 +67,11 @@ class Build(NamedItem):
         if not self.deps_prefix:
             self.deps_prefix = self.builddir
 
-    def _set_paths(self):
-        self.tag = self._cat('-')
+    def _set_name_and_paths(self):
+        self.tag = __class__.get_tag(
+            self.system, self.architecture,
+            self.compiler, self.buildtype, self.variant, '-')
+        super().__init__(self.tag)
         self.buildtag = self.tag
         self.installtag = self.tag  # this was different in the past and may become so in the future
         self.builddir = os.path.abspath(os.path.join(self.buildroot, self.buildtag))
@@ -77,6 +80,9 @@ class Build(NamedItem):
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
 
     def adjust(self, **kwargs):
+        for k, _ in kwargs.items():
+            if k not in ('architecture', 'compiler'):
+                raise Exception("build adjustment for {} not supported".format(k))
         a = kwargs.get('architecture')
         if a and a != self.architecture:
             self.adjusted = True
@@ -85,14 +91,7 @@ class Build(NamedItem):
         if c and c != self.compiler:
             self.adjusted = True
             self.compiler = c
-        self._set_paths()
-        super().__init__(self.tag)
-
-
-    def _cat(self, sep):
-        s =  __class__.get_tag(
-            self.system, self.architecture, self.compiler, self.buildtype, self.variant, sep)
-        return s
+        self._set_name_and_paths()
 
     @staticmethod
     def get_tag(s, a, c, t, v, sep='-'):
