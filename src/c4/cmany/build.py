@@ -100,7 +100,7 @@ class Build(NamedItem):
             if self.system.name == "windows":
                 return Generator(fallback_generator, self, num_jobs)
             else:
-                return Generator(__class__.default_str(), self, num_jobs)
+                return Generator(Generator.default_str(), self, num_jobs)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
