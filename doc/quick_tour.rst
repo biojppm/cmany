@@ -50,12 +50,12 @@ be this::
 
     $ tree -fi -L 2
     build/
-    build/linux-x86_64-gcc6.1-Release/
+    build/linux-x86_64-g++6.1-Release/
     CMakeLists.txt
     main.cpp
 
     $ ls build/*/CMakeCache.txt
-    build/linux-x86_64-gcc6.1-Release/CMakeCache.txt
+    build/linux-x86_64-g++6.1-Release/CMakeCache.txt
 
 Note that unlike CMake, cmany will not place the resulting build tree
 directly at the current working directory: it will instead nest it under
@@ -97,9 +97,9 @@ a single executable named ``hello``, the following will result::
 
     $ tree -fi install
     install/
-    install/linux-x86_64-gcc6.1-Release/
-    install/linux-x86_64-gcc6.1-Release/bin/
-    install/linux-x86_64-gcc6.1-Release/bin/hello
+    install/linux-x86_64-g++6.1-Release/
+    install/linux-x86_64-g++6.1-Release/bin/
+    install/linux-x86_64-g++6.1-Release/bin/hello
 
 
 Choosing the build type
@@ -114,7 +114,7 @@ instead of Release::
 If the directory is initially empty, this will be the result::
 
     $ ls -1 build/*
-    build/linux-x86_64-gcc6.1-Debug/
+    build/linux-x86_64-g++6.1-Debug/
 
 Note that the build naming scheme will cause build trees with different build
 types to be placed in different directories. Apart from producing a better
@@ -137,7 +137,7 @@ The following command chooses clang++ instead of CMake's default compiler::
 If the directory is initially empty, this will be the result::
 
     $ ls -1 build/*
-    build/linux-x86_64-clang3.9-Release/
+    build/linux-x86_64-clang++3.9-Release/
 
 Note that cmany will query the compiler for a name and a version. This is for
 ensuring the use of different build trees for different versions of the same
@@ -215,39 +215,39 @@ trees)::
 
     $ cmany b -t Debug,Release
     $ ls -1 build/
-    build/linux-x86_64-gcc6.1-Debug/
-    build/linux-x86_64-gcc6.1-Release/
+    build/linux-x86_64-g++6.1-Debug/
+    build/linux-x86_64-g++6.1-Release/
 
 You can also do this for the compilers (2 build trees)::
 
     $ cmany b -c clang++,g++
     $ ls -1 build/
-    build/linux-x86_64-clang3.9-Release/
-    build/linux-x86_64-gcc6.1-Release/
+    build/linux-x86_64-clang++3.9-Release/
+    build/linux-x86_64-g++6.1-Release/
 
 And you can also combine all of them (4 build trees)::
 
     $ cmany b -c clang++,g++ -t Debug,Release
     $ ls -1 build/
-    build/linux-x86_64-clang3.9-Debug/
-    build/linux-x86_64-clang3.9-Release/
-    build/linux-x86_64-gcc6.1-Debug/
-    build/linux-x86_64-gcc6.1-Release/
+    build/linux-x86_64-clang++3.9-Debug/
+    build/linux-x86_64-clang++3.9-Release/
+    build/linux-x86_64-g++6.1-Debug/
+    build/linux-x86_64-g++6.1-Release/
 
 Another example -- build using clang++,g++,icpc for Debug,Release,MinSizeRel build types
 (9 build trees)::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel
     $ ls -1 build/
-    build/linux-x86_64-clang3.9-Debug/
-    build/linux-x86_64-clang3.9-MinSizeRel/
-    build/linux-x86_64-clang3.9-Release/
-    build/linux-x86_64-gcc6.1-Debug/
-    build/linux-x86_64-gcc6.1-MinSizeRel/
-    build/linux-x86_64-gcc6.1-Release/
-    build/linux-x86_64-icc16.1-Debug/
-    build/linux-x86_64-icc16.1-MinSizeRel/
-    build/linux-x86_64-icc16.1-Release/
+    build/linux-x86_64-clang++3.9-Debug/
+    build/linux-x86_64-clang++3.9-MinSizeRel/
+    build/linux-x86_64-clang++3.9-Release/
+    build/linux-x86_64-g++6.1-Debug/
+    build/linux-x86_64-g++6.1-MinSizeRel/
+    build/linux-x86_64-g++6.1-Release/
+    build/linux-x86_64-icpc16.1-Debug/
+    build/linux-x86_64-icpc16.1-MinSizeRel/
+    build/linux-x86_64-icpc16.1-Release/
 
 
 Choosing build/install directories
@@ -262,20 +262,20 @@ building and ``bar`` for installing::
     $ cmany i -c clang++,g++ --build-dir foo --install-dir bar
 
     $ ls -1 foo/ bar/
-    bar/linux-x86_64-clang3.9-Release/
-    bar/linux-x86_64-gcc6.1-Release/
-    bar/linux-x86_64-icc16.1-Release/
-    foo/linux-x86_64-clang3.9-Release/
-    foo/linux-x86_64-gcc6.1-Release/
-    foo/linux-x86_64-icc16.1-Release/
+    bar/linux-x86_64-clang++3.9-Release/
+    bar/linux-x86_64-g++6.1-Release/
+    bar/linux-x86_64-icpc16.1-Release/
+    foo/linux-x86_64-clang++3.9-Release/
+    foo/linux-x86_64-g++6.1-Release/
+    foo/linux-x86_64-icpc16.1-Release/
 
 Note that ``foo`` and ``bar`` will still be placed under the current working
 directory, since they are given as relative paths. cmany also accepts
 absolute paths here.
 
 
-Using flags/defines/cache vars
-------------------------------
+Using flags
+-----------
 
 (:doc:`Full docs for flags here </flags>`).
 
@@ -305,17 +305,20 @@ flags, use quotes to escape::
 
     $ cmany b -C "--Wall","-O3"
 
-The cmake cache variables, preprocessor defines and compiler flags specified
-this way will be used across the board in all the individual builds produced
-by the cmany command. For applying these only to certain builds, you can use
-build **variants**, introduced next.
+.. Note::
+   The cmake cache variables, preprocessor defines and compiler flags specified
+   this way will be used across the board in all the individual builds produced
+   by the cmany command. For applying these only to certain builds, you can use
+   build **variants**, introduced next. You can also apply these flags only
+   to certain build items.
+
 
 Build variants
 --------------
 
 (:doc:`Full docs for variants here </variants>`).
 
-cmany has **variants** for setting up per-build parameters. A variant is a
+cmany has **variants** as a
 build different from any other which uses a specific combination of the
 options of the previous section (``--vars/-V``, ``--defines/-D``,
 ``--cxxflags/-X``, ``--cflags/-C``). The command option to setup a variant is
@@ -327,9 +330,9 @@ options of the previous section (``--vars/-V``, ``--defines/-D``,
 which will produce the following tree::
 
     $ ls -1 build
-    build/linux-x86_64-clang3.9-Release/
+    build/linux-x86_64-clang++3.9-Release/
 
-If want instead to produce two variants ``foo`` and ``bar`` with some
+If you want instead to produce two variants ``foo`` and ``bar`` with some
 specific defines and compiler flags, the following command should be used::
 
     $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
@@ -342,43 +345,49 @@ preprocessor symbol named ``SOME_DEFINE`` defined to 16, and will use the
 ``-O2`` C++ compiler flag. So instead of the build above, we now get::
 
     $ ls -1 build
-    build/linux-x86_64-clang3.9-Release-bar/
-    build/linux-x86_64-clang3.9-Release-foo/
+    build/linux-x86_64-clang++3.9-Release-bar/
+    build/linux-x86_64-clang++3.9-Release-foo/
 
 Note above the additional ``-foo`` and ``-bar`` suffixes to denote the
 originating variant.
 
 You can also make variants inherit from other variants, as well as having a
-null variant. Read more about this in the :doc:`variants` document.
+null variant (just call it ``none``). Read more about this in the
+:doc:`variants` document.
 
-Per-parameter flags
--------------------
+
+Per-item flags
+--------------
 
 The pattern ``item_name: <flag_specs>`` which is used for specifying the
-flags to use in :doc:`a variant </variants>` can also be used for making a
-bundle of flags be used whenever a certain build combination parameter is
-used. To be clear, the variant mechanism also applies to the following
-parameters:
+flags to use in :doc:`a variant </variants>` can also be used with any other
+combination item. That is, you can specify flags to be used with any of the
+following items:
 
  * operating system (``--systems/-s``)
  * architecture (``--architectures/-a``)
  * compiler (``--compilers/-c``)
  * build type (``--build-types/-t``)
+ * variant (``--variant/-v``)
 
 Some examples follow.
 
-For example, to associate specific flags to an operating system in order to
-used a toolchain, you can simply do::
+For example, to associate specific flags to an operating system, you can simply do::
 
-  $ cmany b --systems linux,'android: --vars CMAKE_TOOLCHAIN=toolchain.cmake'
+  $ cmany b --systems linux,'android: --defines THIS_IS_ANDROID'
 
-This will build linux with default settings, and will make the android build
-use a cmake toolchain file.
+This will build linux with default settings, and add a preprocessor define
+for the android system.
 
-Or if you want to invoke gcc in both in 32 and 64 bit mode while in a 64 bit
+Or if you want to invoke gcc both in 32 and 64 bit mode while in a 64 bit
 system::
 
-  $ cmany b --architecture x86_64,'x86: --cxxflags "-m32"'
+  $ cmany b --architectures x86_64,'x86: --cxxflags "-m32"'
+
+(In practice, cmany already does exactly this for you when you select the x86
+architecture: when cmany is given ``cmany b -a x86_64,x86`` the ``-m32`` flag
+is implicitly added by cmake when it is run in a x86_64 system. But hopefully
+you get the point.)
 
 Or if you want to add a special define only for one compiler::
 
@@ -391,8 +400,37 @@ Or you can add a flag only to a certain build type::
 Again, all of the :doc:`flag directives </flags>` can be used inside the
 ``item_name: <flags>`` pattern.
 
+
 Cross-compiling
 ---------------
 
-Cross compilation with cmany is easy: just use per-parameter flags for your
-target operating system, as described in the previous section.
+`Cross compilation with cmake
+<https://cmake.org/Wiki/CMake_Cross_Compiling>`_ requires passing a
+`toolchain file
+<https://cmake.org/cmake/help/v3.0/manual/cmake-toolchains.7.html>`_. cmany
+has the ``--toolchain`` option for this.
+
+
+Excluding combinations
+----------------------
+To exclude certain item combinations, there are the following flags:
+ * ``--exclude-any``
+ * ``--include-any``
+ * ``--exclude-all``
+ * ``--include-all``
+
+For example, consider this command which creates 6 builds::
+
+  $ cmany b -a x86,x86_64 -v none,'foo: -D FOO','bar: -D BAR'
+  $ ls -1
+  
+
+Building dependencies
+---------------------
+(to be done)
+
+
+Project mode
+------------
+(to be done)
+

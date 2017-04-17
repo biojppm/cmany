@@ -115,13 +115,19 @@ Contents:
 
   * Choosing build/install directories
 
-  * Using flags/defines/cache vars
+  * Using flags
 
   * Build variants
 
-  * Per-parameter flags
+  * Per-item flags
 
   * Cross-compiling
+
+  * Excluding combinations
+
+  * Building dependencies
+
+  * Project mode
 
 * Flags
 
@@ -137,9 +143,7 @@ Contents:
 
   * Flag aliases
 
-  * Built-in aliases
-
-  * Defining more flag aliases
+  * Excluding item combinations
 
 * Build variants
 

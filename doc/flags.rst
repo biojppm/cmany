@@ -4,7 +4,7 @@ Flags
 cmany allows you to transparently pass flags to all or some of the builds.
 These flags can be compiler flags, preprocessor defines or CMake cache
 variables. Specifying flags is an important cmany usage pattern, which is
-used also when specifying :doc:`variants` or :ref:`Per-parameter flags`.
+used also when specifying :doc:`variants` or :ref:`Per-item flags`.
 
 .. note::
    The examples below apply the flags across the board to all the
@@ -18,7 +18,7 @@ used also when specifying :doc:`variants` or :ref:`Per-parameter flags`.
    If you want to add flags only to certain builds, it's cool! One of the
    main motivations of cmany is being able to easily do that, and it offers
    two different solutions. You can :doc:`use variants </variants>`. You can
-   also set flags per :ref:`Per-parameter flags`, so that when one specific
+   also set flags per :ref:`Per-item flags`, so that when one specific
    build item (such as a compiler or operating system) is used, then the
    flags are also used in the resulting build.
 
@@ -54,7 +54,7 @@ The command above has the same meaning of::
     $ cmake -D CMAKE_CXX_FLAGS="-D MYMACRO=1 -D FOO=BAR" ../..
     $ cmake --build .
 
-Note also that ``--defines`` can be chained, with the same result::
+Note also that ``--defines/-D`` can be chained, with the same result::
 
     $ cmany b -D MY_MACRO=1 -D FOO=BAR
 
@@ -115,22 +115,22 @@ Flag aliases
 For simplicity of use, cmany comes with a predefined set of flag aliases
 which you can use. A flag alias is a name which maps to specific flags for
 each compiler. For example, if you want to enable maximum warnings there is
-the ``wall`` alias (shown here in the sort-of-yml markup which cmany uses to
-define it)::
+the ``wall`` alias (shown here in the yml markup which cmany uses to define
+it)::
 
     wall:
         desc: turn on all warnings
         gcc,clang,icc: -Wall
         vs: /Wall
 
-or the ``avx`` alias if you want to enable AVX SIMD processing::
+or eg the ``avx`` alias if you want to enable AVX SIMD processing::
 
     avx:
         desc: enable AVX instructions
         gcc,clang,icc: -mavx
         vs: /arch:avx
 
-This allows you to use the aliases instead of the flags directly, thus
+This allows use of the aliases instead of the flags directly, thus
 insulating you from differences between compilers. For example, the following
 command will translate to ``g++ -mavx -Wall`` with gcc, clang or icc, but
 with Visual Studio it will translate instead to ``cl.exe /Wall /arch:avx``::
@@ -141,18 +141,23 @@ Note that flag aliases are translated only when they are given through
 ``--cxxflags/-cflags``. Do not use aliases with ``--vars
 CMAKE_CXX_FLAGS=...``, as cmany will not translate them there.
 
+
 Built-in aliases
-----------------
+^^^^^^^^^^^^^^^^
 
 cmany provides built-in flag aliases to simplify working with different
 compilers at the same time. Currently, you can see them in the file
 ``src/c4/cmany/flags.yml`` (see the `current version at github
 <https://github.com/biojppm/cmany/blob/master/src/c4/cmany/flags.yml>`_).
 
+
 Defining more flag aliases
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Being able to define your own is in the roadmap. For now, you can submit PRs
 for adding aliases.
 
 
+Excluding item combinations
+---------------------------
+Anywhere where flags can be used, combination ov

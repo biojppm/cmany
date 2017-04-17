@@ -120,4 +120,3 @@ SOME_DEFINE=32,SOME_DEFINE=16 -X "-Os","-O2"'``.
    because cmany will insert foo's options right in the place where ``@foo``
    appears.
 
-
