@@ -142,8 +142,8 @@ Note that flag aliases are translated only when they are given through
 CMAKE_CXX_FLAGS=...``, as cmany will not translate them there.
 
 
-Built-in aliases
-^^^^^^^^^^^^^^^^
+Built-in flag aliases
+^^^^^^^^^^^^^^^^^^^^^
 
 cmany provides built-in flag aliases to simplify working with different
 compilers at the same time. Currently, you can see them in the file
@@ -160,4 +160,4 @@ for adding aliases.
 
 Excluding item combinations
 ---------------------------
-Anywhere where flags can be used, combination ov
+Anywhere where flags can be used, combination flags can also be used.
