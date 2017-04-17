@@ -40,6 +40,10 @@ class Build(NamedItem):
 
         self.adjusted = False
 
+        if self.architecture.is32:
+            if self.compiler.gcclike:
+                self.compiler.make_32bit()
+
         self._set_name_and_paths()  # calls super().__init__(self.tag)
 
         self.toolchain_file = self._get_toolchain()
@@ -93,9 +97,6 @@ class Build(NamedItem):
             self.adjust(architecture=arch)
             return g
         else:
-            if self.architecture.is32:
-                c = self.compiler.create_32bit_version(self.buildroot)
-                self.adjust(compiler=c)
             if self.system.name == "windows":
                 return Generator(fallback_generator, self, num_jobs)
             else:

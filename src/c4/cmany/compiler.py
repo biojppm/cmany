@@ -44,7 +44,7 @@ class Compiler(BuildItem):
             path = os.path.abspath(p)
         name, version, version_full = self.get_version(path)
         self.shortname = name
-        self.gcclike = self.shortname in ('gcc', 'clang', 'icc')
+        self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'g++', 'clang++', 'icpc')
         self.is_msvc = self.shortname.startswith('vs')
         if not self.is_msvc:
             name += version
@@ -157,29 +157,7 @@ class Compiler(BuildItem):
         #
         return name, version, version_full
 
-    def create_32bit_version(self, here):
-        cxx = os.path.splitext(os.path.basename(self.path))[0]
-        cc = os.path.splitext(os.path.basename(self.c_compiler))[0]
-        if util.in_windows():
-            cxxpath = os.path.join(here, cxx + "-32.bat")
-            ccpath = os.path.join(here, cc + "-32.bat")
-            fmt = """
-@echo OFF
-{path} {flag32} %*
-exit /b %ERRORLEVEL%
-"""
-        else:
-            cxxpath = os.path.join(here, cxx + "-32")
-            ccpath = os.path.join(here, cc + "-32")
-            fmt = """#!/bin/bash
-{path} {flag32} $*
-exit $?
-"""
+    def make_32bit(self):
         if self.gcclike:
-            for n in ((cxxpath, self.path), (ccpath, self.c_compiler)):
-                txt = fmt.format(path=n[1], flag32='-m32')
-                with open(n[0], 'w') as f:
-                    f.write(txt)
-                util.set_executable(n[0])
-        result = Compiler(cxxpath)
-        return result
+            self.flags.cflags.append('-m32')
+            self.flags.cxxflags.append('-m32')
