@@ -169,7 +169,7 @@ class Test10Flags(ut.TestCase):
         self._do_separate_test('-C', '--cflags')
 
     def _do_separate_test(self, shortopt, longopt):
-        n = longopt[2:]
+        n = longopt[2:].replace('-', '_')
         for o in (shortopt, longopt):
             def _c(a, r): self.check_one(n, o, a, r)
 
@@ -241,37 +241,37 @@ class Test10Flags(ut.TestCase):
         del out
 
     def test10_mixed0(self):
-        self.check_many('-X "-fPIC" -D VARIANT1', vars=[], cxxflags=['-fPIC'], cflags=[],
+        self.check_many('-X "-fPIC" -D VARIANT1', cmake_vars=[], cxxflags=['-fPIC'], cflags=[],
                         defines=['VARIANT1'])
-        self.check_many('-X "-Wall" -D VARIANT2', vars=[], cxxflags=['-Wall'], cflags=[],
+        self.check_many('-X "-Wall" -D VARIANT2', cmake_vars=[], cxxflags=['-Wall'], cflags=[],
                         defines=['VARIANT2'])
-        self.check_many('-X nortti,c++14 -D VARIANT3', vars=[], cxxflags=['nortti', 'c++14'], cflags=[],
+        self.check_many('-X nortti,c++14 -D VARIANT3', cmake_vars=[], cxxflags=['nortti', 'c++14'], cflags=[],
                         defines=['VARIANT3'])
-        self.check_many('-X "-fPIC,-Wl\,-rpath" -D VARIANT1', vars=[], cxxflags=['-fPIC', '-Wl,-rpath'],
+        self.check_many('-X "-fPIC,-Wl\,-rpath" -D VARIANT1', cmake_vars=[], cxxflags=['-fPIC', '-Wl,-rpath'],
                         cflags=[], defines=['VARIANT1'])
 
     def test11_mixed1(self):
-        self.check_many('-X "-fPIC" -D VARIANT1,VARIANT_TYPE=1', vars=[], cxxflags=['-fPIC'], cflags=[],
+        self.check_many('-X "-fPIC" -D VARIANT1,VARIANT_TYPE=1', cmake_vars=[], cxxflags=['-fPIC'], cflags=[],
                         defines=['VARIANT1', 'VARIANT_TYPE=1'])
-        self.check_many('-X "-Wall" -D VARIANT2,VARIANT_TYPE=2', vars=[], cxxflags=['-Wall'], cflags=[],
+        self.check_many('-X "-Wall" -D VARIANT2,VARIANT_TYPE=2', cmake_vars=[], cxxflags=['-Wall'], cflags=[],
                         defines=['VARIANT2', 'VARIANT_TYPE=2'])
-        self.check_many('-X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3', vars=[], cxxflags=['nortti', 'c++14'],
+        self.check_many('-X nortti,c++14 -D VARIANT3,VARIANT_TYPE=3', cmake_vars=[], cxxflags=['nortti', 'c++14'],
                         cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
     def test12_mixed2(self):
-        self.check_many('-X "-fPIC" -D VARIANT1,"VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[],
+        self.check_many('-X "-fPIC" -D VARIANT1,"VARIANT_TYPE=1"', cmake_vars=[], cxxflags=['-fPIC'], cflags=[],
                         defines=['VARIANT1', 'VARIANT_TYPE=1'])
-        self.check_many('-X "-Wall" -D VARIANT2,"VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[],
+        self.check_many('-X "-Wall" -D VARIANT2,"VARIANT_TYPE=2"', cmake_vars=[], cxxflags=['-Wall'], cflags=[],
                         defines=['VARIANT2', 'VARIANT_TYPE=2'])
-        self.check_many('-X nortti,c++14 -D VARIANT3,"VARIANT_TYPE=3"', vars=[],
+        self.check_many('-X nortti,c++14 -D VARIANT3,"VARIANT_TYPE=3"', cmake_vars=[],
                         cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
     def test13_mixed3(self):
-        self.check_many('-X "-fPIC" -D "VARIANT1,VARIANT_TYPE=1"', vars=[], cxxflags=['-fPIC'], cflags=[],
+        self.check_many('-X "-fPIC" -D "VARIANT1,VARIANT_TYPE=1"', cmake_vars=[], cxxflags=['-fPIC'], cflags=[],
                         defines=['VARIANT1', 'VARIANT_TYPE=1'])
-        self.check_many('-X "-Wall" -D "VARIANT2,VARIANT_TYPE=2"', vars=[], cxxflags=['-Wall'], cflags=[],
+        self.check_many('-X "-Wall" -D "VARIANT2,VARIANT_TYPE=2"', cmake_vars=[], cxxflags=['-Wall'], cflags=[],
                         defines=['VARIANT2', 'VARIANT_TYPE=2'])
-        self.check_many('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', vars=[],
+        self.check_many('-X nortti,c++14 -D "VARIANT3,VARIANT_TYPE=3"', cmake_vars=[],
                         cxxflags=['nortti', 'c++14'], cflags=[], defines=['VARIANT3', 'VARIANT_TYPE=3'])
 
 
