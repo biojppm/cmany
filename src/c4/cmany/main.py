@@ -85,7 +85,7 @@ class projcmd(cmdbase):
     def add_args(self, parser):
         super().add_args(parser)
         c4args.add_proj(parser)
-        c4args.add_cflags(parser)
+        c4args.add_bundle_flags(parser)
 
 
 class selectcmd(projcmd):

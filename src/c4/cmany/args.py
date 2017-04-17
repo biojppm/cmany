@@ -164,7 +164,7 @@ def add_select(parser):
                    help="""specify variants as build items.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")
-    add_combination_flags(parser)
+    #add_combination_flags(parser)
 
 
 # -----------------------------------------------------------------------------
