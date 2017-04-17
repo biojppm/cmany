@@ -28,6 +28,7 @@ vspec = "'{}','{}','{}'".format(vnone, vfoo, vbar)
 class Test10AsArguments(ut.TestCase):
 
     def t(self, input, expected_items, expected_combinations):
+        assert isinstance(expected_items, odict)
         if not hasattr(self, 'parser'):
             parser = argparse.ArgumentParser()
             c4args.add_select(parser)
@@ -35,7 +36,6 @@ class Test10AsArguments(ut.TestCase):
 
         args = parser.parse_args(input)
         # util.logcmd(args)
-        assert isinstance(expected_items, odict)
 
         for i in ('systems', 'architectures', 'compilers', 'build_types', 'variants'):
             expected = expected_items[i]
