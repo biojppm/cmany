@@ -4,11 +4,12 @@ import glob
 from datetime import datetime
 
 from .generator import Generator
-from . import util, cmake
+from . import util, cmake, vsinfo
 from .named_item import NamedItem
 from .variant import Variant
 from .build_flags import BuildFlags
 from .compiler import Compiler
+from .architecture import Architecture
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -48,7 +49,7 @@ class Build(NamedItem):
             self.adjust(compiler=c)
 
         # WATCHOUT: this may trigger a readjustment of this build's parameters
-        self.generator = Generator.create(self, num_jobs)
+        self.generator = self.create_generator(num_jobs)
 
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
@@ -78,6 +79,27 @@ class Build(NamedItem):
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
+
+    def create_generator(self, num_jobs, fallback_generator="Unix Makefiles"):
+        """create a generator, adjusting the build parameters if necessary"""
+        #if self.toolchain_file is not None:
+        #    toolchain_cache = cmake.get_toolchain_cache(self.toolchain_file)
+        #    print(toolchain_cache)
+        #    self.adjust(compiler=toolchain_cache['CMAKE_CXX_COMPILER'])
+        if self.compiler.is_msvc:
+            vsi = vsinfo.VisualStudioInfo(self.compiler.name)
+            g = Generator(vsi.gen, self, num_jobs)
+            arch = Architecture(vsi.architecture)
+            self.adjust(architecture=arch)
+            return g
+        else:
+            if self.architecture.is32:
+                c = self.compiler.create_32bit_version(self.buildroot)
+                self.adjust(compiler=c)
+            if self.system.name == "windows":
+                return Generator(fallback_generator, self, num_jobs)
+            else:
+                return Generator(__class__.default_str(), self, num_jobs)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
