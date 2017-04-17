@@ -25,7 +25,7 @@ used also when specifying :doc:`variants` or :ref:`Per-item flags`.
 CMake cache variables
 ---------------------
 
-To set cmake cache variables use ``--vars/-V``. For example::
+To set cmake cache variables use ``--cmake-vars/-V``. For example::
 
     $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1,PROJECT_FOO=BAR
 
@@ -138,7 +138,7 @@ with Visual Studio it will translate instead to ``cl.exe /Wall /arch:avx``::
     $ cmany b --cxxflags avx,wall
 
 Note that flag aliases are translated only when they are given through
-``--cxxflags/-cflags``. Do not use aliases with ``--vars
+``--cxxflags/-cflags``. Do not use aliases with ``--cmake-vars
 CMAKE_CXX_FLAGS=...``, as cmany will not translate them there.
 
 

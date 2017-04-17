@@ -208,7 +208,7 @@ def add_cflags(parser):
         description="""Can be given both at command-level and at item-level.""")
     g.add_argument("-T", "--toolchain", metavar='toolchain_file', type=str, default=None,
                    help="""Specify a cmake toolchain file.""")
-    g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
+    g.add_argument("-V", "--cmake-vars", metavar="var1=val1,var2=val2,...",
                    default=[], action=FlagArgument,
                    help="""Add CMake cache variables to all builds.
                    Multiple invokations of -V are possible, in which case

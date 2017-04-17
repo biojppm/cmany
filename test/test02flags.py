@@ -157,7 +157,7 @@ class Test04FlagsIO(ut.TestCase):
 class Test10Flags(ut.TestCase):
 
     def test01_cmake_vars(self):
-        self._do_separate_test('-V', '--vars')
+        self._do_separate_test('-V', '--cmake-vars')
 
     def test02_defines(self):
         self._do_separate_test('-D', '--defines')

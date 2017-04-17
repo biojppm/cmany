@@ -12,7 +12,7 @@ builds produced by cmany. For setting up build specific cmake cache
 variables, preprocessor defines or compiler flags, cmany has **variants**.
 
 A variant is a build different from any other which uses a specific
-combination of flags via ``--vars/-V``, ``--defines/-D``, ``--cxxflags/-X``,
+combination of flags via ``--cmake-vars/-V``, ``--defines/-D``, ``--cxxflags/-X``,
 ``--cflags/-C``.
 
 The command option to setup a variant is ``--variant/-v`` and should be used

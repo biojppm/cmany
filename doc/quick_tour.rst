@@ -279,7 +279,7 @@ Using flags
 
 (:doc:`Full docs for flags here </flags>`).
 
-You can set cmake cache variables using ``--vars/-V``. For example, the
+You can set cmake cache variables using ``--cmake-vars/-V``. For example, the
 following command will be the same as if ``cmake -DCMAKE_VERBOSE_MAKEFILES=1
 -DPROJECT_SOME_DEFINE=SOME_DEFINE= .`` followed by ``cmake --build`` was
 used::
@@ -320,7 +320,7 @@ Build variants
 
 cmany has **variants** as a
 build different from any other which uses a specific combination of the
-options of the previous section (``--vars/-V``, ``--defines/-D``,
+options of the previous section (``--cmake-vars/-V``, ``--defines/-D``,
 ``--cxxflags/-X``, ``--cflags/-C``). The command option to setup a variant is
 ``--variant/-v`` and should be used as follows: ``--variant 'variant_name:
 <flag_specs>'``. For example, assume a vanilla build::
