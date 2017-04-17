@@ -237,7 +237,7 @@ class TestBuild:
                                      )
 
     def checkc(self, tester):
-        tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds)
+        tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds, msg=self.buildroot + str(self.siblings(self.buildroot)))
         buildtype = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
         tester.assertEqual(buildtype, str(self.buildtype))
 
@@ -251,10 +251,12 @@ class TestBuild:
         tester.assertEqual(self.nsiblings(self.installroot), self.numbuilds)
 
     def nsiblings(self, dir):
+        return len(self.siblings(dir))
+
+    def siblings(self, dir):
         res = os.path.join(self.proj.root, dir, '*')
         ch = glob.glob(res)
-        return len(ch)
-
+        return ch
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
