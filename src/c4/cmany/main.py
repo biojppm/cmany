@@ -93,7 +93,6 @@ class selectcmd(projcmd):
     def add_args(self, parser):
         super().add_args(parser)
         c4args.add_select(parser)
-        c4args.add_combination_flags(parser)
 
 
 class configure(selectcmd):

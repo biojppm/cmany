@@ -94,6 +94,11 @@ def add_proj(parser):
     parser.add_argument("-j", "--jobs", default=cpu_count(),
                         help="""build with the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
+    parser.add_argument("-E", "--export-compile", default=False, action="store_true",
+                        help="""Have cmake export a compile_commands.json
+                        containing the compile commands for each file. This
+                        is useful eg for clang-based indexing tools can be
+                        used.""")
 
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",
@@ -107,10 +112,28 @@ def add_proj(parser):
                    help="""Do not read the default config file. Run
                    `cmany help flags` to get help about this.""")
 
+    d = parser.add_argument_group('Dependencies')
+    d.add_argument('--deps', default='', type=str,
+                   metavar='path/to/extern/CMakeLists.txt',
+                   help="""Before configuring, process (ie, configure, build
+                   and install) the given CMakeLists.txt project containing
+                   needed external project dependencies. This will be done
+                   separately for each build, using the same parameters. The
+                   main project will be configured such that the built
+                   dependencies are found by cmake.""")
+    d.add_argument('--deps-prefix', default="", type=str,
+                   metavar='path/to/install/directory',
+                   help="""When using --deps set the install directory for
+                   external dependencies to the given dir.""")
+    d.add_argument('--with-conan', action='store_true', default=False,
+                   help="""(WIP)""")
+
 
 # -----------------------------------------------------------------------------
 def add_select(parser):
-    g = parser.add_argument_group(title="Selecting the builds")
+    g = parser.add_argument_group(
+        title="Build items",
+        description="""Items to be combined by cmany.""")
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
                    default=[system.System.default_str()], action=BuildItemArgument,
                    help="""(WIP) restrict actions to the given operating systems.
@@ -141,6 +164,7 @@ def add_select(parser):
                    help="""specify variants as build items.
                    Provide as a comma-separated list. To escape commas, use a backslash \\.
                    This feature is currently a work-in-progress.""")
+    add_combination_flags(parser)
 
 
 # -----------------------------------------------------------------------------
@@ -150,31 +174,38 @@ def add_bundle_flags(parser):
 
 
 def add_combination_flags(parser):
-    g = parser.add_argument_group('Combination settings')
-    g.add_argument("--exclude-any", metavar="item1,item2,...",
+    g = parser.add_argument_group(
+        'Combination rules',
+        description="""Prevent certain build item combinations from producing
+                    a build. The rules in each argument are Python regular
+                    expressions that are matched against each build name.
+                    The build name is of the form
+                    {system}-{architecture}-{compiler}-{build_type}[-{variant}].
+                    The build is included only if it successfully matches
+                    every combination argument. The arguments are matched in
+                    the given order.""")
+    g.add_argument("--exclude-any", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
-                   help="""Exclude any combinations with items matching ANY
-                   rule in the list. Multiple invokations are possible, in
-                   which case arguments are appended and not overwritten.""")
-    g.add_argument("--include-any", metavar="item1,item2,...",
+                   help="""Exclude build item combinations whose name
+                   matches ANY rule in the list.""")
+    g.add_argument("--include-any", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
-                   help="""Only allow combinations with items matching ANY
-                   rule in the list. Multiple invokations are possible, in
-                   which case arguments are appended and not overwritten.""")
-    g.add_argument("--exclude-all", metavar="item1,item2,...",
+                   help="""Only allow build item combinations whose name
+                   matches ANY rules in the list.""")
+    g.add_argument("--exclude-all", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
-                   help="""Exclude any combinations with items matching ALL
-                   rules in the list. Multiple invokations are possible, in
-                   which case arguments are appended and not overwritten.""")
-    g.add_argument("--include-all", metavar="item1,item2,...",
+                   help="""Exclude build item combinations whose name
+                   matches ALL rules in the list.""")
+    g.add_argument("--include-all", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
-                   help="""Only allow combinations with items matching ALL
-                   rules in the list. Multiple invokations are possible, in
-                   which case arguments are appended and not overwritten.""")
+                   help="""Only allow build item combinations whose name
+                   matches ALL rules in the list.""")
 
 
 def add_cflags(parser):
-    g = parser.add_argument_group('CMake variables, build flags and defines')
+    g = parser.add_argument_group(
+        'Flags: CMake cache variables, compiler flags and defines',
+        description="""Can be given both at command-level and at item-level.""")
     g.add_argument("-T", "--toolchain", metavar='toolchain_file', type=str, default=None,
                    help="""Specify a cmake toolchain file.""")
     g.add_argument("-V", "--vars", metavar="var1=val1,var2=val2,...",
@@ -224,26 +255,6 @@ def add_cflags(parser):
     #                help="""add dirs to the link path of all builds
     #                Multiple invokations of -L are possible, in which case arguments will be appended and not overwritten.
     #                Can also be given as a comma-separated list. To escape commas, use a backslash \\.""")
-    g.add_argument("-E", "--export-compile", default=False, action="store_true",
-                   help="""Have cmake export a compile_commands.json containing
-                   the compile commands for each file. This is useful eg for
-                   clang-based indexing tools can be used.""")
-
-    d = parser.add_argument_group('Dependencies')
-    d.add_argument('--deps', default='', type=str,
-                   metavar='path/to/extern/CMakeLists.txt',
-                   help="""Before configuring, process (ie, configure, build
-                   and install) the given CMakeLists.txt project containing
-                   needed external project dependencies. This will be done
-                   separately for each build, using the same parameters. The
-                   main project will be configured such that the built
-                   dependencies are found by cmake.""")
-    d.add_argument('--deps-prefix', default="", type=str,
-                   metavar='path/to/install/directory',
-                   help="""When using --deps set the install directory for
-                   external dependencies to the given dir.""")
-    d.add_argument('--with-conan', action='store_true', default=False,
-                   help="""(WIP)""")
 
 
 # -----------------------------------------------------------------------------
@@ -284,6 +295,7 @@ class BuildItemArgument(argparse.Action):
         li += vli
         # util.logwarn("parsing: resulting li:", li)
         setattr(namespace, self.dest, li)
+
 
 
 # -----------------------------------------------------------------------------
