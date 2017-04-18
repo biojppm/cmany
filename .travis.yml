@@ -48,19 +48,19 @@ matrix:
 
     #- os: osx
     #  language: generic
-    #  env: PY=3.6 PYENV=3.6.0
+    #  env: PY=3.6 PYENV=3.6.1
 
     - os: osx
       language: generic
-      env: PY=3.5 PYENV=3.5.0
+      env: PY=3.5 PYENV=3.5.1
 
     #- os: osx
     #  language: generic
-    #  env: PY=3.4 PYENV=3.4.0
+    #  env: PY=3.4 PYENV=3.4.1
 
     #- os: osx
     #  language: generic
-    #  env: PY=3.3 PYENV=3.3.0
+    #  env: PY=3.3 PYENV=3.3.1
 
 install:
   # command to install dependencies
