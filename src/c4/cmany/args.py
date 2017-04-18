@@ -130,40 +130,65 @@ def add_proj(parser):
 
 
 # -----------------------------------------------------------------------------
+def _item_printer(dft):
+    s = "["
+    for i, item in enumerate(dft):
+        if i > 1: s += ","
+        s += str(item).replace(' ', '\ ')
+    s += "]"
+    return s
+
 def add_select(parser):
     g = parser.add_argument_group(
         title="Build items",
-        description="""Items to be combined by cmany.""")
+        description="""Items to be combined by cmany. Each item can be made to
+        bring specific flags with it by using the syntax 'item_name:
+        <flags>...' (the quotes are needed when this syntax is used).  Run
+        `cmany help flags` to see the possible flags. Items can be
+        given either as a comma-separated list or with repeated invokations
+        of their arguments. Commas can be escaped by using a backslash,
+        \\.""")
+
+    dft = [system.System.default_str()]
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                   default=[system.System.default_str()], action=BuildItemArgument,
-                   help="""(WIP) restrict actions to the given operating systems.
-                   Defaults to the current system, \"%(default)s\".
-                   Provide as a comma-separated list. To escape commas, use a backslash \\.
-                   This feature is a stub only and is still to be implemented.""")
+                   default=dft, action=BuildItemArgument,
+                   help="""Specify a comma-separated list of operating systems
+                   to combine. Defaults to the current system, """ +
+                   _item_printer(dft) + """.""")
+
+    dft = [architecture.Architecture.default_str()]
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                   default=[architecture.Architecture.default_str()], action=BuildItemArgument,
-                   help="""(WIP) restrict actions to the given processor architectures.
-                   Defaults to CMake's default architecture, \"%(default)s\" on this system.
-                   Provide as a comma-separated list. To escape commas, use a backslash \\.
-                   This feature requires os-specific toolchains and is currently a
-                   work-in-progress.""")
+                   default=dft, action=BuildItemArgument,
+                   help="""Specify a comma-separated list of processor
+                   architectures to combine. Defaults to CMake's default
+                   architecture on this system, """ +
+                   _item_printer(dft) + """.""")
+
+    dft = [compiler.Compiler.default_str()]
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                   default=[compiler.Compiler.default_str()], action=BuildItemArgument,
-                   help="""restrict actions to the given compilers.
-                   Provide as a comma-separated list. To escape commas, use a backslash \\.
-                   Defaults to CMake's default compiler, \"%(default)s\" on this system.""")
+                   default=dft, action=BuildItemArgument,
+                   help="""Specify a comma-separated list of compilers to
+                   combine. Compilers can be given as an absolute path, or as
+                   a name, in which case that name will be searched for in
+                   the current shell's PATH.  Defaults to CMake's default
+                   compiler on this system, """ +
+                   _item_printer(dft) + """.""")
+
+    # dft = [build_type.BuildType.default_str()]  # avoid a circular dependency
+    dft = ["Release"]
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   # default=[build_type.BuildType.default_str()], action=BuildItemArgument,  # avoid a circular dependency
-                   default=["Release"], action=BuildItemArgument,
-                   help="""restrict actions to the given build types.
-                   Provide as a comma-separated list. To escape commas, use a backslash \\.
-                   Defaults to \"%(default)s\".""")
+                   default=dft, action=BuildItemArgument,
+                   help="""Specify a comma-separated list of build types
+                   to combine. Defaults to """ + _item_printer(dft) + """.""")
+
+    # dft = [variant.Variant.default_str()]  # avoid a circular dependency
+    dft = ["none"]
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   # default=[variant.Variant.default_str()], action=BuildItemArgument,  # avoid a circular dependency
                    default=["none"], action=BuildItemArgument,
-                   help="""specify variants as build items.
-                   Provide as a comma-separated list. To escape commas, use a backslash \\.
-                   This feature is currently a work-in-progress.""")
+                   help="""Specify a comma-separated list of variants
+                   to combine. The variant name 'none' is special and will be
+                   omitted from the name of the resulting build. Defaults to
+                   """ + _item_printer(dft) + """.""")
     #add_combination_flags(parser)
 
 
