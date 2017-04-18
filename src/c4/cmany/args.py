@@ -204,24 +204,23 @@ def add_combination_flags(parser):
         description="""Prevent certain build item combinations from producing
                     a build. The rules in each argument are Python regular
                     expressions that are matched against each build name.
-                    The build name is of the form
+                    A build is included only if its name successfully matches
+                    every combination argument. The build name is of the form
                     {system}-{architecture}-{compiler}-{build_type}[-{variant}].
-                    The build is included only if it successfully matches
-                    every combination argument. The arguments are matched in
-                    the given order.""")
-    g.add_argument("--exclude-any", metavar="rule1,rule2,...",
+                    The arguments are matched in the given order.""")
+    g.add_argument("--exclude-builds", metavar="rule1,[rule2,...",
                    default=[], action=CombinationArgument,
                    help="""Exclude build item combinations whose name
                    matches ANY rule in the list.""")
-    g.add_argument("--include-any", metavar="rule1,rule2,...",
+    g.add_argument("--include-builds", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
                    help="""Only allow build item combinations whose name
                    matches ANY rules in the list.""")
-    g.add_argument("--exclude-all", metavar="rule1,rule2,...",
+    g.add_argument("--exclude-builds-all", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
                    help="""Exclude build item combinations whose name
                    matches ALL rules in the list.""")
-    g.add_argument("--include-all", metavar="rule1,rule2,...",
+    g.add_argument("--include-builds-all", metavar="rule1,rule2,...",
                    default=[], action=CombinationArgument,
                    help="""Only allow build item combinations whose name
                    matches ALL rules in the list.""")
@@ -338,13 +337,13 @@ class CombinationArgument(argparse.Action):
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
         prev = getattr(namespace, 'combination_rules')
-        if self.dest == 'exclude_any':
+        if self.dest == 'exclude_builds':
             li = ('x', 'any', li)
-        elif self.dest == 'include_any':
+        elif self.dest == 'include_builds':
             li = ('i', 'any', li)
-        elif self.dest == 'exclude_all':
+        elif self.dest == 'exclude_builds_all':
             li = ('x', 'all', li)
-        elif self.dest == 'include_all':
+        elif self.dest == 'include_builds_all':
             li = ('i', 'all', li)
         curr = prev
         curr.append(li)

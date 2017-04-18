@@ -147,13 +147,13 @@ class Test10AsArguments(ut.TestCase):
             (ds, 'x86_64', dc, dt, vfoo),
             # (ds, 'x86_64', dc, dt, vbar),
         ]
-        self.t(args + ["--exclude-any", rules], expected_items,
+        self.t(args + ["--exclude-builds", rules], expected_items,
                expected_combinations_exc)
-        self.t(args + ["--exclude-all", rules], expected_items,
+        self.t(args + ["--exclude-builds-all", rules], expected_items,
                expected_combinations_exc)
-        self.t(args + ["--include-any", rules], expected_items,
+        self.t(args + ["--include-builds", rules], expected_items,
                expected_combinations_inc)
-        self.t(args + ["--include-all", rules], expected_items,
+        self.t(args + ["--include-builds-all", rules], expected_items,
                expected_combinations_inc)
 
     def test03(self):
@@ -182,13 +182,13 @@ class Test10AsArguments(ut.TestCase):
             # (ds, 'x86_64', dc, dt, vfoo),
             # (ds, 'x86_64', dc, dt, vbar),
         ]
-        self.t(args + ["--exclude-any", rules], expected_items,
+        self.t(args + ["--exclude-builds", rules], expected_items,
                expected_combinations_exc)
-        self.t(args + ["--exclude-all", rules], expected_items,
+        self.t(args + ["--exclude-builds-all", rules], expected_items,
                expected_combinations_exc)
-        self.t(args + ["--include-any", rules], expected_items,
+        self.t(args + ["--include-builds", rules], expected_items,
                expected_combinations_inc)
-        self.t(args + ["--include-all", rules], expected_items,
+        self.t(args + ["--include-builds-all", rules], expected_items,
                expected_combinations_inc)
 
     def test04(self):
@@ -233,13 +233,13 @@ class Test10AsArguments(ut.TestCase):
             # (ds, 'x86_64', dc, dt, vfoo),
             # (ds, 'x86_64', dc, dt, vbar),
         ]
-        self.t(args + ["--exclude-any", rules], expected_items,
+        self.t(args + ["--exclude-builds", rules], expected_items,
                expected_combinations_exc_any)
-        self.t(args + ["--exclude-all", rules], expected_items,
+        self.t(args + ["--exclude-builds-all", rules], expected_items,
                expected_combinations_exc_all)
-        self.t(args + ["--include-any", rules], expected_items,
+        self.t(args + ["--include-builds", rules], expected_items,
                expected_combinations_inc_any)
-        self.t(args + ["--include-all", rules], expected_items,
+        self.t(args + ["--include-builds-all", rules], expected_items,
                expected_combinations_inc_all)
 
 
