@@ -2,6 +2,7 @@
 from . import util
 from .named_item import NamedItem
 from .build_flags import BuildFlags
+from .combination_rules import CombinationRules
 
 
 # -----------------------------------------------------------------------------
@@ -14,6 +15,7 @@ class BuildItem(NamedItem):
         self.flags = BuildFlags(name_or_spec)
         self.full_specs = name_or_spec
         self.flag_specs = []
+        self.combination_rules = CombinationRules([])
         #
         self.parse_specs(name_or_spec)
 
@@ -23,13 +25,20 @@ class BuildItem(NamedItem):
             return
         self.name = spl[0]
         self.flag_specs = util.splitesc_quoted(spl[1], ' ')
-        if parse_flags:
-            from . import args as c4args
-            import argparse
-            parser = argparse.ArgumentParser()
-            c4args.add_bundle_flags(parser)
-            args = parser.parse_args(self.flag_specs)
-            self.flags = BuildFlags(self.name, None, **vars(args))
+        if not parse_flags:
+            return
+        #
+        from . import args as c4args
+        import argparse
+        parser = argparse.ArgumentParser()
+        c4args.add_bundle_flags(parser)
+        args = parser.parse_args(self.flag_specs)
+        self.flags = BuildFlags(self.name, None, **vars(args))
+        #
+        cr = []
+        if hasattr(args, 'combination_rules'):
+            cr = getattr(args, 'combination_rules')
+        self.combination_rules = CombinationRules(cr)
 
     @staticmethod
     def parse_args(v_):

@@ -4,6 +4,7 @@ from .build_item import BuildItem
 from .build_flags import BuildFlags
 from . import util
 from . import args as c4args
+from .combination_rules import CombinationRules
 
 
 # -----------------------------------------------------------------------------
@@ -34,6 +35,7 @@ class Variant(BuildItem):
         self.full_specs = spec
         self.flag_specs = []
         self.refs = []
+        self.combination_rules = CombinationRules([])
         self._resolved_references = False
         spec = util.unquote(spec)
         spl = spec.split(':')
@@ -86,4 +88,8 @@ class Variant(BuildItem):
                 args = parser.parse_args(ss)
                 tmp = BuildFlags('', None, **vars(args))
                 self.flags.append_flags(tmp, append_to_name=False)
+                cr = []
+                if hasattr(args, 'combination_rules'):
+                    cr = getattr(args, 'combination_rules')
+                self.combination_rules = CombinationRules(cr)
         self._resolved_references = True

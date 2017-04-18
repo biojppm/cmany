@@ -237,47 +237,47 @@ def add_item_combination_flags(parser):
         also be of use when there's a project file.""")
 
     g.add_argument("-xs", "--exclude-systems", metavar="sys1,[sys2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
                    following systems.""")
     g.add_argument("-is", "--include-systems", metavar="sys1,[sys2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any
                    of the following systems.""")
 
     g.add_argument("-xa", "--exclude-architectures", metavar="arch1,[arch2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
                    following architectures.""")
     g.add_argument("-ia", "--include-architectures", metavar="arch1,[arch2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any of the
                    following architectures.""")
 
     g.add_argument("-xc", "--exclude-compilers", metavar="comp1,[comp2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
                    following compilers.""")
     g.add_argument("-ic", "--include-compilers", metavar="comp1,[comp2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any of the
                    following compilers.""")
 
     g.add_argument("-xt", "--exclude-build-types", metavar="btype1,[btype2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
                    following build types.""")
     g.add_argument("-it", "--include-build-types", metavar="btype1,[btype2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude only builds which combine this item with any of the
                    following build types.""")
 
     g.add_argument("-xv", "--exclude-variants", metavar="var1,[var2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
                    following variants.""")
     g.add_argument("-iv", "--include-variants", metavar="var1,[var2[,...]]",
-                   default=[], type=cslist,
+                   default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any of the
                    following variants.""")
 
