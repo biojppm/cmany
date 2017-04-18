@@ -138,12 +138,13 @@ def _item_printer(dft):
     s += "]"
     return s
 
+
 def add_select(parser):
     g = parser.add_argument_group(
         title="Build items",
         description="""Items to be combined by cmany. Each item can be made to
         bring specific flags with it by using the syntax 'item_name:
-        <flags>...' (the quotes are needed when this syntax is used).  Run
+        <flags>...' (the quotes are needed when this syntax is used). Run
         `cmany help flags` to see the possible flags. Items can be
         given either as a comma-separated list or with repeated invokations
         of their arguments. Commas can be escaped by using a backslash,
@@ -196,6 +197,7 @@ def add_select(parser):
 def add_bundle_flags(parser):
     add_cflags(parser)
     add_combination_flags(parser)
+    add_item_combination_flags(parser)
 
 
 def add_combination_flags(parser):
@@ -208,22 +210,76 @@ def add_combination_flags(parser):
                     every combination argument. The build name is of the form
                     {system}-{architecture}-{compiler}-{build_type}[-{variant}].
                     The arguments are matched in the given order.""")
-    g.add_argument("--exclude-builds", metavar="rule1,[rule2,...",
+    g.add_argument("-xb", "--exclude-builds", metavar="rule1,[rule2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude build item combinations whose name
                    matches ANY rule in the list.""")
-    g.add_argument("--include-builds", metavar="rule1,rule2,...",
+    g.add_argument("-ib", "--include-builds", metavar="rule1,[rule2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Only allow build item combinations whose name
                    matches ANY rules in the list.""")
-    g.add_argument("--exclude-builds-all", metavar="rule1,rule2,...",
+    g.add_argument("-xba", "--exclude-builds-all", metavar="rule1,[rule2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude build item combinations whose name
                    matches ALL rules in the list.""")
-    g.add_argument("--include-builds-all", metavar="rule1,rule2,...",
+    g.add_argument("-iba", "--include-builds-all", metavar="rule1,[rule2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Only allow build item combinations whose name
                    matches ALL rules in the list.""")
+
+
+def add_item_combination_flags(parser):
+    g = parser.add_argument_group(
+        'Build-item-specific combination rules',
+        description="""Prevent certain build items from producing a build.
+        Each item is given by name and must be valid. These arguments are
+        generally for use in spefications of build items; however, they may
+        also be of use when there's a project file.""")
+
+    g.add_argument("-xs", "--exclude-systems", metavar="sys1,[sys2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude builds which combine this item with any of the
+                   following systems.""")
+    g.add_argument("-is", "--include-systems", metavar="sys1,[sys2[,...]]",
+                   default=[], type=cslist,
+                   help="""Include only builds which combine this item with any
+                   of the following systems.""")
+
+    g.add_argument("-xa", "--exclude-architectures", metavar="arch1,[arch2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude builds which combine this item with any of the
+                   following architectures.""")
+    g.add_argument("-ia", "--include-architectures", metavar="arch1,[arch2[,...]]",
+                   default=[], type=cslist,
+                   help="""Include only builds which combine this item with any of the
+                   following architectures.""")
+
+    g.add_argument("-xc", "--exclude-compilers", metavar="comp1,[comp2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude builds which combine this item with any of the
+                   following compilers.""")
+    g.add_argument("-ic", "--include-compilers", metavar="comp1,[comp2[,...]]",
+                   default=[], type=cslist,
+                   help="""Include only builds which combine this item with any of the
+                   following compilers.""")
+
+    g.add_argument("-xt", "--exclude-build-types", metavar="btype1,[btype2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude builds which combine this item with any of the
+                   following build types.""")
+    g.add_argument("-it", "--include-build-types", metavar="btype1,[btype2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude only builds which combine this item with any of the
+                   following build types.""")
+
+    g.add_argument("-xv", "--exclude-variants", metavar="var1,[var2[,...]]",
+                   default=[], type=cslist,
+                   help="""Exclude builds which combine this item with any of the
+                   following variants.""")
+    g.add_argument("-iv", "--include-variants", metavar="var1,[var2[,...]]",
+                   default=[], type=cslist,
+                   help="""Include only builds which combine this item with any of the
+                   following variants.""")
 
 
 def add_cflags(parser):
@@ -321,7 +377,6 @@ class BuildItemArgument(argparse.Action):
         setattr(namespace, self.dest, li)
 
 
-
 # -----------------------------------------------------------------------------
 class CombinationArgument(argparse.Action):
     """parse combination arguments in order, putting them all into a single
@@ -337,15 +392,44 @@ class CombinationArgument(argparse.Action):
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
         prev = getattr(namespace, 'combination_rules')
+
         if self.dest == 'exclude_builds':
-            li = ('x', 'any', li)
+            li = ('x', 'builds_any', li)
         elif self.dest == 'include_builds':
-            li = ('i', 'any', li)
+            li = ('i', 'builds_any', li)
         elif self.dest == 'exclude_builds_all':
-            li = ('x', 'all', li)
+            li = ('x', 'builds_all', li)
         elif self.dest == 'include_builds_all':
-            li = ('i', 'all', li)
+            li = ('i', 'builds_all', li)
+
+        elif self.dest == 'exclude_systems':
+            li = ('x', 'systems', li)
+        elif self.dest == 'include_systems':
+            li = ('i', 'systems', li)
+
+        elif self.dest == 'exclude_architectures':
+            li = ('x', 'architectures', li)
+        elif self.dest == 'include_architectures':
+            li = ('i', 'architectures', li)
+
+        elif self.dest == 'exclude_compilers':
+            li = ('x', 'compilers', li)
+        elif self.dest == 'include_compilers':
+            li = ('i', 'compilers', li)
+
+        elif self.dest == 'exclude_build_types':
+            li = ('x', 'build_types', li)
+        elif self.dest == 'include_build_types':
+            li = ('i', 'build_types', li)
+
+        elif self.dest == 'exclude_variants':
+            li = ('x', 'variants', li)
+        elif self.dest == 'include_variants':
+            li = ('i', 'variants', li)
+        else:
+            raise Exception("unoknown argument: " + self.dest)
         curr = prev
         curr.append(li)
         # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
         setattr(namespace, 'combination_rules', curr)
+

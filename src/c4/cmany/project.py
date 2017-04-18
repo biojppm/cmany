@@ -304,67 +304,83 @@ class Project:
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class CombinationPattern:
+class CombinationRule:
+    """x=exclude / i=include"""
 
-    def __init__(self, spec):
-        self.rule = spec
+    def __init__(self, x_or_i, what, patterns):
+        assert x_or_i in ('x', 'i')
+        assert what in (
+            'builds_any', 'builds_all',
+            'systems', 'architectures', 'compilers', 'build_types', 'variants'
+        )
+        self.x_or_i = x_or_i
+        self.what = what
+        self.patterns = patterns
 
-    def matches(self, s, a, c, t, v):
-        for i in (s, a, c, t, v):
-            if re.search(self.rule, str(i)):
-                # print("GOT A MATCH:", self.rule, i)
-                return True
+    def is_valid(self, s, a, c, t, v):
+        result = True
+        if self.what in ('builds_any', 'builds_all'):
+            matches_all = True
+            matches_none = True
+            matches_any = False
+            for pattern in self.patterns:
+                if __class__.pattern_matches(pattern, s, a, c, t, v):
+                    matches_any = True
+                    matches_none = False
+                else:
+                    matches_all = False
+            if self.x_or_i == 'x':
+                if matches_none:
+                    result = True
+                else:
+                    if self.what == 'builds_any':
+                        result = not matches_any
+                    elif self.what == 'builds_all':
+                        result = not matches_all
+                    else:
+                        raise Exception("never reach this point")
+            elif self.x_or_i == 'i':
+                if matches_none:
+                    result = False
+                else:
+                    if self.what == 'builds_any':
+                        result = matches_any
+                    elif self.what == 'builds_all':
+                        result = matches_all
+                    else:
+                        raise Exception("never reach this point")
+            return result
+        else:
+            if self.what == 'systems':
+                which = s
+            elif self.what == 'architectures':
+                which = a
+            elif self.what == 'compilers':
+                which = c
+            elif self.what == 'build_types':
+                which = t
+            elif self.what == 'variants':
+                which = v
+            if which in self.patterns:
+                if self.x_or_i == 'x':
+                    result = False
+                elif self.x_or_i == 'i':
+                    result = True
+            return result
+
+    @staticmethod
+    def pattern_matches(pattern, s, a, c, t, v):
+        #for i in (s, a, c, t, v):
+        #    if re.search(pattern, str(i)):
+        #        # print("GOT A MATCH:", self.rule, i)
+        #        return True
         s = Build.get_tag(s, a, c, t, v)
         # print(s, type(s))
-        if re.search(self.rule, s):
+        if re.search(pattern, s):
             # print("GOT A TAG MATCH:", self.rule, s)
             return True
         # print("NO MATCH:", self.rule, s)
         return False
-
-
-# -----------------------------------------------------------------------------
-class CombinationRule:
-    """x=exclude / i=include"""
-
-    def __init__(self, specs, x_or_i, any_or_all):
-        assert x_or_i in ('x', 'i')
-        assert any_or_all in ('any', 'all')
-        self.patterns = []
-        self.x_or_i = x_or_i
-        self.any_or_all = 'y' if any_or_all == 'any' else 'l'
-        for s in specs:
-            cr = CombinationPattern(s)
-            self.patterns.append(cr)
-
-    def is_valid(self, s, a, c, t, v):
-        result = True
-        matches_all = True
-        matches_none = True
-        matches_any = False
-        for pattern in self.patterns:
-            if pattern.matches(s, a, c, t, v):
-                matches_any = True
-                matches_none = False
-            else:
-                matches_all = False
-        if self.x_or_i == 'x':
-            if matches_none:
-                result = True
-            else:
-                if self.any_or_all == 'y':
-                    result = not matches_any
-                else:
-                    result = not matches_all
-        elif self.x_or_i == 'i':
-            if matches_none:
-                result = False
-            else:
-                if self.any_or_all == 'y':
-                    result = matches_any
-                else:
-                    result = matches_all
-        return result
 
 
 # -----------------------------------------------------------------------------
@@ -373,7 +389,7 @@ class CombinationRules:
     def __init__(self, specs):
         self.rules = []
         for x_or_i, any_or_all, rules in specs:
-            crc = CombinationRule(rules, x_or_i, any_or_all)
+            crc = CombinationRule(x_or_i, any_or_all, rules)
             self.rules.append(crc)
 
     def is_valid(self, s, a, c, t, v):

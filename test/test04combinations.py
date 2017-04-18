@@ -7,7 +7,6 @@ from collections import OrderedDict as odict
 
 import c4.cmany as cmany
 from c4.cmany import util, args as c4args
-from c4.cmany import variant
 from c4.cmany.project import CombinationRules
 
 # utility variables for simpler names
