@@ -22,6 +22,7 @@ used also when specifying :doc:`variants` or :ref:`Per-item flags`.
    build item (such as a compiler or operating system) is used, then the
    flags are also used in the resulting build.
 
+
 CMake cache variables
 ---------------------
 
@@ -41,6 +42,7 @@ compilers or build types. You can also use separate invocations::
     $ cmany b -V CMAKE_VERBOSE_MAKEFILES=1 -V PROJECT_FOO=BAR
 
 which will have the same result as above.
+
 
 Preprocessor macros
 -------------------
@@ -77,6 +79,7 @@ Note that ``--cxxflags/-X`` can be chained, with the same result::
 
     $ cmany b -X "-Wall" -X "-O3"
 
+
 C compiler flags
 ----------------
 
@@ -93,6 +96,7 @@ The command above has the same meaning of::
 Note that ``--cflags/-C`` can be chained, with the same result::
 
     $ cmany b -C "-Wall" -C "-O3"
+
 
 Linker flags
 ------------
@@ -141,15 +145,13 @@ Note that flag aliases are translated only when they are given through
 ``--cxxflags/-cflags``. Do not use aliases with ``--cmake-vars
 CMAKE_CXX_FLAGS=...``, as cmany will not translate them there.
 
-
 Built-in flag aliases
 ^^^^^^^^^^^^^^^^^^^^^
 
-cmany provides built-in flag aliases to simplify working with different
+cmany provides some built-in flag aliases to simplify working with different
 compilers at the same time. Currently, you can see them in the file
-``src/c4/cmany/flags.yml`` (see the `current version at github
-<https://github.com/biojppm/cmany/blob/master/src/c4/cmany/flags.yml>`_).
-
+``conf/cmany.yml`` (see the `current version at github
+<https://github.com/biojppm/cmany/blob/master/conf/cmany.yml>`_).
 
 Defining more flag aliases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -160,4 +162,77 @@ for adding aliases.
 
 Excluding item combinations
 ---------------------------
-Anywhere where flags can be used, combination flags can also be used.
+
+Combination exclusion arguments can be used wherever the flags above can be
+used. These are the following:
+
+ * ``--exclude-builds rule1[,rule2[,...]]``: excludes a build if its name matches **any**
+   of the rules
+ * ``--include-builds rule1[,rule2[,...]]``: includes a build only if its name matches
+   **any** of the rules
+ * ``--exclude-builds-all rule1[,rule2[,...]]``: excludes a build if its name matches **all**
+   of the rules
+ * ``--include-builds-all rule1[,rule2[,...]]``: includes a build only if its name matches
+   **all** of the rules
+
+As noted above, each argument accepts a comma-separated list of `Python
+regular expressions <https://docs.python.org/3/library/re.html>`_ that will
+serve as matching rules to each build name. A build is included only if its
+name successfully matches every combination argument. Note that the form of
+the name is
+``{system}-{architecture}-{compiler}-{build_type}[-{variant}]``. Note also
+the hyphen separating the build items; it can be used to distinguish between
+similarly named items such as ``x86`` and ``x86_64``.
+
+As a first example, consider this command which shows 12 builds by combining 2
+architectures, 2 build types and 3 variants::
+
+  $ cmany show_builds -a x86,x86_64 -t Debug,Release -v none,'foo: -D FOO','bar: -D BAR'
+  linux-x86-g++5.4-Debug
+  linux-x86-g++5.4-Debug-foo
+  linux-x86-g++5.4-Debug-bar
+  linux-x86-g++5.4-Release
+  linux-x86-g++5.4-Release-foo
+  linux-x86-g++5.4-Release-bar
+  linux-x86_64-g++5.4-Debug
+  linux-x86_64-g++5.4-Debug-foo
+  linux-x86_64-g++5.4-Debug-bar
+  linux-x86_64-g++5.4-Release
+  linux-x86_64-g++5.4-Release-foo
+  linux-x86_64-g++5.4-Release-bar
+
+If for example we want to exclude ``foo`` variants with the ``x86``
+architecture, we can use::
+
+  $ cmany show_builds -a x86,x86_64 -v none,'foo: -D FOO','bar: -D BAR' \
+                      --exclude-builds '.*x86-.*foo'
+  linux-x86-g++5.4-Debug
+  linux-x86-g++5.4-Debug-bar     # NOTE: no foo variant above
+  linux-x86-g++5.4-Release
+  linux-x86-g++5.4-Release-bar   # NOTE: no foo variant above
+  linux-x86_64-g++5.4-Debug
+  linux-x86_64-g++5.4-Debug-foo
+  linux-x86_64-g++5.4-Debug-bar
+  linux-x86_64-g++5.4-Release
+  linux-x86_64-g++5.4-Release-foo
+  linux-x86_64-g++5.4-Release-bar
+
+Note the use of the hyphen in the regular expression passed to
+``--exclude-builds '.*x86-.*foo'``. This prevents it from matching
+``x86_64``. As noted above, the name of the build is obtained by separating
+the build items of which it is composed with an hyphen. If this regular
+expression did not have the hyphen and was instead ``.*x86.*foo``, then it
+would match both ``x86`` and ``x86_64``, with the result that no builds would
+contain the ``foo`` variant.
+
+The logical opposite of ``--exclude-builds`` is naturally ``-include-builds``::
+
+  $ cmany show_builds -a x86,x86_64 -v none,'foo: -D FOO','bar: -D BAR' \
+                      --include-builds '.*x86-.*foo'
+  linux-x86-g++5.4-Debug-foo
+  linux-x86-g++5.4-Release-foo
+
+When multiple combination arguments are given, they are processed in the
+order in which they are given. A build is then included only if successfully
+matches every argument.
+

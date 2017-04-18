@@ -425,19 +425,9 @@ has the "--toolchain" option for this.
 Excluding combinations
 ======================
 
-To exclude certain item combinations, there are the following flags:
-   * "--exclude-any"
-
-   * "--include-any"
-
-   * "--exclude-all"
-
-   * "--include-all"
-
-For example, consider this command which creates 6 builds:
-
-   $ cmany b -a x86,x86_64 -v none,'foo: -D FOO','bar: -D BAR'
-   $ ls -1
+Since cmany combines every build item which it is given, it is natural
+to want to exclude some of these combinations. cmany allows you to do
+this; read about it in the section Excluding item combinations.
 
 
 Building dependencies
