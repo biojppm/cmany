@@ -79,7 +79,7 @@ class CombinationRule:
 
     @staticmethod
     def pattern_matches(pattern, s, a, c, t, v):
-        from build import Build
+        from .build import Build
         #for i in (s, a, c, t, v):
         #    if re.search(pattern, str(i)):
         #        # print("GOT A MATCH:", self.rule, i)
