@@ -1,3 +1,4 @@
+typing
 ruamel.yaml
 colorama
 argcomplete
