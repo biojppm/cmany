@@ -103,9 +103,9 @@ class CombinationRules:
             self.rules.append(crc)
 
     def is_valid(self, s, a, c, t, v):
-        result = True
+        result = 1
         for r in self.rules:
-            result = r.is_valid(s, a, c, t, v)
+            result = result & r.is_valid(s, a, c, t, v)
         return result
 
     def valid_combinations(self, systems, archs, comps, types, variants):
@@ -120,8 +120,8 @@ class CombinationRules:
                                 valid = False
                             for item in (s, a, c, t, v):
                                 crs = item.combination_rules
-                                for idx, r in enumerate(crs.rules):
-                                    print((s, a, c, t, v), ":", item, ": rule[{}]".format(idx), r.x_or_i, r.what, r.patterns)
+                                #for idx, r in enumerate(crs.rules):
+                                #    print((s, a, c, t, v), ":", item, ": rule[{}]".format(idx), r.x_or_i, r.what, r.patterns)
                                 if not crs.is_valid(s, a, c, t, v):
                                     valid = False
                                     break
