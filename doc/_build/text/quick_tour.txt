@@ -433,7 +433,7 @@ this; read about it in the section Excluding item combinations.
 Building dependencies
 =====================
 
-(to be done)
+CMake has
 
 
 Project mode

@@ -156,24 +156,65 @@ compilers at the same time. Currently, you can see them in the file
 Defining more flag aliases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Being able to define your own is in the roadmap. For now, you can submit PRs
-for adding aliases.
+Being able to define your own flag aliases is in the roadmap. For now, you
+can submit PRs for adding aliases.
 
 
 Excluding item combinations
 ---------------------------
 
-Combination exclusion arguments can be used wherever the flags above can be
-used. These are the following:
+cmany accepts arguments for excluding certain combinations of build
+items. These arguments specify rules which apply either to a build's name or
+to the items the build is composed of.
 
- * ``--exclude-builds rule1[,rule2[,...]]``: excludes a build if its name matches **any**
-   of the rules
- * ``--include-builds rule1[,rule2[,...]]``: includes a build only if its name matches
-   **any** of the rules
- * ``--exclude-builds-all rule1[,rule2[,...]]``: excludes a build if its name matches **all**
-   of the rules
- * ``--include-builds-all rule1[,rule2[,...]]``: includes a build only if its name matches
-   **all** of the rules
+Like all the arguments above, item combination arguments can be used both at
+the cmany command level or at each build item level.
+
+When multiple combination arguments are given, they are processed in the
+order in which they are given. A build is then included if it successfully 
+matches every argument.
+
+
+Excluding builds by item name
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To exclude a build based on the items it is composed of, cmany offers the
+following arguments:
+
+ * systems:
+   * ``-xs/--exclude-systems sys1[,sys2[,...]]``
+   * ``-is/--include-systems sys1[,sys2[,...]]``
+ * architectures
+   * ``-xa/--exclude-architectures arch1[,arch2[,...]]``
+   * ``-ia/--include-architectures arch1[,arch2[,...]]``
+ * compilers
+   * ``-xc/--exclude-compilers comp1[,comp2[,...]]``
+   * ``-ic/--include-compilers comp1[,comp2[,...]]``
+ * build types
+   * ``-xt/--exclude-build-types btype1[,btype2[,...]]``
+   * ``-it/--include-build-types btype1[,btype2[,...]]``
+ * variants
+   * ``-xv/--exclude-variants var1[,var2[,...]]``
+   * ``-iv/--include-variants var1[,var2[,...]]``
+
+The names of the arguments should be self-explaining. Each argument receives
+a comma-separated list of item names. These names are matched literally to
+any prospective item of the same type.
+
+
+Excluding builds by build name
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These are the arguments to prevent a build by name:
+
+ * ``-xb / --exclude-builds rule1[,rule2[,...]]``: excludes a build if its
+   name matches **any** of the rules
+ * ``-ib / --include-builds rule1[,rule2[,...]]``: includes a build only if
+   *its name matches **any** of the rules
+ * ``-xba / --exclude-builds-all rule1[,rule2[,...]]``: excludes a build if
+   its name matches **all** of the rules
+ * ``-iba / --include-builds-all rule1[,rule2[,...]]``: includes a build only
+   *if its name matches **all** of the rules
 
 As noted above, each argument accepts a comma-separated list of `Python
 regular expressions <https://docs.python.org/3/library/re.html>`_ that will
@@ -184,10 +225,15 @@ the name is
 the hyphen separating the build items; it can be used to distinguish between
 similarly named items such as ``x86`` and ``x86_64``.
 
+
+Examples
+^^^^^^^^
+
 As a first example, consider this command which shows 12 builds by combining 2
 architectures, 2 build types and 3 variants::
 
-  $ cmany show_builds -a x86,x86_64 -t Debug,Release -v none,'foo: -D FOO','bar: -D BAR'
+  $ cmany show_builds -a x86,x86_64 -t Debug,Release \
+                      -v none,'foo: -D FOO','bar: -D BAR'
   linux-x86-g++5.4-Debug
   linux-x86-g++5.4-Debug-foo
   linux-x86-g++5.4-Debug-bar
@@ -201,10 +247,11 @@ architectures, 2 build types and 3 variants::
   linux-x86_64-g++5.4-Release-foo
   linux-x86_64-g++5.4-Release-bar
 
-If for example we want to exclude ``foo`` variants with the ``x86``
-architecture, we can use::
+Now, if we want to exclude ``foo`` variants of the ``x86`` architecture, we
+can use::
 
-  $ cmany show_builds -a x86,x86_64 -v none,'foo: -D FOO','bar: -D BAR' \
+  $ cmany show_builds -a x86,x86_64 -t Debug,Release \
+                      -v none,'foo: -D FOO','bar: -D BAR' \
                       --exclude-builds '.*x86-.*foo'
   linux-x86-g++5.4-Debug
   linux-x86-g++5.4-Debug-bar     # NOTE: no foo variant above
@@ -217,7 +264,7 @@ architecture, we can use::
   linux-x86_64-g++5.4-Release-foo
   linux-x86_64-g++5.4-Release-bar
 
-Note the use of the hyphen in the regular expression passed to
+Note the hyphen appearing in the regular expression passed to
 ``--exclude-builds '.*x86-.*foo'``. This prevents it from matching
 ``x86_64``. As noted above, the name of the build is obtained by separating
 the build items of which it is composed with an hyphen. If this regular
@@ -231,8 +278,4 @@ The logical opposite of ``--exclude-builds`` is naturally ``-include-builds``::
                       --include-builds '.*x86-.*foo'
   linux-x86-g++5.4-Debug-foo
   linux-x86-g++5.4-Release-foo
-
-When multiple combination arguments are given, they are processed in the
-order in which they are given. A build is then included only if successfully
-matches every argument.
 

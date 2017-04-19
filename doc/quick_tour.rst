@@ -421,7 +421,7 @@ combinations`.
 
 Building dependencies
 ---------------------
-(to be done)
+CMake has
 
 
 Project mode
