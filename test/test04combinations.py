@@ -61,8 +61,9 @@ def do_combination_t(test, input, expected_items, expected_combinations):
     cr = CombinationRules(cr)
     actual_combinations = cr.valid_combinations(s, a, c, t, v)
 
-    print("\n")
-    for i, (e, a) in enumerate(zip(expected_combinations, actual_combinations)): print("expected[{}]".format(i), e, "actual[{}]".format(i), a)
+    # print("\n")
+    # for i, (e, a) in enumerate(zip(expected_combinations, actual_combinations)):
+    #     print("expected[{}]".format(i), e, "actual[{}]".format(i), a)
     with test.subTest(msg="expected count of combinations", input=input):
         test.assertEqual(len(expected_combinations), len(actual_combinations))
     for exp, act in zip(expected_combinations, actual_combinations):
