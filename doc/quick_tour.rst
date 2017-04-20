@@ -17,10 +17,11 @@ of the following can be used, and they are all equivalent::
     $ cmany build -h
     $ cmany build --help
 
-This text is also a help topic. You can read it with the help
-command::
+Note that this text is also available as a help topic. You can read it with
+the help command::
 
     $ cmany h quick_tour
+
 
 Build
 -----
@@ -44,7 +45,7 @@ exactly the same as ``cmany build .``::
     $ cmany b
 
 When no compiler is specified, cmany chooses CMake's default
-compiler. cmany's default build type is (explicitly set to) Release. As an
+compiler. cmany's default build type is (explicitly set to) ``Release``. As an
 example, using g++ 6.1 in Linux x86_64, the result of the command above will
 be this::
 
@@ -126,7 +127,7 @@ like MSVC).
 Choosing the compiler
 ---------------------
 
-By default, cmany uses CMake's default compiler. To use different compilers,
+cmany defaults to CMake's default compiler. To use different compilers,
 use ``--compilers/-c``. Each argument given here must be an executable
 compiler found in your path, or an absolute path to the compiler.
 
@@ -139,79 +140,42 @@ If the directory is initially empty, this will be the result::
     $ ls -1 build/*
     build/linux-x86_64-clang++3.9-Release/
 
-Note that cmany will query the compiler for a name and a version. This is for
-ensuring the use of different build trees for different versions of the same
-compiler. The logic for extracting the compiler name/version may be a bit
-faulty, so open an issue if you see problems here.
+:ref:`Read more here <Compilers>`.
 
 
-Microsoft Visual Studio
-^^^^^^^^^^^^^^^^^^^^^^^
+Choosing build/install directories
+----------------------------------
 
-cmany makes it easier than CMake to :doc:`specify which Visual Studio
-version </vs>` to use. For example, this will use Visual Studio 2015 **in the
-native architecture**::
+By default, cmany creates the build trees nested under a directory ``build``
+which is created as a sibling of the ``CMakeLists.txt`` project file. Similarly,
+the install trees are nested under the ``install`` directory. However, you
+don't have to use these defaults. The following command will use ``foo`` for
+building and ``bar`` for installing::
 
-    $ cmany b -c vs2015
-    $ ls -1 build/*
-    build/windows-x86_64-vs2015-Release/
+    $ cmany i -c clang++,g++ --build-dir foo --install-dir bar
 
-as opposed to the option required by CMake, which would be ``-G "Visual
-Studio 15 2017 Win64"``). Significantly, this will use the native
-architecture (this is a behaviour slightly different from CMake). So if cmany
-is running in a 32 bit system, then the result of running the command above
-would be a 32 bit build instead::
+    $ ls -1 foo/ bar/
+    bar/linux-x86_64-clang++3.9-Release/
+    bar/linux-x86_64-g++6.1-Release/
+    bar/linux-x86_64-icpc16.1-Release/
+    foo/linux-x86_64-clang++3.9-Release/
+    foo/linux-x86_64-g++6.1-Release/
+    foo/linux-x86_64-icpc16.1-Release/
 
-    $ cmany b -c vs2015
-    $ ls -1 build/*
-    build/windows-x86-vs2015-Release/
-
-An explicit request for the target architecture may be made by appending a
-``_32`` or ``_64`` suffix. For example, if Visual Studio 2017 in 32 bit mode
-is desired, then simply use ``vs2017_32``::
-
-    $ cmany b -c vs2017_32
-    $ ls -1 build/*
-    build/windows-x86-vs2017-Release/
-
-You can also choose the VS toolset to use in the compiler name. For example,
-compile with the ``clang`` frontend (equivalent in this case to cmake's ``-T
-v141_clang_c2`` option)::
-
-    $ cmany b -c vs2017_clang
-    $ ls -1 build/*
-    build/windows-x86-vs2017_clang-Release/
-
-cmany allows you to create any valid combination of the Visual Studio project
-versions (from vs2017 to vs2005), target architectures (32, 64, arm, ia64)
-and toolsets (from v141 to v80, with clang_c2 and xp variants). The general
-form for the cmany VS specification alias is::
-
-    <vs_project_version>[_<vs_platform_version>][_<vs_toolset_version>]
-
-Note that the order must be exactly as given. Note also that the platform
-version or the toolset version can be omitted, in which case a sensible
-default will be used:
-
-   * if the platform is omitted, then the current platform will be used
-   * if the toolset is omitted, then the toolset of the given project version
-     will be used.
-
-Given the many VS versions, target architectures and toolsets, this creates
-hundreds of possible aliases, so read :doc:`the complete documentation for
-Visual Studio </vs>`.
+Note that ``foo`` and ``bar`` will still be placed under the current working
+directory, since they are given as relative paths. cmany also accepts
+absolute paths here.
 
 
 Building many trees at once
 ---------------------------
 
-The commands shown up to this point were only fancy, practical wrappers for
-CMake. Since defaults were being used, or single arguments were given, the
-result for each command was a single build tree. But as its name attests to,
-cmany will build many trees at once by combining the build parameters. For
-example, to build both Debug and Release build types while using defaults for
-the remaining parameters, you can do the following (resulting in 2 build
-trees)::
+The commands shown up to this point were only fancy wrappers for CMake. Since
+defaults were being used, or single arguments were given, the result for each
+command was a single build tree. But as its name attests to, cmany will build
+many trees at once by combining the build items. For example, to build
+both ``Debug`` and ``Release`` build types while using defaults for the
+remaining parameters, you can do the following (resulting in 2 build trees)::
 
     $ cmany b -t Debug,Release
     $ ls -1 build/
@@ -249,29 +213,35 @@ Another example -- build using clang++,g++,icpc for Debug,Release,MinSizeRel bui
     build/linux-x86_64-icpc16.1-MinSizeRel/
     build/linux-x86_64-icpc16.1-Release/
 
+The items that can be combined by cmany are called **build items**. cmany
+:doc:`has the following classes of build items </build_items>`:
 
-Choosing build/install directories
-----------------------------------
+* systems: ``-s/--systems sys1[,sys2[,...]]``
+* architectures (``-a/--architectures arch1[,arch2[,...]]``
+* compilers (``-c/--compilers comp1[,comp2[,...]]``
+* build types (``-t/--build-types btype1[,btype2[,...]]``
+* variants (``-v/--variants var1[,var2[,...]]``
 
-By default, cmany creates the build trees nested under a directory ``build``
-which is created as a sibling of the ``CMakeLists.txt`` project file. Similarly,
-the install trees are nested under the ``install`` directory. However, you
-don't have to use these defaults. The following command will use ``foo`` for
-building and ``bar`` for installing::
+All of the arguments above accept a comma-separated list of items. Any
+omitted argument will default to a list of a single item based on the current
+system (for example, omitting ``-s`` in linux yields an implicit ``-s linux``
+whereas in windows yields an implicit ``-s windows``; or omitting ``-a`` in a
+64 bit processor system yields an implicit ``-a x86_64``).
 
-    $ cmany i -c clang++,g++ --build-dir foo --install-dir bar
+cmany will generate builds by combining every build item with every other
+build item of different class. The resulting build has a name of the form
+``{system}-{architecture}-{compiler}-{build_type}[-{variant}]``.
 
-    $ ls -1 foo/ bar/
-    bar/linux-x86_64-clang++3.9-Release/
-    bar/linux-x86_64-g++6.1-Release/
-    bar/linux-x86_64-icpc16.1-Release/
-    foo/linux-x86_64-clang++3.9-Release/
-    foo/linux-x86_64-g++6.1-Release/
-    foo/linux-x86_64-icpc16.1-Release/
+Each build item can be made to bring with it a set of flags to be passed to
+the compiler.
 
-Note that ``foo`` and ``bar`` will still be placed under the current working
-directory, since they are given as relative paths. cmany also accepts
-absolute paths here.
+A variant is just a bundle of :doc:`flags that should be employed independently
+
+Since the number of build item combinations grows very quickly and not every
+combination will make sense, cmany has arguments to exclude certain
+combinations, either by the resulting build name (with a regex) or by the
+names of the items that a build would be composed of. Read more about it
+:doc:`here </excluding_builds>`.
 
 
 Using flags
@@ -306,19 +276,19 @@ flags, use quotes to escape::
     $ cmany b -C "--Wall","-O3"
 
 .. Note::
-   The cmake cache variables, preprocessor defines and compiler flags specified
-   this way will be used across the board in all the individual builds produced
-   by the cmany command. For applying these only to certain builds, you can use
-   build **variants**, introduced next. You can also apply these flags only
-   to certain build items.
+   The cmake cache variables, preprocessor defines and compiler flags
+   specified this way will be used across the board in **all** the individual
+   builds produced by the cmany command. For applying these only to certain
+   builds, you can use build **variants**, introduced next. You can also
+   apply these flags only to certain build items.
 
 
 Build variants
 --------------
 
-(:doc:`Full docs for variants here </variants>`).
+(:doc:`Full docs for variants here </build_items>`).
 
-cmany has **variants** as a
+cmany uses the name **variant** to refer to a
 build different from any other which uses a specific combination of the
 options of the previous section (``--cmake-vars/-V``, ``--defines/-D``,
 ``--cxxflags/-X``, ``--cflags/-C``). The command option to setup a variant is
@@ -351,54 +321,10 @@ preprocessor symbol named ``SOME_DEFINE`` defined to 16, and will use the
 Note above the additional ``-foo`` and ``-bar`` suffixes to denote the
 originating variant.
 
-You can also make variants inherit from other variants, as well as having a
+You can also make variants inherit from other variants (add a reference to
+the variant you want to inherit from ), as well as having a
 null variant (just call it ``none``). Read more about this in the
-:doc:`variants` document.
-
-
-Per-item flags
---------------
-
-The pattern ``item_name: <flag_specs>`` which is used for specifying the
-flags to use in :doc:`a variant </variants>` can also be used with any other
-combination item. That is, you can specify flags to be used with any of the
-following items:
-
- * operating system (``--systems/-s``)
- * architecture (``--architectures/-a``)
- * compiler (``--compilers/-c``)
- * build type (``--build-types/-t``)
- * variant (``--variant/-v``)
-
-Some examples follow.
-
-For example, to associate specific flags to an operating system, you can simply do::
-
-  $ cmany b --systems linux,'android: --defines THIS_IS_ANDROID'
-
-This will build linux with default settings, and add a preprocessor define
-for the android system.
-
-Or if you want to invoke gcc both in 32 and 64 bit mode while in a 64 bit
-system::
-
-  $ cmany b --architectures x86_64,'x86: --cxxflags "-m32"'
-
-(In practice, cmany already does exactly this for you when you select the x86
-architecture: when cmany is given ``cmany b -a x86_64,x86`` the ``-m32`` flag
-is implicitly added by cmake when it is run in a x86_64 system. But hopefully
-you get the point.)
-
-Or if you want to add a special define only for one compiler::
-
-  $ cmany b --compilers g++,'clang++: --defines FOO=bar"'
-
-Or you can add a flag only to a certain build type::
-
-  $ cmany b --build-types Release,'Debug: --cxxflags "-Wall"'
-
-Again, all of the :doc:`flag directives </flags>` can be used inside the
-``item_name: <flags>`` pattern.
+:doc:`build_items` document.
 
 
 Cross-compiling
@@ -408,23 +334,41 @@ Cross-compiling
 <https://cmake.org/Wiki/CMake_Cross_Compiling>`_ requires passing a
 `toolchain file
 <https://cmake.org/cmake/help/v3.0/manual/cmake-toolchains.7.html>`_. cmany
-has the ``--toolchain`` option for this.
+has the ``--toolchain`` option for this. This is more likely to be used as a
+flag of the system or architecture build type.
 
-
-Excluding combinations
-----------------------
-Since cmany combines every build item which it is given, it is natural to
-want to exclude some of these combinations. cmany allows you to do this;
-read about it in the section :ref:`Excluding item
-combinations`.
 
 
 Building dependencies
 ---------------------
-CMake has
+
+cmany offers the argument ``--deps path/to/extern/CMakeLists.txt`` to enable
+building another CMake project which builds and installs the dependencies of
+the current project. When ``--deps`` is given, the external project is built
+for each configuration, and installed in the configuration's build
+directory. Use ``--deps-prefix`` to specify a different install directory for
+the external project. :doc:`Read more here </dependencies>`.
 
 
 Project mode
 ------------
-(to be done)
 
+Due to the way that compilation flags are accepted, the full form of a cmany
+command does become big. cmany allows permanently storing these options in a
+``cmany.yml`` project file, which should be placed side by side with the
+project ``CMakeLists.txt``. You can :doc:`find more about this here </project_mode>`.
+
+
+Exporting build configurations
+------------------------------
+
+cmany has the command ``export_vs``, which exports the build configurations
+to Visual Studio through the file ``CMakeSettings.json`` (placed side by side
+with the project ``CMakeLists.txt``). Read `this MS blog post
+<https://blogs.msdn.microsoft.com/vcblog/2016/10/05/cmake-support-in-visual-studio/>`_
+to discover how to use the generated file.
+
+For code-intelligence tools requiring knowledge of the compilation commands
+(for example, rtags, and many other tools used with emacs), cmany offers also
+the argument ``-E/--export-compile``. This argument will instruct cmake to
+generate the file ``compile_commands.json`` (placed in each build tree).

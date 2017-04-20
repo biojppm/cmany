@@ -111,23 +111,41 @@ Contents:
 
   * Choosing the compiler
 
-  * Building many trees at once
-
   * Choosing build/install directories
+
+  * Building many trees at once
 
   * Using flags
 
   * Build variants
 
-  * Per-item flags
-
   * Cross-compiling
-
-  * Excluding combinations
 
   * Building dependencies
 
   * Project mode
+
+  * Exporting build configurations
+
+* Build items
+
+  * Per-item flags
+
+  * Compilers
+
+  * Build types
+
+  * Variants
+
+  * Systems
+
+  * Architectures
+
+* Excluding builds
+
+  * Excluding builds by item name
+
+  * Excluding builds by build name
 
 * Flags
 
@@ -143,13 +161,7 @@ Contents:
 
   * Flag aliases
 
-  * Excluding item combinations
-
-* Build variants
-
-  * Null variant
-
-  * Inheriting variants
+  * Build exclusion arguments
 
 * Using cmany with Visual Studio
 

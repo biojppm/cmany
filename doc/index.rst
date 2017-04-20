@@ -66,8 +66,9 @@ Contents
    cmany
    installing
    quick_tour
+   build_items
+   excluding_builds
    flags
-   variants
    vs
    dependencies
    project_mode

@@ -52,16 +52,16 @@ create_topic(
 
 # -----------------------------------------------------------------------------
 create_topic(
-    "variants",
-    title="Specifying build variants",
-    txt=_get_doc("variants")
+    "build_items",
+    title="Specifying build items",
+    txt=_get_doc("build_items")
 )
 
 
 # -----------------------------------------------------------------------------
 create_topic(
     "flags",
-    title="Specifying compiler flags",
+    title="Specifying compiler flags and build-item specific properties",
     txt=_get_doc("flags")
 )
 
