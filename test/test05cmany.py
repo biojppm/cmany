@@ -75,7 +75,7 @@ def _get_variant_spec(test_name):
     if not blueprint:
         return []
     li = ['-v'] + [','.join(flag_bundle_set[v]['spec']) for v in blueprint]
-    variants = cmany.Variant.create(li)
+    variants = cmany.Variant.create_variants(li)
     return li, variants
 
 # -----------------------------------------------------------------------------
@@ -129,7 +129,7 @@ else:
 
 build_types = [cmany.BuildType(b) for b in util.splitesc(build_types, ',')]
 
-variant_set = cmany.Variant.create(variant_set)
+variant_set = cmany.Variant.create_variants(variant_set)
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

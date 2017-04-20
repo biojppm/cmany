@@ -432,4 +432,3 @@ class CombinationArgument(argparse.Action):
         curr.append(li)
         # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
         setattr(namespace, 'combination_rules', curr)
-

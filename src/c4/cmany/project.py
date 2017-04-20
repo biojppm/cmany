@@ -11,6 +11,7 @@ from . import util
 from . import conf
 
 from .build_flags import BuildFlags
+from .build_item import BuildItem
 from .build_type import BuildType
 from .system import System
 from .architecture import Architecture
@@ -85,25 +86,21 @@ class Project:
 
     @staticmethod
     def get_build_items(**kwargs):
-        _get = lambda name_, class_: __class__._get_build_item_arg(name_, class_, **kwargs)
-        s = _get('systems', System)
-        a = _get('architectures', Architecture)
-        c = _get('compilers', Compiler)
-        t = _get('build_types', BuildType)
-        v = Variant.create(kwargs.get('variants'))
+        d = odict()
+        for c, cls in (
+                ('systems', System),
+                ('architectures', Architecture),
+                ('compilers', Compiler),
+                ('build_types', BuildType),
+                ('variants', Variant)):
+            d[c] = (cls, kwargs.get(c))
+        coll = BuildItem.create(d)
+        s = coll['systems']
+        a = coll['architectures']
+        c = coll['compilers']
+        t = coll['build_types']
+        v = coll['variants']
         return s, a, c, t, v
-
-    @staticmethod
-    def _get_build_item_arg(name, class_, **kwargs):
-        g = kwargs.get(name)
-        if g is None or not g:
-            raise Exception("is this ever reached?")
-            g = [class_.default()]
-            return g
-        l = []
-        for i in g:
-            l.append(class_(i))
-        return l
 
     def load_configs(self):
         seq = [os.path.join(d, "cmany.yml") for d in (
