@@ -244,11 +244,10 @@ other build item of different class. The resulting build has a name of
 the form
 "{system}-{architecture}-{compiler}-{build_type}[-{variant}]".
 
-Each build item can be made to bring with it a set of flags to be
-passed to the compiler.
-
-A variant is just a bundle of :doc:>>`<<flags that should be employed
-independently
+A variant is a build item which brings with it a collection of flags.
+This allows for easy combination of these flags with other build
+items. But note that every build item can bring specific flags with
+it.
 
 Since the number of build item combinations grows very quickly and not
 every combination will make sense, cmany has arguments to exclude
@@ -288,36 +287,8 @@ flags, use quotes to escape:
 
    $ cmany b -C "--Wall","-O3"
 
-Note: The cmake cache variables, preprocessor defines and compiler
-  flags specified this way will be used across the board in **all**
-  the individual builds produced by the cmany command. For applying
-  these only to certain builds, you can use build **variants**,
-  introduced next. You can also apply these flags only to certain
-  build items.
-
-
-Build variants
-==============
-
-(Full docs for variants here).
-
-cmany uses the name **variant** to refer to a build different from any
-other which uses a specific combination of the options of the previous
-section ("--cmake-vars/-V", "--defines/-D", "--cxxflags/-X", "--
-cflags/-C"). The command option to setup a variant is "--variant/-v"
-and should be used as follows: "--variant 'variant_name:
-<flag_specs>'". For example, assume a vanilla build:
-
-   $ cmany b
-
-which will produce the following tree:
-
-   $ ls -1 build
-   build/linux-x86_64-clang++3.9-Release/
-
-If you want instead to produce two variants "foo" and "bar" with some
-specific defines and compiler flags, the following command should be
-used:
+Using flags per build item is easy. Instead of specifying the flags at
+the command level as above, specify them at build item. For example:
 
    $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
              --variant 'bar: --defines SOME_DEFINE=16 --cxxflags "-O2"'
@@ -336,10 +307,15 @@ get:
 Note above the additional "-foo" and "-bar" suffixes to denote the
 originating variant.
 
-You can also make variants inherit from other variants (add a
-reference to the variant you want to inherit from ), as well as having
-a null variant (just call it "none"). Read more about this in the
-Build items document.
+You can make build items inherit the flags from other build items: add
+a "@" reference to the variant you want to inherit from. For example:
+
+   $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
+             --variant 'bar: @foo --defines SOME_DEFINE=16 --cxxflags "-O2"'
+
+This will result in the "bar" variant having its flags specifications
+as "--defines SOME_DEFINE=32 --cxxflags "-Os" --defines SOME_DEFINE=16
+--cxxflags "-O2"".
 
 
 Cross-compiling

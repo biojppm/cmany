@@ -117,8 +117,6 @@ Contents:
 
   * Using flags
 
-  * Build variants
-
   * Cross-compiling
 
   * Building dependencies
