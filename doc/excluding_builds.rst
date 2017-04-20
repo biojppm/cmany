@@ -61,13 +61,13 @@ Excluding builds by build name
 
 These are the arguments to prevent a build by name:
 
- * ``-xb / --exclude-builds rule1[,rule2[,...]]``: excludes a build if its
+ * ``-xb/--exclude-builds rule1[,rule2[,...]]``: excludes a build if its
    name matches **any** of the rules
- * ``-ib / --include-builds rule1[,rule2[,...]]``: includes a build only if
+ * ``-ib/--include-builds rule1[,rule2[,...]]``: includes a build only if
    its name matches **any** of the rules
- * ``-xba / --exclude-builds-all rule1[,rule2[,...]]``: excludes a build if
+ * ``-xba/--exclude-builds-all rule1[,rule2[,...]]``: excludes a build if
    its name matches **all** of the rules
- * ``-iba / --include-builds-all rule1[,rule2[,...]]``: includes a build only
+ * ``-iba/--include-builds-all rule1[,rule2[,...]]``: includes a build only
    if its name matches **all** of the rules
 
 As noted above, each argument accepts a comma-separated list of `Python
@@ -84,7 +84,7 @@ the builds to the argument works as expected.
 
 
 Examples
-^^^^^^^^
+--------
 
 As a first example, consider this command which shows 12 builds by combining 2
 architectures, 2 build types and 3 variants::
