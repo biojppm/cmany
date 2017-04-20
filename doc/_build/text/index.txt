@@ -145,6 +145,8 @@ Contents:
 
   * Excluding builds by build name
 
+  * Examples
+
 * Flags
 
   * CMake cache variables
