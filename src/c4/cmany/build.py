@@ -436,7 +436,7 @@ class Build(NamedItem):
             p('CMAKE_TOOLCHAIN_FILE', self.toolchain_file)
         p('CMAKE_C_COMPILER', self.compiler.c_compiler)
         p('CMAKE_CXX_COMPILER', self.compiler.path)
-        dont_show = ('CMAKE_INSTALL_PREFIX')
+        dont_show = ('CMAKE_INSTALL_PREFIX', 'CMAKE_CXX_COMPILER', 'CMAKE_C_COMPILER')
         for _, v in self.varcache.items():
             if v.from_input:
                 if v.name in dont_show:
