@@ -161,3 +161,8 @@ class Compiler(BuildItem):
         if self.gcclike:
             self.flags.cflags.append('-m32')
             self.flags.cxxflags.append('-m32')
+
+    def make_64bit(self):
+        if self.gcclike:
+            self.flags.cflags.append('-m64')
+            self.flags.cxxflags.append('-m64')

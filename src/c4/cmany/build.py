@@ -40,9 +40,12 @@ class Build(NamedItem):
 
         self.adjusted = False
 
-        if self.architecture.is32:
+        if util.in_64bit and self.architecture.is32:
             if self.compiler.gcclike:
                 self.compiler.make_32bit()
+        elif util.in_32bit and self.architecture.is64:
+            if self.compiler.gcclike:
+                self.compiler.make_64bit()
 
         self._set_name_and_paths()  # calls super().__init__(self.tag)
 
