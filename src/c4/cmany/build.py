@@ -429,6 +429,22 @@ class Build(NamedItem):
                 util.logerr("sorry, feature not implemented for this generator: " +
                             str(self.generator))
 
+    def show_properties(self):
+        util.logcmd(self.name)
+        p = lambda n, v: print("{}={}".format(n, v))
+        if self.toolchain_file:
+            p('CMAKE_TOOLCHAIN_FILE', self.toolchain_file)
+        p('CMAKE_C_COMPILER', self.compiler.c_compiler)
+        p('CMAKE_CXX_COMPILER', self.compiler.path)
+        dont_show = ('CMAKE_INSTALL_PREFIX')
+        for _, v in self.varcache.items():
+            if v.from_input:
+                if v.name in dont_show:
+                    continue
+                p(v.name, v.val)
+        p("PROJECT_BINARY_DIR", self.builddir)
+        p("CMAKE_INSTALL_PREFIX", self.installdir)
+
 
 # -----------------------------------------------------------------------------
 _preload_file_tpl = (
