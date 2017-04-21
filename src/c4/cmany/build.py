@@ -241,7 +241,8 @@ class Build(NamedItem):
         if not tc:
             return None
         if not os.path.isabs(tc):
-            tc = os.path.join(os.cwd(), tc)
+            tc = os.path.join(os.getcwd(), tc)
+            tc = os.path.abspath(tc)
         if not os.path.exists(tc):
             raise Exception("file not found: " + tc)
         return tc
