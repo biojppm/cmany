@@ -208,7 +208,7 @@ class Project:
         with open(self.configfile, 'w') as f:
             json.dump(jd, f, indent=2)
 
-    def showvars(self, varlist):
+    def show_vars(self, varlist):
         varv = odict()
         pat = os.path.join(self.build_dir, '*', 'CMakeCache.txt')
         g = glob.glob(pat)
@@ -231,15 +231,19 @@ class Project:
             for s, v in sysvalues.items():
                 print(fmt.format(var, s, v))
 
-    def showbuilds(self):
+    def show_build_names(self):
         for b in self.builds:
             print(b)
 
-    def showbuilddirs(self):
+    def show_build_dirs(self):
         for b in self.builds:
             print(b.builddir)
 
-    def showtargets(self):
+    def show_builds(self):
+        for b in self.builds:
+            b.show_properties()
+
+    def show_targets(self):
         for t in self.builds[0].get_targets():
             print(t)
 

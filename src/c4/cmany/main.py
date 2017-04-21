@@ -16,10 +16,11 @@ cmds = odict([
     ('build', ['b']),
     ('install', ['i']),
     ('run', ['r']),
-    ('show_vars', []),
-    ('show_builds', []),
-    ('show_build_dirs', []),
-    ('show_targets', []),
+    ('show_vars', ['sv']),
+    ('show_builds', ['sb']),
+    ('show_build_names', ['sn']),
+    ('show_build_dirs', ['sd']),
+    ('show_targets', ['st']),
     ('create', []),
     ('export_vs', []),
 ])
@@ -135,25 +136,31 @@ class show_vars(selectcmd):
         super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
     def _exec(self, proj, args):
-        proj.showvars(args.var_names)
+        proj.show_vars(args.var_names)
 
 
-class show_builds(selectcmd):
+class show_build_names(selectcmd):
     '''show the build names'''
     def _exec(self, proj, args):
-        proj.showbuilds()
+        proj.show_build_names()
 
 
 class show_build_dirs(selectcmd):
     '''show the build directories'''
     def _exec(self, proj, args):
-        proj.showbuilddirs()
+        proj.show_build_dirs()
+
+
+class show_builds(selectcmd):
+    '''show the build properties'''
+    def _exec(self, proj, args):
+        proj.show_builds()
 
 
 class show_targets(selectcmd):
     '''show the targets of a single build'''
     def _exec(self, proj, args):
-        proj.showtargets()
+        proj.show_targets()
 
 
 class create(selectcmd):
