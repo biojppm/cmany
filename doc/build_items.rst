@@ -38,7 +38,8 @@ The following sections address each of these build items in more detail.
 Per-item flags
 --------------
 
-To make a build item bring with it a set of compiler or cmake flags, use the
+To make a build item bring with it a set of properties (which can be compiler
+flags, macros, cmake flags, or combination exclusion arguments), use the
 following syntax: ``'item_name: <flag_specs>....'`` instead of just
 ``item_name``. This will prompt cmany to use those flags whenever that build
 item is used in a build. For example, you can add a flag only to a certain
@@ -46,14 +47,27 @@ build type::
 
   $ cmany b --build-types Release,'Debug: --cxxflags "-Wall"'
 
-Note the use of the quotes; it is necessary to have the arguments correctly
-parsed by the system.
+Note the use of the quotes; this is necessary to have the arguments correctly
+parsed:
+
+* The outer quotes (single quotes in this case) are necessary for
+  causing the full specification of the ``Debug`` build type to be considered
+  at once.
+* The inner quotes around the ``-Wall`` flag in the ``Debug`` configuration
+  are needed to prevent it from being parsed as an argument to cmany, which
+  would cause an error.
+* The order of the quotes is irrelevant to cmany. The Debug configuration
+  could also have been specified as ``"Debug: --cxxflags '-Wall'"``.
+* You can also escape the quotes using the backslash character. For example,
+  you can do ``"Debug: --cxxflags \"-Wall\""`` or ``'Debug: --cxxflags
+  \'-Wall\''``.
 
 See the :doc:`cmany help on flags </flags>` to discover what flags can be
-used here. Note also that :doc:`exclusion flags </excluding_builds>` can also
-be used as per-item flags.
+used with build items. Note also that :doc:`exclusion flags
+</excluding_builds>` can also be used as per-item flags.
 
-When creating the flags for the build, the order is the following:
+When creating the flags for the build, the order in the final compile command
+is the following:
 
 #. command-level flags
 #. system flags
@@ -63,7 +77,9 @@ When creating the flags for the build, the order is the following:
 #. variant flags
 
 So command level flags come first and variant flags come last in the compiler
-command line.
+command line. Note that flags from later build items override those of
+earlier build items. For example, variant flags override flags from the build
+type; these in turn override flags specified with the compiler, and so on. 
 
 
 Inheriting per-item flags
@@ -73,7 +89,7 @@ To make a build item inherit all the flags in another build item, reference
 the base item name prefixed with ``@``. The result is that the inheriting
 item will have all the flags of the base item, plus its own flags inserted at
 the point where the ``@`` reference occurs. :doc:`combination flags
-</excluding_builds>` are not inherited. 
+</excluding_builds>` are **not** inherited. 
 
 For example, note the ``@foo`` spec in the bar variant::
 
@@ -177,7 +193,6 @@ hundreds of possible aliases, so read :doc:`the complete documentation for
 Visual Studio </vs>`.
 
 
-
 Build types
 -----------
 
@@ -202,22 +217,14 @@ like MSVC).
 Variants
 --------
 
-If you have read the :doc:`help on setting up </flags>` cmake cache variables,
-preprocessor defines or compiler flags, you know that a direct invokation
-like this::
-
-  $ cmany b --defines FOO=bar ...more options
-
-(ie, at the level of the cmany command) will cause these to apply to all the
-builds produced by cmany. For setting up a bundle of cmake cache
-variables, preprocessor defines or compiler flags to be combined with all
-other build items, cmany offers **variants**.
+cmany has **variants** for setting up :doc:`a bundle of flags </flags>` to be
+combined with all other build items.
 
 A variant is a build item different from any other which uses a specific
 combination of flags via ``--cmake-vars/-V``, ``--defines/-D``, ``--cxxflags/-X``,
 ``--cflags/-C``. Like all other build items, it will be combined with other
 build items of different class. With the exception of the null variant,
-variants will always have per-item flags.
+variants will usually have per-item flags.
 
 The command option to setup a variant is ``--variant/-v`` and should be used
 as follows: ``--variant 'variant_name: <variant_specs>'``. For example,
@@ -235,6 +242,11 @@ specific defines and compiler flags, the following command should be used::
 
     $ cmany b --variant 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
               --variant 'bar: --defines SOME_DEFINE=16 --cxxflags "-O2"'
+
+or, in short form::
+
+    $ cmany b -v 'foo: -D SOME_DEFINE=32 -X "-Os"' \
+              -v 'bar: -D SOME_DEFINE=16 -X "-O2"'
 
 To be clear, the ``foo`` variant will be compiled with the preprocessor symbol
 named ``SOME_DEFINE`` defined to 32, and will use the ``-Os`` C++ compiler
@@ -273,16 +285,18 @@ builds (3 compilers * 3 build types * 2 variants) ::
     build/linux-x86_64-icc16.1-Release-bar/
     build/linux-x86_64-icc16.1-Release-foo/
 
-Note that ``--variant/-v`` accepts also comma-separated arguments::
+Note that like any other build item ``--variant/-v`` also accepts
+comma-separated arguments::
 
     $ cmany b -c clang++,g++,icpc -t Debug,Release,MinSizeRel \
               --variant 'foo: -D SOME_DEFINE=32 -X "-Os"','bar: -D SOME_DEFINE=16 -X "-O2"'
 
 Null variant
 ^^^^^^^^^^^^
-cmany will combine only the given variant names. Notice above that the
-basic (variant-less) build ``linux-x86_64-clang3.9-Debug`` is not there. 
-To retain the basic build without a variant suffix use the special name ``none``::
+
+cmany will combine only the variants it is given. Notice above that the basic
+(variant-less) build ``linux-x86_64-clang3.9-Debug`` is not there.  To retain
+the basic build without a variant suffix use the special name ``none``::
 
     $ cmany b -v none \
               -v 'foo: -D SOME_DEFINE=32 -X "-Os"' \
@@ -292,24 +306,126 @@ To retain the basic build without a variant suffix use the special name ``none``
     build/linux-x86_64-clang3.9-Release-bar/
     build/linux-x86_64-clang3.9-Release-foo/
 
-You can add flags to the none variant as well, and use inheritance at will.
+You can add flags to the ``none`` variant as well, and use inheritance at will::
 
+    $ cmany b -v 'none: -X "-Wall"' \
+              -v 'foo: @none -D SOME_DEFINE=32 -X "-Os"' \
+              -v 'bar: @none -D SOME_DEFINE=16 -X "-O2"'
 
 
 Systems
 -------
 
+The argument to specify system build items is ``-s/--systems``. Systems are a
+special build item. For example, if you are on linux, omitting ``-s`` will
+default to ``-s linux``, so using ``-s`` it is not really needed. But
+compiling for a different target system qualifies as `cross compilation
+<https://cmake.org/Wiki/CMake_Cross_Compiling>`_ and requires a `cmake
+toolchain file
+<https://cmake.org/cmake/help/v3.0/manual/cmake-toolchains.7.html>`_ (for
+which cmany offers the ``-T/--toolchain`` flag).
+
+Usually, a toolchain also fixes the compiler and maybe the processor
+architecture. So most of the time, whenever ``-s/--systems`` is used, it will
+bring with it a toolchain and will also require :doc:`exclusion arguments
+</excluding_builds>` to prevent combination of the target system with
+compilers or architectures different from those of the toolchain.
+
+For example, consider this linux ARM gnueabihf cmake toolchain::
+
+    # arm-linux-gnueabihf.cmake
+
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_SYSTEM_VERSION 1)
+    
+    set(CMAKE_C_COMPILER   /usr/bin/arm-linux-gnueabihf-gcc)
+    set(CMAKE_CXX_COMPILER /usr/bin/arm-linux-gnueabihf-g++)
+    set(CMAKE_STRIP        /usr/bin/arm-linux-gnueabihf-strip)
+    
+    set(CMAKE_FIND_ROOT_PATH  /usr/arm-linux-gnueabihf)
+    
+    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+
+(If you are using Ubuntu you can install these tools with ``sudo apt-get
+install binutils-arm-linux-gnueabihf g++-arm-linux-gnueabihf``). When you
+want to compile your project only for linux OS and (armv5,armv7)
+architectures, this would be the command line::
+
+    $ cmany b --systems 'linux: -T arm-linux-gnueabihf.cmake' \
+              --architectures 'armv5: -X "-march=armv5"' \
+              --architectures 'armv7: -X "-march=armv7"'
+
+which will produce the following builds::
+
+    linux-armv5-arm-linux-gnueabihf-g++5.4-Release
+    linux-armv7-arm-linux-gnueabihf-g++5.4-Release
+
+If you want to build at the same time for x86 and x86_64, this command could
+be used (note the use of ``--exclude-builds``)::
+
+    $ cmany b --systems linux \
+              --architectures x86,x86_64 \
+              --systems 'linux_arm: -T arm-linux-gnueabihf.cmake -xa x86,x86_64' \
+              --architectures 'armv5: -X "-march=armv5"' \
+              --architectures 'armv7: -X "-march=armv7"' \
+              --exclude-builds 'linux_arm-.*x86','linux-.*arm'
+
+which produces the following builds::
+
+    linux-x86-g++5.4-Release
+    linux-x86_64-g++5.4-Release
+    linux_arm-armv5-arm-linux-gnueabihf-g++5.4-Release
+    linux_arm-armv7-arm-linux-gnueabihf-g++5.4-Release
+
+The arm builds for linux now use a system named linux_arm to prevent
+ambiguity with the native ``linux`` system. The ``--exclude-builds`` is
+used to prevent the arm toolchain from being combined with x86 or x86_64
+architectures and also to prevent the arm architectures from being used
+without a toolchain.
+
 
 Architectures
 -------------
 
-Or if you want to invoke gcc both in 32 and 64 bit mode while in a 64 bit
-system::
+Architectures are specified with the argument ``-a/--architectures``. When
+the architecture argument is omitted, cmany will silently default to ``-a
+<current_architecture>``.
 
-  $ cmany b --architectures x86_64,'x86: --cxxflags "-m32"'
+Like with ``-s/--systems``, architectures have some special properties:
 
-(In practice, cmany already does exactly this for you when you select the x86
-architecture: when cmany is given ``cmany b -a x86_64,x86`` the ``-m32`` flag
-is implicitly added by cmake when it is run in a x86_64 system. But hopefully
-you get the point.)
+* When in a 64 bit system, asking for a ``x86`` architecture when the
+  compiler is a gcc-like compiler (ie, gcc, clang, icc, zapcc or similar)
+  will result in the the compiler flag ``-m32`` being added to
+  ``CMAKE_CXX_FLAGS`` and ``CMAKE_C_FLAGS``.
+* Conversely, when in a 32 bit system, asking for a ``x86_64`` architecture
+  with a gcc-like compiler will result in the flag ``-m64`` being added to
+  ``CMAKE_CXX_FLAGS`` and ``CMAKE_C_FLAGS``.
+* When :doc:`using Visual Studio </vs>`, you can select the compiler and architecture at
+  once. For example, using ``-c vs2015_32,vs2015_64`` will compile both for
+  ``x86`` and ``x86_64``, and is equivalent to ``-c vs2015 -a x86,x86_64``.
 
+Architectures other than x86/x86_64, as with ``-s/--systems``,
+``-a/--architectures`` will usually need cross-compilation and thus require
+toolchains. In fact the, command used in the example of the :ref:`Systems`
+section can be simplified if the toolchain is specified by architecture
+instead of the system, and the variants instead provide the ``-m`` compiler
+flags::
+
+    $ cmany b --architectures x86,x86_64,'arm: -T arm-linux-gnueabihf.cmake' \
+              --variants 'none: -xa arm' \
+              --variants 'armv5: -X "-march=armv5" -ia arm' \
+              --variants 'armv7: -X "-march=armv7" -ia arm'
+
+The ``-xa`` and the ``-ia`` arguments above are the short forms of
+respectively the :doc:`exclusion arguments </excluding_builds>`
+``--exclude-architectures`` and ``--include-architectures``. They are needed
+to prevent combination of the arm variants with the x86 architectures and
+vice-versa. The resulting builds are exactly the same as in that example, but
+are now named differently because of the variants::
+
+  linux-x86-g++5.4-Release
+  linux-x86_64-g++5.4-Release
+  linux-arm-arm-linux-gnueabihf-g++5.4-Release-armv5
+  linux-arm-arm-linux-gnueabihf-g++5.4-Release-armv7

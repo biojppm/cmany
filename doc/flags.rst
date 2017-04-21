@@ -185,9 +185,18 @@ Defining more flag aliases
 Being able to define your own flag aliases is in the roadmap. For now, you
 can submit PRs for adding aliases.
 
+Toolchains
+----------
+
+To use cmake toolchain use the option ``-T/--toolchain``. Usually, this
+will be done inside a systems build item, ``-s/--systems``; see the
+:ref:`Systems` section in the :doc:`build items document </build_items>`.
 
 Build exclusion arguments
 -------------------------
 
 Note that :doc:`arguments for excluding builds </excluding_builds>` can be
-used wherever flag arguments can be used.
+used wherever flag arguments can be used. This makes it easier to declare
+incompatibility between build items::
+
+  $ cmany b

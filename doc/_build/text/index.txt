@@ -161,6 +161,8 @@ Contents:
 
   * Flag aliases
 
+  * Toolchains
+
   * Build exclusion arguments
 
 * Using cmany with Visual Studio
