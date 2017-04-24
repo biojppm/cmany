@@ -113,7 +113,10 @@ class Project:
             if not os.path.exists(f):
                 raise Exception(f + ": does not exist")
             seq.append(f)
-        self.configs = conf.Configs.load(seq)
+        self.configs = conf.Configs.load_seq(seq)
+
+    def save_configs(self):
+        c = Configs()
 
     def add_build(self, system, arch, compiler, buildtype, variant):
         # duplicate the build items, as they may be mutated due

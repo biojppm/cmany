@@ -37,7 +37,7 @@ class Test02Load(ut.TestCase):
     def test00RunTestCases(self):
         for tcn, (rcomps, rflags, yml) in test_cases.items():
             with self.subTest(test_case=tcn):
-                (comps, cflags) = flags.load_yml(yml)
+                (comps, cflags) = flags.load_txt(yml)
                 #print()
                 #print(tcn, rcomps, comps)
                 #print(tcn, rflags, cflags)
@@ -54,7 +54,7 @@ class Test02Load(ut.TestCase):
     gcc,clang,icc: -std=c++11
     vs: ''
 """
-        c, f = flags.load_yml(yml)
+        c, f = flags.load_txt(yml)
         self.assertTrue('c++11' in f)
         f11 = f['c++11']
         self.assertTrue(hasattr(f11, 'gcc'))
@@ -91,7 +91,7 @@ class Test04FlagsIO(ut.TestCase):
 
     def setUp(self):
         with open(os.path.join(conf.CONF_DIR, "cmany.yml"), "r") as f:
-            self.comps, self.flags = flags.load_yml(f.read())
+            self.comps, self.flags = flags.load_txt(f.read())
 
     @staticmethod
     def _do_save(comps_, flags_, filename):
@@ -103,7 +103,7 @@ class Test04FlagsIO(ut.TestCase):
     def _do_load(filename):
         with open(filename, 'r') as f:
             yml = f.read()
-            comps_, flags_ = flags.load_yml(yml)
+            comps_, flags_ = flags.load_txt(yml)
         return comps_, flags_
 
     def test00SavedIsSameAsOriginal(self):
@@ -321,28 +321,34 @@ def f(name, *args, **kwargs):
 
 
 with open(os.path.join(conf.CONF_DIR, "cmany.yml")) as fconf:
-    kc, kf = flags.load_yml(fconf.read())
+    kc, kf = flags.load_txt(fconf.read())
 kyml = flags.dump_yml(kc, kf)
+
 
 test_cases = d(
 
-    tc('gcc-g', ['gcc'], d(f('g', gcc='-g')), yml="""g:
+    tc('gcc-g', ['gcc'], d(f('g', gcc='-g')), yml="""\
+g:
     gcc: -g
 """),
 
-    tc('gcc-g3', ['gcc'], d(f('g3', gcc='-g3')), yml="""g3:
+    tc('gcc-g3', ['gcc'], d(f('g3', gcc='-g3')), yml="""\
+g3:
     gcc: -g3
 """),
 
-    tc('clang-g3', ['clang'], d(f('g3', clang='-g3')), yml="""g3:
+    tc('clang-g3', ['clang'], d(f('g3', clang='-g3')), yml="""\
+g3:
     clang: -g3
 """),
 
-    tc('gcc, clang-g3', ['gcc', 'clang'], d(f('g3', gcc='-g3', clang='-g3')), yml="""g3:
+    tc('gcc, clang-g3', ['gcc', 'clang'], d(f('g3', gcc='-g3', clang='-g3')), yml="""\
+g3:
     gcc,clang: -g3
 """),
 
-    tc('clang, gcc-g3', ['clang', 'gcc'], d(f('g3', clang='-g3', gcc='-g3')), yml="""g3:
+    tc('clang, gcc-g3', ['clang', 'gcc'], d(f('g3', clang='-g3', gcc='-g3')), yml="""\
+g3:
     clang,gcc: -g3
 """),
 

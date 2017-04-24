@@ -1,104 +1,106 @@
-c++11:
+config: {}
+flag_aliases:
+  c++11:
     desc: enable C++11 mode
     gcc,clang,icc: -std=c++11
-c++14:
+  c++14:
     desc: enable C++14 mode
     gcc,clang,icc: -std=c++14
-c++1z:
+  c++1z:
     desc: enable C++1z mode
     gcc,clang,icc: -std=c++1z
-wall:
+  wall:
     desc: turn on all warnings
     gcc,clang,icc: -Wall
     vs: /Wall
-pedantic:
+  pedantic:
     desc: compile in pedantic mode
     gcc,clang,icc: -Wpedantic
     vs: /W4
-thread:
+  thread:
     desc: enable threads
     gcc,clang,icc: -pthread
-sse2:
+  sse2:
     desc: enable SSE2 instructions
     gcc,clang,icc: -msse2
     vs: /arch:sse2
-avx:
+  avx:
     desc: enable AVX instructions
     gcc,clang,icc: -mavx
     vs: /arch:avx
-avx2:
+  avx2:
     desc: enable AVX2 instructions
     gcc,clang,icc: -mavx2
     vs: /arch:avx2
-g:
+  g:
     desc: add debug information
     gcc,clang,icc: -g
     vs: /Zi
-g3:
+  g3:
     desc: add full debug information
     gcc,clang,icc: -g3
     vs: /Zi
-O2:
+  O2:
     desc: optimize level 2
     gcc,clang,icc: -O2
     vs: /O2
-O3:
+  O3:
     desc: optimize level 3
     gcc,clang,icc: -O3
     vs: /Ox
-Os:
+  Os:
     desc: optimize for size
     gcc,clang,icc: -Os
     vs: /Os
-Ofast:
+  Ofast:
     desc: optimize for speed
     gcc,clang,icc: -Ofast
     vs: /Ot
-Onative:
+  Onative:
     desc: optimize for native architecture
     gcc,clang,icc: -march=native
-lto:
+  lto:
     desc: enable whole program optimization
     gcc,clang,icc: -flto
     vs: /GL
-strict_aliasing:
+  strict_aliasing:
     desc: enable strict aliasing
     gcc,clang,icc: -fstrict-aliasing
-no_strict_aliasing:
+  no_strict_aliasing:
     desc: disable strict aliasing
     gcc,clang,icc: -fno-strict-aliasing
-fast_math:
+  fast_math:
     desc: enable fast math http://stackoverflow.com/a/22135559 -fno-math-errno -funsafe-math-optimizations -ffinite-math-only -fno-rounding-math -fno-signaling-nans -fcx-limited-range
     gcc,clang,icc: -ffast-math
     vs: /fp:fast /Qfast_transcendentals
-no_rtti:
+  no_rtti:
     desc: disable run-time type information
     gcc,clang,icc: -fno-rtti
     vs: /GR-
-no_exceptions:
+  no_exceptions:
     desc: disable exceptions
     gcc,clang,icc: -fno-exceptions
     vs: /EHsca-
-libstdc++11:
+  libstdc++11:
     desc: use the C++11 standard library ABI.
     gcc,clang,icc: -stdlib=libstdc++ -D_GLIBCXX_USE_CXX11_ABI=1
-libstdc++:
+  libstdc++:
     desc: use the pre-C++11 standard library ABI.
     gcc,clang,icc: -stdlib=libstdc++ -D_GLIBCXX_USE_CXX11_ABI=0
-libc++:
+  libc++:
     desc: use the Clang libc++ standard library ABI.
     clang: -stdlib=libc++
-static_stdlib:
+  static_stdlib:
     desc: link statically with the standard library http://stackoverflow.com/questions/13636513/linking-libstdc-statically-any-gotchas
     gcc,clang,icc: -static-libstdc++ -static-libgcc -static
     vs: /MT
-no_stdlib:
+  no_stdlib:
     desc: do not link with the standard library
     gcc,clang,icc: -fnostdlib
     vs: /NODEFAULTLIB
-no_bufsec:
+  no_bufsec:
     desc: disable buffer security checks
     vs: /GS-
-no_iterator_debug:
+  no_iterator_debug:
     desc: disable checked iterators and debug iterator support https://msdn.microsoft.com/en-us/library/hh697468.aspx
     vs: /D _ITERATOR_DEBUG_LEVEL=0

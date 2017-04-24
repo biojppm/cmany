@@ -24,14 +24,17 @@ def get_name_for_flags(compiler):
 class FlagAliases:
 
     def __init__(self, **kwargs):
-        if kwargs.get('yml') is not None:
+        if kwargs.get('txt') is not None:
+            raise Exception("not implemented")
+            # self.compilers, self.flags = load_txt(kwargs.get('txt'))
+        elif kwargs.get('yml') is not None:
             self.compilers, self.flags = load_yml(kwargs.get('yml'))
         else:
             self.flags = odict(**kwargs)
             self.compilers = get_all_compilers(self.flags)
 
     def merge_from(self, other):
-        self.flags = merge(self.flags, other)
+        self.flags = merge(self.flags, other.flags)
         self.compilers = get_all_compilers(self.flags)
 
     def get(self, name, compiler=None):
@@ -163,13 +166,15 @@ def dump_yml(comps, flags):
     return txt
 
 
-def load_yml(txt):
+def load_txt(yml_txt):
     """load a yml txt into a compilers, flags pair"""
-    dump = list(yaml.load_all(txt, yaml.RoundTripLoader))
-    if len(dump) != 1:
-        raise Exception('The flags must be in one yaml document. len='
-                        + str(len(dump)) + "\n" + str(dump))
-    fd = odict(dump[0])
+    dump = yaml.load(yml_txt, yaml.RoundTripLoader)
+    fa = dump.get('flag_aliases', dump)
+    return load_yml(fa)
+
+
+def load_yml(dump):
+    fd = odict(dump)
     # gather the list of compilers
     comps = []
     for n, yf in fd.items():
