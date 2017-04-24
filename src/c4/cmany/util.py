@@ -365,8 +365,8 @@ def nested_merge(into_dct, from_dct, into_dct_is_const=True):
     """
     out = copy.deepcopy(into_dct) if into_dct_is_const else into_dct
     for k, v in from_dct.items():
-        if (k in out and isinstance(out[k], collections.Mapping)
-                and isinstance(from_dct[k], collections.Mapping)):
+        if (k in out and isinstance(out[k], type(into_dct))
+                and isinstance(from_dct[k], type(from_dct))):
             nested_merge(out[k], from_dct[k], False)
         else:
             out[k] = from_dct[k]
