@@ -1,13 +1,16 @@
 from .named_item import NamedItem as NamedItem
 from . import flags as c4flags
 
+from . import util
 
 # -----------------------------------------------------------------------------
 class BuildFlags(NamedItem):
 
+    attrs = ('cmake_vars', 'defines', 'cflags', 'cxxflags', 'toolchain')
+
     def __init__(self, name, compiler=None, aliases=None, **kwargs):
         super().__init__(name)
-        self.cmake_vars = kwargs.get('vars', [])
+        self.cmake_vars = kwargs.get('cmake_vars', [])
         self.defines = kwargs.get('defines', [])
         self.cflags = kwargs.get('cflags', [])
         self.cxxflags = kwargs.get('cxxflags', [])
@@ -15,6 +18,7 @@ class BuildFlags(NamedItem):
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
         if compiler is not None:
+            raise Exception("TODO: remove this")
             self.resolve_flag_aliases(compiler, aliases)
 
     def resolve_flag_aliases(self, compiler, aliases):
@@ -40,13 +44,38 @@ class BuildFlags(NamedItem):
         log_fn(t, "defines=", self.defines)
         log_fn(t, "cxxflags=", self.cxxflags)
         log_fn(t, "cflags=", self.cflags)
+        log_fn(t, "toolchain=", self.toolchain)
 
     @staticmethod
     def merge_toolchains(tc1, tc2):
-        if ((tc1 != tc2) and
-            (tc1 is not None and tc2 is not None)):
-            raise Exception("conflicting toolchains: "
-                            + tc1 + " vs. " + tc2)
+        if ((tc1 != tc2) and (tc1 is not None and tc2 is not None)):
+            raise Exception("conflicting toolchains: " + tc1 + " vs. " + tc2)
         if tc1 is None and tc2 is not None:
             tc1 = tc2
         return tc1
+
+    def save_config(self, yml_node):
+        for n in __class__.attrs:
+            a = getattr(self, n)
+            if a:
+                a = __class__.flag_list_to_str(a)
+                yml_node[n] = a
+
+    def load_config(self, yml_node):
+        for n in __class__.attrs:
+            a = yml_node.get(n)
+            if a is not None:
+                a = __class__.flag_str_to_list(a)
+                setattr(self, n, a)
+
+    @staticmethod
+    def flag_list_to_str(li):
+        if isinstance(li, str):
+            return li
+        return " ".join(li)
+
+    @staticmethod
+    def flag_str_to_list(s):
+        if isinstance(s, list):
+            return s
+        return util.splitesc_quoted(s, ' ')

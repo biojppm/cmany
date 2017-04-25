@@ -159,6 +159,15 @@ class BuildItem(NamedItem):
         # util.logdone("parse_args 4: input=____{}____ output=__{}__".format(v_, vli))
         return vli
 
+    def save_config(self, yml_node):
+        if yml_node.get('flags') is None:
+            yml_node['flags'] = type(yml_node)()
+        self.flags.save_config(yml_node['flags'])
+
+    def load_config(self, yml_node):
+        if yml_node.get('flags'):
+            self.flags.load_config(yml_node['flags'])
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
