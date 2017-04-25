@@ -75,7 +75,7 @@ class BuildItem(NamedItem):
                 c4args.add_bundle_flags(parser)
                 ss = util.splitesc_quoted(s, ' ')
                 args = parser.parse_args(ss)
-                tmp = BuildFlags('', None, **vars(args))
+                tmp = BuildFlags('', **vars(args))
                 self.flags.append_flags(tmp, append_to_name=False)
                 cr = []
                 if hasattr(args, 'combination_rules'):

@@ -131,7 +131,7 @@ class Project:
         c = _dup_item(compiler)
         v = _dup_item(variant)
         #
-        f = BuildFlags('all_builds', compiler, aliases=self.configs.flag_aliases, **self.kwargs)
+        f = BuildFlags('all_builds', **self.kwargs)
         f.resolve_flag_aliases(compiler, aliases=self.configs.flag_aliases)
 
         # create the build

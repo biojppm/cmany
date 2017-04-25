@@ -8,7 +8,7 @@ class BuildFlags(NamedItem):
 
     attrs = ('cmake_vars', 'defines', 'cflags', 'cxxflags', 'toolchain')
 
-    def __init__(self, name, compiler=None, aliases=None, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(name)
         self.cmake_vars = kwargs.get('cmake_vars', [])
         self.defines = kwargs.get('defines', [])
@@ -17,9 +17,6 @@ class BuildFlags(NamedItem):
         self.toolchain = kwargs.get('toolchain')
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
-        if compiler is not None:
-            raise Exception("TODO: remove this")
-            self.resolve_flag_aliases(compiler, aliases)
 
     def resolve_flag_aliases(self, compiler, aliases):
         self.defines = aliases.as_defines(self.defines, compiler)
