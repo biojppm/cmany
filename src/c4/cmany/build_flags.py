@@ -18,6 +18,19 @@ class BuildFlags(NamedItem):
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
 
+    def empty(self):
+        if self.cmake_vars:
+            return False
+        if self.defines:
+            return False
+        if self.cflags:
+            return False
+        if self.cxxflags:
+            return False
+        if self.toolchain:
+            return False
+        return True
+
     def resolve_flag_aliases(self, compiler, aliases):
         self.defines = aliases.as_defines(self.defines, compiler)
         self.cflags = aliases.as_flags(self.cflags, compiler)
