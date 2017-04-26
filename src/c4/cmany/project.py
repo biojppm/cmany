@@ -127,9 +127,10 @@ class Project:
         #
         def _add(name):
             items = getattr(self, name)
-            if BuildItem.trivial_item(items):
-                yml['project'][name] = "_default_"
-            elif BuildItem.no_flags_in_collection(items):
+            #if BuildItem.trivial_item(items):
+            #    yml['project'][name] = "_default_"
+            #elif BuildItem.no_flags_in_collection(items):
+            if BuildItem.no_flags_in_collection(items):
                 out = []
                 for s in items:
                     out.append(s.name)
