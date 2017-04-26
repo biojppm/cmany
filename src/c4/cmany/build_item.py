@@ -178,13 +178,11 @@ class BuildItem(NamedItem):
         return vli
 
     def save_config(self, yml_node):
-        if yml_node.get('flags') is None:
-            yml_node['flags'] = type(yml_node)()
-        self.flags.save_config(yml_node['flags'])
+        if not self.flags.empty():
+            self.flags.save_config(yml_node)
 
     def load_config(self, yml_node):
-        if yml_node.get('flags'):
-            self.flags.load_config(yml_node['flags'])
+        self.flags.load_config(yml_node)
 
 
 # -----------------------------------------------------------------------------

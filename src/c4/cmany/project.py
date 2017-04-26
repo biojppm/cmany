@@ -7,6 +7,9 @@ import copy
 import timeit
 from collections import OrderedDict as odict
 
+from ruamel import yaml as yaml
+from ruamel.yaml.comments import CommentedMap as CommentedMap
+
 from . import util
 from . import conf
 
@@ -118,7 +121,38 @@ class Project:
     def save_configs(self):
         c = Configs()
 
-    def add_build(self, system, arch, compiler, buildtype, variant):
+    def create_proj(self):
+        yml = CommentedMap()
+        yml['project'] = CommentedMap()
+        #
+        def _add(name):
+            items = getattr(self, name)
+            if BuildItem.trivial_item(items):
+                yml['project'][name] = "_default_"
+            elif BuildItem.no_flags_in_collection(items):
+                out = []
+                for s in items:
+                    out.append(s.name)
+                yml['project'][name] = out
+            else:
+                out = []
+                for s in items:
+                    cm = CommentedMap()
+                    cm[s.name] = CommentedMap()
+                    s.save_config(cm[s.name])
+                    out.append(cm)
+                yml['project'][name] = out
+        #
+        _add('systems')
+        _add('architectures')
+        _add('compilers')
+        _add('build_types')
+        _add('variants')
+        txt = yaml.round_trip_dump(yml)
+        fn = os.path.join(self.root_dir, 'cmany.yml')
+        with open(fn, "w") as f:
+            f.write(txt)
+
     def add_build(self, system, arch, compiler, build_type, variant):
         # duplicate the build items, as they may be mutated due
         # to translation of their flags for the compiler
@@ -204,7 +238,7 @@ class Project:
                 util.runsyscmd(cmds)
         self._execute(_run_cmd, "Run cmd", silent=False, **restrict_to)
 
-    def create_projfile(self):
+    def export_vs(self):
         confs = []
         for b in self.builds:
             confs.append(b.json_data())
