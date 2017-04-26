@@ -285,47 +285,47 @@ def add_item_combination_flags(parser):
 def add_cflags(parser):
     g = parser.add_argument_group(
         'Flags: CMake cache variables, compiler flags and defines',
-        description="""Can be given both at command-level and at item-level.""")
+        description="""Can be given both at command-level and at item-level.
+        When given at command level, these arguments apply to all builds.
+        When given at item-level (eg compilers or build types), these arguments
+        apply only to the particular item.""")
     g.add_argument("-T", "--toolchain", metavar='toolchain_file', type=str, default=None,
                    help="""Specify a cmake toolchain file.""")
-    g.add_argument("-V", "--cmake-vars", metavar="var1=val1,var2=val2,...",
-                   default=[], action=FlagArgument,
-                   help="""Add CMake cache variables to all builds.
+    g.add_argument("-V", "--cmake-vars", default=[], action=FlagArgument,
+                   help="""Add CMake cache variables.
+                   Accepts a comma-separated list of CMake cache
+                   variable definitions.
                    Multiple invokations of -V are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list, including in
-                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-D", "--defines", default=[], action=FlagArgument,
-                   help="""add a preprocessor symbol definition to all builds.
+                   help="""Add preprocessor symbol definitions.
+                   Accepts a comma-separated list of preprocessor macro
+                   definitions, in either of the forms -D FOO or -D FOO=value.
                    Multiple invokations of -D are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list, including in
-                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-X", "--cxxflags", default=[], action=FlagArgument,
-                   help="""add C++ compiler flags applying to all builds.
+                   help="""Add C++ compiler flags.
+                   Accepts a comma-separated list of C++ compiler flags.
                    These will be passed to cmake by appending to the
                    default initial value of CMAKE_CXX_FLAGS (taken from
                    CMAKE_CXX_FLAGS_INIT). cmany has flag aliases mapping
-                   to several common compilers. Run `cmany help flags`
+                   a single key to different compilers. Run `cmany help flags`
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list, including in
-                   each invokation.
                    To escape commas, use a backslash \\.""")
     g.add_argument("-C", "--cflags", default=[], action=FlagArgument,
-                   help="""add C compiler flags applying to all builds.
+                   help="""Add C compiler flags.
+                   Accepts a comma-separated list of C compiler flags.
                    These will be passed to cmake by appending to the
                    default initial value of CMAKE_C_FLAGS (taken from
                    CMAKE_C_FLAGS_INIT). cmany has flag aliases mapping
-                   to several common compilers. Run `cmany help flags`
+                   a single key to different compilers. Run `cmany help flags`
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   Can also be given as a comma-separated list, including in
-                   each invokation.
                    To escape commas, use a backslash \\.""")
     # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
     #                help="""add dirs to the include path of all builds
