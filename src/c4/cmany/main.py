@@ -21,7 +21,7 @@ cmds = odict([
     ('show_build_names', ['sn']),
     ('show_build_dirs', ['sd']),
     ('show_targets', ['st']),
-    ('create_proj', []),
+    ('create_proj', ['cp']),
     ('export_vs', []),
 ])
 
