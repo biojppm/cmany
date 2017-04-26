@@ -12,7 +12,6 @@ from c4.cmany.build_flags import BuildFlags
 
 from ruamel import yaml as yaml
 from ruamel.yaml.comments import CommentedMap as CommentedMap
-import types
 
 # -----------------------------------------------------------------------------
 def tmpfile(contents):
@@ -253,16 +252,6 @@ cxxflags: -std=c++11 -Wall
 toolchain: somefile.cmake
 """)
 
-
-def suite():
-    suite = ut.TestSuite()
-    suite.addTest(Test02BuildFlags01Empty())
-    suite.addTest(Test02BuildFlags02CMakeVars())
-    suite.addTest(Test02BuildFlags03CMakeVarsAndCxxflags())
-    suite.addTest(Test02BuildFlags04Full())
-    return suite
-
-suite()
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
