@@ -166,6 +166,12 @@ class show_targets(selectcmd):
 class create_proj(selectcmd):
     '''create cmany.yml alongside CMakeLists.txt to hold project-settings
     '''
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('-o', '--output-file', default="cmany.yml",
+                            help="""file where the project should be written.
+                            Accepts relative or absolute paths. Relative paths
+                            are taken from the current working directory.""")
     def _exec(self, proj, args):
         proj.create_proj()
 

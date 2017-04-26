@@ -149,7 +149,9 @@ class Project:
         _add('build_types')
         _add('variants')
         txt = yaml.round_trip_dump(yml)
-        fn = os.path.join(self.root_dir, 'cmany.yml')
+        fn = self.kwargs['output_file']
+        if not os.path.isabs(fn):
+            fn = os.path.join(self.root_dir, fn)
         with open(fn, "w") as f:
             f.write(txt)
 
