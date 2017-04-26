@@ -21,7 +21,7 @@ cmds = odict([
     ('show_build_names', ['sn']),
     ('show_build_dirs', ['sd']),
     ('show_targets', ['st']),
-    ('create', []),
+    ('create_proj', []),
     ('export_vs', []),
 ])
 
@@ -163,11 +163,11 @@ class show_targets(selectcmd):
         proj.show_targets()
 
 
-class create(selectcmd):
+class create_proj(selectcmd):
     '''create cmany.yml alongside CMakeLists.txt to hold project-settings
     '''
     def _exec(self, proj, args):
-        raise Exception("not implemented")
+        proj.create_proj()
 
 
 class export_vs(selectcmd):
@@ -175,7 +175,7 @@ class export_vs(selectcmd):
     outlining the project builds
     '''
     def _exec(self, proj, args):
-        proj.create_projfile()
+        proj.export_vs()
 
 
 # -----------------------------------------------------------------------------
