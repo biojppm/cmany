@@ -62,7 +62,8 @@ class BuildFlags(NamedItem):
         for n in __class__.attrs:
             a = yml_node.get(n)
             if a is not None:
-                a = __class__.flag_str_to_list(a)
+                if n != 'toolchain':
+                    a = __class__.flag_str_to_list(a)
                 setattr(self, n, a)
 
     @staticmethod
