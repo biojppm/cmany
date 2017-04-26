@@ -66,7 +66,7 @@ class Project:
         self.systems = s
         self.architectures = a
         self.compilers = c
-        self.buildtypes = t
+        self.build_types = t
         self.variants = v
 
         # add new build params as needed to deal with adjusted builds
@@ -80,7 +80,7 @@ class Project:
                 continue
             _addnew(b, 'system')
             _addnew(b, 'architecture')
-            _addnew(b, 'buildtype')
+            _addnew(b, 'build_type')
             _addnew(b, 'compiler')
             _addnew(b, 'variant')
 
@@ -119,6 +119,7 @@ class Project:
         c = Configs()
 
     def add_build(self, system, arch, compiler, buildtype, variant):
+    def add_build(self, system, arch, compiler, build_type, variant):
         # duplicate the build items, as they may be mutated due
         # to translation of their flags for the compiler
         def _dup_item(item):
@@ -127,7 +128,7 @@ class Project:
             return i
         s = _dup_item(system)
         a = _dup_item(arch)
-        t = _dup_item(buildtype)
+        t = _dup_item(build_type)
         c = _dup_item(compiler)
         v = _dup_item(variant)
         #
@@ -169,7 +170,7 @@ class Project:
         _h("sys", "system")
         _h("arch", "architecture")
         _h("compiler", "compiler")
-        _h("buildtype", "buildtype")
+        _h("build_type", "build_type")
         _h("variant", "variant")
         return out
 
