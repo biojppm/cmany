@@ -22,6 +22,24 @@ class BuildItem(NamedItem):
         items.resolve_references()
         return items
 
+    def is_trivial(self):
+        if self.name != self.default_str():
+            return False
+        if not self.flags.empty():
+            return False
+        return True
+
+    @staticmethod
+    def trivial_item(items):
+        return len(items) == 1 and items[0].is_trivial()
+
+    @staticmethod
+    def no_flags_in_collection(items):
+        for i in items:
+            if not i.flags.empty():
+                return False
+        return True
+
     def __init__(self, spec):
         self.full_specs = spec
         self.flag_specs = []

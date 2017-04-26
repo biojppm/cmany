@@ -26,6 +26,15 @@ class Compiler(BuildItem):
             cpp = vs.name if vs is not None else CMakeSysInfo.cxx_compiler()
         return cpp
 
+    def is_trivial(self):
+        """reimplement BuildItem.is_trivial because our name is altered from the
+        path to compiler_name+version"""
+        if self.path != self.default_str():
+            return False
+        if not self.flags.empty():
+            return False
+        return True
+
     def __init__(self, spec):
         if util.is_quoted(spec):
             spec = util.unquote(spec)
