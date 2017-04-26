@@ -125,7 +125,7 @@ class Compiler(BuildItem):
         # print("cmp base:", base)
         if base.startswith("c++") or base.startswith("cc"):
             try:  # if this fails, just go on. It's not really needed.
-                with tempfile.NamedTemporaryFile(suffix=".cc", prefix="cmany.", delete=False) as f:
+                with tempfile.NamedTemporaryFile(suffix=".cpp", prefix="cmany.", delete=False) as f:
                     macros = slntout([path, '-dM', '-E', f.name])
                     os.unlink(f.name)
                 macros = macros.split("\n")
@@ -155,7 +155,7 @@ class Compiler(BuildItem):
                 # print("clang version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
             name = "icc" if name.startswith("icc") else "icpc"
-            if re.search(r'icpc \(ICC\) ' + vregex + '.*'):
+            if re.search(r'icpc \(ICC\) ' + vregex + '.*', version_full):
                 version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             else:
                 version = re.sub(r'icc \(ICC\) ' + vregex + '.*', r'\1', version_full)
