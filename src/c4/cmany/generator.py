@@ -66,7 +66,7 @@ class Generator(BuildItem):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
         else:
-            bt = str(self.build.buildtype)
+            bt = str(self.build.build_type)
             if len(targets) > 1:
                 msg = ("Building multiple targets with this generator is not "
                        "implemented. "
@@ -98,7 +98,7 @@ class Generator(BuildItem):
             return cmd
 
     def install(self):
-        bt = str(self.build.buildtype)
+        bt = str(self.build.build_type)
         return ['cmake', '--build', '.', '--config', bt, '--target', 'install']
 
     """

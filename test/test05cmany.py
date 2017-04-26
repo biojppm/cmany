@@ -146,7 +146,7 @@ def run_projs(testobj, args, check_fn=None):
             if check_fn:
                 tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
-                               buildtype=cmany.BuildType.default(),
+                               build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
@@ -159,7 +159,7 @@ def run_projs(testobj, args, check_fn=None):
             if check_fn:
                 tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
-                               buildtype=cmany.BuildType.default(),
+                               build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
@@ -183,7 +183,7 @@ def run_projs(testobj, args, check_fn=None):
                     for t in build_types:
                         for v in variant_set:
                             tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                           compiler=c, buildtype=t, variant=v,
+                                           compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
 
@@ -204,7 +204,7 @@ def run_projs(testobj, args, check_fn=None):
                         ])
                         if check_fn:
                             tb = TestBuild(proj=p, buildroot=bd, installroot=id,
-                                           compiler=c, buildtype=t, variant=v,
+                                           compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
 
@@ -214,12 +214,12 @@ def run_projs(testobj, args, check_fn=None):
 # -----------------------------------------------------------------------------
 class TestBuild:
 
-    def __init__(self, proj, buildroot, installroot, compiler, buildtype, variant, numbuilds):
+    def __init__(self, proj, buildroot, installroot, compiler, build_type, variant, numbuilds):
         self.proj = proj
         self.buildroot = buildroot
         self.installroot = installroot
         self.compiler = compiler
-        self.buildtype = buildtype
+        self.build_type = build_type
         self.variant = variant
         self.numbuilds = numbuilds
         self.flags = cmany.BuildFlags('all_builds')
@@ -228,7 +228,7 @@ class TestBuild:
                                      install_root=os.path.join(self.proj.root, self.installroot),
                                      system=cmany.System.default(),
                                      arch=cmany.Architecture.default(),
-                                     buildtype=buildtype,
+                                     build_type=build_type,
                                      compiler=compiler,
                                      variant=variant,
                                      flags=self.flags,
@@ -238,8 +238,8 @@ class TestBuild:
 
     def checkc(self, tester):
         tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds, msg=self.buildroot + str(self.siblings(self.buildroot)))
-        buildtype = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
-        tester.assertEqual(buildtype, str(self.buildtype))
+        build_type = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
+        tester.assertEqual(build_type, str(self.build_type))
 
     def checkv(self, tester):
         pass

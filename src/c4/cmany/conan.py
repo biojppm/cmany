@@ -17,7 +17,7 @@ class Conan:
                    self.translate_os(build.system) +
                    self.translate_architecture(build.architecture) +
                    self.translate_compiler(build.compiler) +
-                   self.translate_buildtype(build.buildtype) +
+                   self.translate_buildtype(build.build_type) +
                    [os.path.abspath(build.projdir)])
             util.runsyscmd(cmd)
 
@@ -67,8 +67,8 @@ class Conan:
         msg = "compiler not found in conan: {}. Must be one of {}"
         raise Exception(msg.format(s, conan))
 
-    def translate_buildtype(self, buildtype):
-        s = buildtype.name
+    def translate_build_type(self, build_type):
+        s = build_type.name
         conan = Conan.settings['build_type']
         if s in conan:
             return ['-s', 'build_type=' + s]

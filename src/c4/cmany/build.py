@@ -22,7 +22,7 @@ class Build(NamedItem):
     pfile = "cmany_preload.cmake"
 
     def __init__(self, proj_root, build_root, install_root,
-                 system, arch, buildtype, compiler, variant, flags,
+                 system, arch, build_type, compiler, variant, flags,
                  num_jobs, kwargs):
         #
         self.kwargs = kwargs
@@ -34,7 +34,7 @@ class Build(NamedItem):
         self.flags = flags
         self.system = system
         self.architecture = arch
-        self.buildtype = buildtype
+        self.build_type = build_type
         self.compiler = compiler
         self.variant = variant
 
@@ -78,7 +78,7 @@ class Build(NamedItem):
     def _set_name_and_paths(self):
         self.tag = __class__.get_tag(
             self.system, self.architecture,
-            self.compiler, self.buildtype, self.variant, '-')
+            self.compiler, self.build_type, self.variant, '-')
         super().__init__(self.tag)
         self.buildtag = self.tag
         self.installtag = self.tag  # this was different in the past and may become so in the future
@@ -233,7 +233,7 @@ class Build(NamedItem):
             self.system.flags,
             self.architecture.flags,
             self.compiler.flags,
-            self.buildtype.flags,
+            self.build_type.flags,
             self.variant.flags
         )
 
@@ -295,7 +295,7 @@ class Build(NamedItem):
         if (not self.generator.is_msvc) and (not self.toolchain_file):
             _set(vc.f, 'CMAKE_C_COMPILER', self.compiler.c_compiler)
             _set(vc.f, 'CMAKE_CXX_COMPILER', self.compiler.path)
-        _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.buildtype))
+        _set(vc.s, 'CMAKE_BUILD_TYPE', str(self.build_type))
         _set(vc.p, 'CMAKE_INSTALL_PREFIX', self.installdir)
         #
         cflags = self._gather_flags('cflags', 'CMAKE_C_FLAGS_INIT', with_defines=True)
@@ -401,7 +401,7 @@ class Build(NamedItem):
         return odict([
             ('name', self.tag),
             ('generator', self.generator.name),
-            ('configurationType', self.buildtype.name),
+            ('configurationType', self.build_type.name),
             ('buildRoot', builddir),
             ('cmakeCommandArgs', self.configure_cmd(for_json=True)),
             # ('variables', []),  # this is not needed since the vars are set in the preload file
