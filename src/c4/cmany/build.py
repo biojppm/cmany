@@ -1,6 +1,7 @@
 import os
 import copy
 import glob
+import re
 from datetime import datetime
 
 from .generator import Generator

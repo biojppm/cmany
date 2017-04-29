@@ -132,10 +132,11 @@ class Compiler(BuildItem):
             except:
                 macros = []
             for m in sorted(macros):
-                if re.search("#define __GNUC__", m):
-                    name = "g++" if base.startswith("c++") else "gcc"
-                elif re.search("#define __clang__", m):
-                    name = "clang++" if base.startswith("c++") else "clang"
+                if re.search("#define __clang__", m):
+                    name = "clang++" if re.search(r"\+\+", path) else "clang"
+                    break
+                elif re.search("#define __GNUC__", m):
+                    name = "g++" if re.search(r"\+\+", path) else "gcc"
                     break
         if name.startswith("g++") or name.startswith("gcc"):
             # print("g++: version:", name, name.find('++'))
