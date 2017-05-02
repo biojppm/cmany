@@ -23,8 +23,8 @@ def read(*rnames):
 def read_manifest():
     thisd = os.path.abspath(os.path.dirname(__file__))
     with open(os.path.join(thisd, 'MANIFEST.in')) as f:
-        lines = [ re.sub(r'include (.*)$', r'\1', l) for l in f.readlines() ]
-        lines = [ os.path.join(thisd, l) for l in lines ]
+        lines = [re.sub(r'include (.*)$', r'\1', l) for l in f.readlines()]
+        lines = [os.path.join(thisd, l) for l in lines]
         return lines
 
 
