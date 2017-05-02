@@ -45,6 +45,12 @@ class Compiler(BuildItem):
             self.vs = vs
             path = vs.cxx_compiler
         else:
+            # in windows, defend against paths written for example as
+            # C:\path\to\compiler. The split is inappropriate here.
+            if (util.in_windows() and len(path) == 1 and len(spl) > 1 and
+                (spl[1][0] == '/' or spl[1][0] == '\\')):
+                path = spec
+                spl = [path]
             p = util.which(path)
             if p is None:
                 raise Exception("compiler not found: " + path)
