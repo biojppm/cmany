@@ -12,6 +12,7 @@ from c4.cmany.main import cmany_main
 from c4.cmany import util
 from c4.cmany import cmake
 from c4.cmany.compiler import Compiler
+from c4.cmany.build import Build
 
 mydir = osp.abspath(osp.dirname(__file__))
 tc_armhf = osp.join(mydir, "toolchain-arm-linux-gnueabihf.cmake")
@@ -51,7 +52,7 @@ def do_toolchain_builds(toolchain, test, args, expected_builds):
     args = [a.format(toolchain=toolchain) for a in args]
     comps = cmake.extract_toolchain_compilers(toolchain)
     c = Compiler(comps['CMAKE_CXX_COMPILER'])
-    expected_builds = [b.format(compiler=c.name)
+    expected_builds = [b.format(compiler=Build.sanitize_compiler_name(c.name))
                        for b in expected_builds]
     for t in testdirs:
         with test.subTest(msg=osp.dirname(t), args=args):

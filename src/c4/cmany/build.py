@@ -122,12 +122,21 @@ class Build(NamedItem):
 
     @staticmethod
     def get_tag(s, a, c, t, v, sep='-'):
-        s = str(s) + sep + str(a) + sep + str(c) + sep + str(t)
+        # some utilities (eg, ar) dont deal well with + in the path
+        # so replace + with x
+        # eg see https://sourceforge.net/p/mingw/bugs/1429/
+        sc = __class__.sanitize_compiler_name(c)
+        s = str(s) + sep + str(a) + sep + sc + sep + str(t)
         if v is not None and isinstance(v, Variant):
             v = v.name
         if v and v != "none":
             s += "{sep}{var}".format(sep=sep, var=str(v))
         return s
+
+    @staticmethod
+    def sanitize_compiler_name(c):
+        sc = re.sub(r'\+', 'x', str(c))
+        return sc
 
     def create_dir(self):
         if not os.path.exists(self.builddir):
