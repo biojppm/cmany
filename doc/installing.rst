@@ -10,8 +10,11 @@ Requirements
 
 Installing from PyPI
 --------------------
-cmany will eventually be added to the PyPI repository so that you can install
-via pip, but for now you can install it from source; see below.
+
+cmany is `available at the PyPI repository
+<https://pypi.python.org/pypi/cmany/>`_. Installing couldn't be easier::
+
+  $ pip install cmany
 
 
 Installing from source

@@ -1,7 +1,7 @@
 
-===========  ===============  ========================  ======================
- |license|    |readthedocs|    Linux + OS X: |travis|    Windows: |appveyor|
-===========  ===============  ========================  ======================
+=========== ===========  ===============  ========================  ======================
+ |pypi|      |license|    |readthedocs|    Linux + OS X: |travis|    Windows: |appveyor|
+=========== ===========  ===============  ========================  ======================
 
 cmany
 =====
@@ -97,6 +97,9 @@ cmany is permissively licensed under the `MIT license`_.
 
 .. _MIT license: LICENSE.txt
 
+.. |pypi| image:: https://img.shields.io/pypi/v/cmany.svg
+      :alt: Version
+      :target: https://pypi.python.org/pypi/cmany/
 .. |license| image:: https://img.shields.io/badge/License-MIT-yellow.svg
    :alt: License: MIT
    :target: https://opensource.org/licenses/MIT

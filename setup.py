@@ -91,7 +91,7 @@ def get_data_files():
 
 
 setup(name="cmany",
-      version="0.1",
+      version="0.1.0-1",
       description="CMake build tree batching tool",
       long_description=read('README.rst') + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
@@ -100,13 +100,8 @@ setup(name="cmany",
       classifiers=[
           "License :: OSI Approved :: MIT License",
           "Intended Audience :: Developers",
-          "Development Status :: 2 - Pre-Alpha",
+          "Development Status :: 3 - Alpha",
           "Programming Language :: Python :: 3",
-          'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
           "Programming Language :: C",
           "Programming Language :: C++",
           "Topic :: Software Development :: Build Tools",
