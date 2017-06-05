@@ -39,9 +39,9 @@ def cmany_main(in_args=None):
 
 # -----------------------------------------------------------------------------
 class cmdbase:
-    '''base class for commands'''
+    """base class for commands"""
     def add_args(self, parser):
-        '''add arguments to a command parser'''
+        """add arguments to a command parser"""
         pass
     def proj(self, args):
         return None
@@ -79,9 +79,9 @@ class help(cmdbase):
 
 
 class projcmd(cmdbase):
-    '''a command which refers to a project'''
+    """a command which refers to a project"""
     def proj(self, args):
-        '''create a project given the configuration.'''
+        """create a project given the configuration."""
         return Project(**vars(args))
     def add_args(self, parser):
         super().add_args(parser)
@@ -90,14 +90,14 @@ class projcmd(cmdbase):
 
 
 class selectcmd(projcmd):
-    '''a command which selects several builds'''
+    """a command which selects several builds"""
     def add_args(self, parser):
         super().add_args(parser)
         c4args.add_select(parser)
 
 
 class configure(selectcmd):
-    '''configure the selected builds'''
+    """configure the selected builds"""
     def _exec(self, proj, args):
         proj.configure()
     def add_args(self, parser):
@@ -105,7 +105,7 @@ class configure(selectcmd):
 
 
 class build(selectcmd):
-    '''build the selected builds, configuring before if necessary'''
+    """build the selected builds, configuring before if necessary"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('target', default=[], nargs='*',
@@ -115,13 +115,13 @@ class build(selectcmd):
 
 
 class install(selectcmd):
-    '''install the selected builds, building before if necessary'''
+    """install the selected builds, building before if necessary"""
     def _exec(self, proj, args):
         proj.install()
 
 
 class run(selectcmd):
-    '''run a command in each build directory'''
+    """run a command in each build directory"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('command', default="",
@@ -131,7 +131,7 @@ class run(selectcmd):
 
 
 class show_vars(selectcmd):
-    '''show the value of certain CMake cache vars'''
+    """show the value of certain CMake cache vars"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
@@ -140,32 +140,32 @@ class show_vars(selectcmd):
 
 
 class show_build_names(selectcmd):
-    '''show the build names'''
+    """show the build names"""
     def _exec(self, proj, args):
         proj.show_build_names()
 
 
 class show_build_dirs(selectcmd):
-    '''show the build directories'''
+    """show the build directories"""
     def _exec(self, proj, args):
         proj.show_build_dirs()
 
 
 class show_builds(selectcmd):
-    '''show the build properties'''
+    """show the build properties"""
     def _exec(self, proj, args):
         proj.show_builds()
 
 
 class show_targets(selectcmd):
-    '''show the targets of a single build'''
+    """show the targets of a single build"""
     def _exec(self, proj, args):
         proj.show_targets()
 
 
 class create_proj(selectcmd):
-    '''create cmany.yml alongside CMakeLists.txt to hold project-settings
-    '''
+    """create cmany.yml alongside CMakeLists.txt to hold project-settings
+    """
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('-o', '--output-file', default="cmany.yml",
@@ -177,9 +177,9 @@ class create_proj(selectcmd):
 
 
 class export_vs(selectcmd):
-    '''create CMakeSettings.json, a VisualStudio 2015+ compatible file
+    """create CMakeSettings.json, a VisualStudio 2015+ compatible file
     outlining the project builds
-    '''
+    """
     def _exec(self, proj, args):
         proj.export_vs()
 
