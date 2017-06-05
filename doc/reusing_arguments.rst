@@ -38,7 +38,7 @@ or as another example, you can process only a single build tree via the
 
 .. code:: bash
 
-    $ cmany b -ib 'icpc.*Debug'
+    $ cmany b -ib 'icpc.*Release'
 
 Some arguments to cmany are meant to be used before the cmany subcommand. For
 those arguments, you should use the ``CMANY_PFX_ARGS`` environment variable
