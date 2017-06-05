@@ -44,21 +44,22 @@ command sequences have the same effect:
 
 Features
 --------
-* Easily configure and build many variations of your project with one simple command.
+* Easily configures and builds many variations of your project with one
+  simple command.
 * Saves the tedious work of dealing with many build trees by hand.
-* Sensible defaults: ``cmany build`` will create and build a single project using CMake's
-  defaults.
+* Sensible defaults: ``cmany build`` will create and build a single project
+  using CMake's defaults.
 * Transparently pass flags (compiler flags, processor defines or cmake cache
   variables) to any or all of the builds.
-* Useful for build comparison and benchmarking. You can easily setup bundles of flags, aka variants.
+* Useful for build comparison and benchmarking. You can easily setup bundles
+  of flags, aka variants.
 * Useful for validating and unit-testing your project with different
   compilers and flags.
 * Useful for creating distributions of your project.
 * Avoids a full rebuild when the build type is changed. Although this feature
-  already exists in multi-configuration cmake generators like Visual
-  Studio, it is missing from mono-configuration generators like Unix
-  Makefiles.
-* Run arbitrary commands in every build tree or install tree.
+  already exists in multi-configuration cmake generators like Visual Studio,
+  it is missing from mono-configuration generators like Unix Makefiles.
+* Runs arbitrary commands in every build tree or install tree.
 * Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 More info
@@ -102,7 +103,7 @@ cmany is permissively licensed under the `MIT license`_.
       :target: https://pypi.python.org/pypi/cmany/
 .. |license| image:: https://img.shields.io/badge/License-MIT-yellow.svg
    :alt: License: MIT
-   :target: https://opensource.org/licenses/MIT
+   :target: https://github.com/biojppm/cmany/blob/master/LICENSE.txt
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
     :alt: Linux+OSX build status
     :target: https://travis-ci.org/biojppm/cmany
