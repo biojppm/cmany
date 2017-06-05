@@ -162,12 +162,19 @@ or eg the ``avx`` alias if you want to enable AVX SIMD processing::
         gcc,clang,icc: -mavx
         vs: /arch:avx
 
-This allows use of the aliases instead of the flags directly, thus
-insulating you from differences between compilers. For example, the following
-command will translate to ``g++ -mavx -Wall`` with gcc, clang or icc, but
-with Visual Studio it will translate instead to ``cl.exe /Wall /arch:avx``::
+This allows use of the aliases instead of the flags directly, thus insulating
+you from differences between compilers. Using the aliases will also produce
+easier commands, because less quoting is needed to prevent the flags from
+being read by the shell. For example, the following command will translate to
+``g++ -mavx -Wall`` with gcc, clang or icc, but with Visual Studio it will
+translate instead to ``cl.exe /Wall /arch:avx``::
 
     $ cmany b --cxxflags avx,wall
+
+As a comparison, direct use of the flags would result in these commands::
+
+    $ cmany b --cxxflags '-Wall','-mavx'          # for gcc
+    $ cmany b --cxxflags '/Wall','/arch:avx'      # for VS
 
 Note that flag aliases are translated only when they are given through
 ``--cxxflags/-cflags``. Do not use aliases with ``--cmake-vars
@@ -185,6 +192,7 @@ Defining more flag aliases
 Being able to define your own flag aliases is in the roadmap. For now, you
 can submit PRs for adding aliases.
 
+
 Toolchains
 ----------
 
@@ -192,11 +200,11 @@ To use cmake toolchain use the option ``-T/--toolchain``. Usually, this
 will be done inside a systems build item, ``-s/--systems``; see the
 :ref:`Systems` section in the :doc:`build items document </build_items>`.
 
+
 Build exclusion arguments
 -------------------------
 
 Note that :doc:`arguments for excluding builds </excluding_builds>` can be
 used wherever flag arguments can be used. This makes it easier to declare
-incompatibility between build items::
-
-  $ cmany b
+incompatibility between build items. See :doc:`an example in this help page
+</excluding_builds>`.
