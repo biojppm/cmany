@@ -11,6 +11,8 @@ import copy
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
 
+_debug_mode = False
+
 
 def supports_color():
     """
@@ -42,6 +44,11 @@ def color_log(style, *args, **kwargs):
         print(*args, **kwargs)
         print(colorama.Style.RESET_ALL, sep='', end='')
     else:
+        print(*args, **kwargs)
+
+
+def logdbg(*args, **kwargs):
+    if _debug_mode:
         print(*args, **kwargs)
 
 
@@ -80,7 +87,7 @@ def human_readable_time(seconds):
         return '{:.3g}s'.format(seconds)
     elif seconds < 3600.:
         mins = int(seconds / 60.)
-        secs = int(seconds-60.*mins)
+        secs = int(seconds - 60.*mins)
         return '{}m {}s'.format(mins, secs)
     else:
         hours = int(seconds / 3600.)
