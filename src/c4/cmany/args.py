@@ -62,18 +62,23 @@ def merge_envargs(cmds, sysargs):
     pfxargs = util.splitesc_quoted(pfxargs, ' ')
     cmdargs = os.environ.get('CMANY_ARGS', '')
     cmdargs = util.splitesc_quoted(cmdargs, ' ')
+    if not pfxargs and not cmdargs:
+        return sysargs
     pos = find_subcommand(cmds, sysargs)
     args = sysargs
     cmd = sysargs[pos]
     if cmd not in ('help', 'h'):
         args = sysargs[0:pos]
         if pfxargs:
-            print("inserting CMANY_PFX_ARGS:", pfxargs)
+            # print("inserting CMANY_PFX_ARGS:", pfxargs)
             args += pfxargs
         args.append(cmd)
         if cmdargs:
-            print("inserting CMANY_ARGS:", cmdargs)
+            # print("inserting CMANY_ARGS:", cmdargs)
             args += cmdargs
+        if len(sysargs) > pos+1:
+            args += sysargs[(pos+1):]
+    # print("resulting args:", args)
     return args
 
 
@@ -267,8 +272,9 @@ def add_item_combination_flags(parser):
         'Build-item-specific combination rules',
         description="""Prevent certain build items from producing a build.
         Each item is given by name and must be valid. These arguments are
-        generally for use in spefications of build items; however, they may
-        also be of use when there's a project file.""")
+        generally for use in specifications of build items; however, they may
+        also be of use when using arguments via the CMANY_ARGS environment
+        or with a project file.""")
 
     g.add_argument("-xs", "--exclude-systems", metavar="sys1,[sys2[,...]]",
                    default=[], action=CombinationArgument,

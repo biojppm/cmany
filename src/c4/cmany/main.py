@@ -166,8 +166,7 @@ class show_targets(selectcmd):
 
 # -----------------------------------------------------------------------------
 class create_proj(selectcmd):
-    """create cmany.yml alongside CMakeLists.txt to hold project-settings
-    """
+    """create cmany.yml alongside CMakeLists.txt to hold project-settings"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('-o', '--output-file', default="cmany.yml",
