@@ -2,6 +2,7 @@
 
 import argparse
 import pprint
+import os
 
 from . import util
 from . import help
@@ -16,6 +17,7 @@ from multiprocessing import cpu_count as cpu_count
 
 # -----------------------------------------------------------------------------
 def setup(subcommands, module):
+    """creates a parser to process cmany's arguments"""
     p = argparse.ArgumentParser(
         prog='cmany',
         description='''Easily process several build trees of a CMake project''',
@@ -38,6 +40,7 @@ def setup(subcommands, module):
 
 
 def parse(parser, in_args):
+    """parses and performs related tasks"""
     args = parser.parse_args(in_args)
     if not hasattr(args, 'func'):
         argerror(parser, 'missing subcommand')
@@ -51,6 +54,37 @@ def argerror(parser, *msg_args):
     print('\n')
     parse(parser, ['-h'])
     exit(1)
+
+
+def merge_envargs(cmds, sysargs):
+    """gets any arguments from environment vars"""
+    pfxargs = os.environ.get('CMANY_PFX_ARGS', '')
+    pfxargs = util.splitesc_quoted(pfxargs, ' ')
+    cmdargs = os.environ.get('CMANY_ARGS', '')
+    cmdargs = util.splitesc_quoted(cmdargs, ' ')
+    pos = find_subcommand(cmds, sysargs)
+    args = sysargs
+    cmd = sysargs[pos]
+    if cmd not in ('help', 'h'):
+        args = sysargs[0:pos]
+        if pfxargs:
+            print("inserting CMANY_PFX_ARGS:", pfxargs)
+            args += pfxargs
+        args.append(cmd)
+        if cmdargs:
+            print("inserting CMANY_ARGS:", cmdargs)
+            args += cmdargs
+    return args
+
+
+def find_subcommand(cmds, args):
+    pos = None
+    for i, a in enumerate(args):
+        for c, aliases in cmds.items():
+            if a == c or a in aliases:
+                pos = i
+                return pos
+    raise Exception("could not find subcommand")
 
 
 # -----------------------------------------------------------------------------
@@ -94,11 +128,11 @@ def add_proj(parser):
     parser.add_argument("-j", "--jobs", default=cpu_count(),
                         help="""build with the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
-    parser.add_argument("-E", "--export-compile", default=False, action="store_true",
+    parser.add_argument("-E", "--export-compile", default=False,
+                        action="store_true",
                         help="""Have cmake export a compile_commands.json
                         containing the compile commands for each file. This
-                        is useful eg for clang-based indexing tools can be
-                        used.""")
+                        is useful eg for clang-based indexing tools.""")
 
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",

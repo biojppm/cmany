@@ -28,7 +28,7 @@ cmds = odict([
 
 def cmany_main(in_args=None):
     if in_args is None:
-        in_args = sys.argv[1:]
+        in_args = c4args.merge_envargs(cmds, sys.argv[1:])
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
     argcomplete.autocomplete(parser)
@@ -78,6 +78,7 @@ class help(cmdbase):
                     print(subtopic.txt)
 
 
+# -----------------------------------------------------------------------------
 class projcmd(cmdbase):
     """a command which refers to a project"""
     def proj(self, args):
@@ -152,7 +153,7 @@ class show_build_dirs(selectcmd):
 
 
 class show_builds(selectcmd):
-    """show the build properties"""
+    """show the builds and their properties"""
     def _exec(self, proj, args):
         proj.show_builds()
 
@@ -163,6 +164,7 @@ class show_targets(selectcmd):
         proj.show_targets()
 
 
+# -----------------------------------------------------------------------------
 class create_proj(selectcmd):
     """create cmany.yml alongside CMakeLists.txt to hold project-settings
     """
@@ -187,5 +189,4 @@ class export_vs(selectcmd):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-
     cmany_main(sys.argv[1:])
