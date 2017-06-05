@@ -97,6 +97,6 @@ epilog = """
 
 list of help topics:
 {}
-""".format('\n'.join([
-    Topic.tablefmt.format(k, v.title) for k, v in topics.items()
-])
+""".format(
+    '\n'.join([Topic.tablefmt.format(k, v.title) for k, v in topics.items()])
+)
