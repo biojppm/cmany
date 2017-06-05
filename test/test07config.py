@@ -163,7 +163,8 @@ class _BFTCase(ConfFixtureBase):
         self.bf = bf
         self.yml = yml
         self.name = self.__class__.__name__[7:].lower()
-        self.cm = yaml.load(self.yml, yaml.RoundTripLoader)
+        YAML = yaml.YAML()
+        self.cm = YAML.load(self.yml)
         if self.cm is None:
             self.cm = CommentedMap()
         self.non_empty = []

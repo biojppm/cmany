@@ -29,7 +29,8 @@ class Conan:
         settings_file = os.path.join(conandir, 'settings.yml')
         with open(settings_file) as f:
             txt = f.read()
-            data = yaml.load(txt, yaml.RoundTripLoader)
+            YAML = yaml.YAML()
+            data = YAML.load(txt)
             settings = odict(data)
             return settings
 

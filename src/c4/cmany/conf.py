@@ -13,6 +13,9 @@ if not osp.exists(CONF_DIR):
 
 USER_DIR = osp.expanduser("~/.cmany/")
 
+if yaml.version_info < (0, 15):
+    raise Exception("cmany now requires ruamel.yaml>=0.15.0")
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -42,7 +45,8 @@ flag_aliases: {}
 """)
 
     def _load_yml(self, yml):
-        dump = yaml.load(yml, yaml.RoundTripLoader)
+        YAML = yaml.YAML()
+        dump = YAML.load(yml)
         dump = odict(dump)
         for i in ('project', 'config', 'flag_aliases'):
             if dump.get(i) is None:

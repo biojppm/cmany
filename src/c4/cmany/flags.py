@@ -168,7 +168,8 @@ def dump_yml(comps, flags):
 
 def load_txt(yml_txt):
     """load a yml txt into a compilers, flags pair"""
-    dump = yaml.load(yml_txt, yaml.RoundTripLoader)
+    YAML = yaml.YAML()
+    dump = YAML.load(yml_txt)
     fa = dump.get('flag_aliases', dump)
     return load_yml(fa)
 
