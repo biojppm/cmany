@@ -70,6 +70,7 @@ variant_tests = {
     'variant_test31-foobar_only':['none', 'foo', 'bar'],
 }
 
+
 def _get_variant_spec(test_name):
     blueprint = variant_tests[test_name]
     if not blueprint:
@@ -77,6 +78,13 @@ def _get_variant_spec(test_name):
     li = ['-v'] + [','.join(flag_bundle_set[v]['spec']) for v in blueprint]
     variants = cmany.Variant.create_variants(li)
     return li, variants
+
+
+# unset environment variables which affect the behaviour of child invokations
+# of cmany
+os.environ['CMANY_ARGS'] = ''
+os.environ['CMANY_PFX_ARGS'] = ''
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
