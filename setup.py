@@ -91,7 +91,7 @@ def get_data_files():
 
 
 setup(name="cmany",
-      version="0.1.0-2",
+      version="0.1.0.r3",
       description="CMake build tree batching tool",
       long_description=read('README.rst') + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
@@ -114,12 +114,12 @@ setup(name="cmany",
       author_email="dev@jpmag.me",
       zip_safe=False,
       namespace_packages=['c4'],
-      packages=find_packages('src'),
+      packages=find_packages('src', exclude=['test']),
       package_dir={'': 'src'},
       entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
       install_requires=readreqs('requirements.txt'),
       tests_require=readreqs('requirements_test.txt'),
-      # include_package_data=True,
+      include_package_data=True,
       # package_data={'c4.cmany':read_manifest()},
       data_files=get_data_files()
 )
