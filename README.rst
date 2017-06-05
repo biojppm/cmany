@@ -46,7 +46,8 @@ Features
 --------
 * Easily configures and builds many variations of your project with one
   simple command.
-* Saves the tedious work of dealing with many build trees by hand.
+* Saves the tedious and error-prone work of dealing with many build trees by
+  hand.
 * Sensible defaults: ``cmany build`` will create and build a single project
   using CMake's defaults.
 * Transparently pass flags (compiler flags, processor defines or cmake cache

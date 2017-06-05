@@ -41,7 +41,7 @@ command sequences have the same effect:
 Features
 ========
 
-* Easily configure and build many variations of your project with
+* Easily configures and builds many variations of your project with
   one simple command.
 
 * Saves the tedious work of dealing with many build trees by hand.
@@ -65,7 +65,7 @@ Features
   like Visual Studio, it is missing from mono-configuration generators
   like Unix Makefiles.
 
-* Run arbitrary commands in every build tree or install tree.
+* Runs arbitrary commands in every build tree or install tree.
 
 * Emacs integration! https://github.com/biojppm/cmany.el
 
@@ -121,7 +121,7 @@ Contents:
 
   * Building dependencies
 
-  * Project mode
+  * Argument reuse
 
   * Exporting build configurations
 
@@ -179,7 +179,11 @@ Contents:
 
 * Project dependencies
 
-* Project mode
+* Reusing arguments
+
+  * Session arguments
+
+  * Project file
 
 
 Indices and tables

@@ -37,7 +37,8 @@ the "--include-builds/-ib", say, "g++-6" with "Release":
 Some arguments to cmany are meant to be used before the cmany
 subcommand. For those arguments, you should use the "CMANY_PFX_ARGS"
 environment variable instead of "CMANY_ARGS". That is, cmany will see
-the commands as "cmany $CMANY_PFX_ARGS <subcommand> $CMANY_ARGS".
+commands given to it as "cmany $CMANY_PFX_ARGS <subcommand>
+$CMANY_ARGS".
 
 Note: The value of "CMANY_ARGS" and "CMANY_PFX_ARGS" is always used
   in every "cmany" invokation. To prevent their use, you will have to

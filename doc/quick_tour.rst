@@ -327,13 +327,16 @@ directory. Use ``--deps-prefix`` to specify a different install directory for
 the external project. :doc:`Read more here </dependencies>`.
 
 
-Project mode
-------------
+Argument reuse
+--------------
 
 Due to the way that compilation flags are accepted, the full form of a cmany
-command does become big. cmany allows permanently storing these options in a
-``cmany.yml`` project file, which should be placed side by side with the
-project ``CMakeLists.txt``. You can :doc:`find more about this here </project_mode>`.
+command can become big. To save you from retyping the command, you can set
+the ``CMANY_ARGS`` environment variable to reuse arguments to cmany. As an
+experimental (and buggy) feature, you can also permanently store these
+options in a ``cmany.yml`` project file, which should be placed side by side
+with the project ``CMakeLists.txt``. You can :doc:`find more about this here
+</reusing_arguments>`.
 
 
 Exporting build configurations
