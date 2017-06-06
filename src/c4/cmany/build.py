@@ -423,7 +423,7 @@ class Build(NamedItem):
         with util.setcwd(self.builddir):
             if self.generator.is_msvc:
                 # each target in MSVC has a corresponding vcxproj file
-                files = glob.glob(".", "*.vcxproj")
+                files = list(util.find_files_with_ext(self.builddir, ".vcxproj"))
                 files = [os.path.basename(f) for f in files]
                 files = [os.path.splitext(f)[0] for f in files]
                 return files
