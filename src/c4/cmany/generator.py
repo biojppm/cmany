@@ -78,22 +78,26 @@ class Generator(BuildItem):
             if not self.is_msvc:
                 cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
             else:
-                # if a target has a . in the name, it must be substituted for _
-                targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
-                if len(targets_safe) != 1:
-                    raise Exception("msbuild can only build one target at a time: was " + str(targets_safe))
-                t = targets_safe[0]
-                pat = os.path.join(self.build.builddir, t + '*.vcxproj')
-                projs = glob.glob(pat)
-                if len(projs) == 0:
-                    msg = "could not find vcx project for this target: {} (glob={}, got={})".format(t, pat, projs)
-                    raise Exception(msg)
-                elif len(projs) > 1:
-                    msg = "multiple vcx projects for this target: {} (glob={}, got={})".format(t, pat, projs)
-                    raise Exception(msg)
-                proj = projs[0]
-                cmd = [self.build.compiler.vs.msbuild, proj,
-                       '/property:Configuration='+bt,
+                # # if a target has a . in the name, it must be substituted for _
+                # targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
+                # if len(targets_safe) != 1:
+                #     raise Exception("msbuild can only build one target at a time: was " + str(targets_safe))
+                # t = targets_safe[0]
+                # pat = os.path.join(self.build.builddir, t + '*.vcxproj')
+                # projs = glob.glob(pat)
+                # if len(projs) == 0:
+                #     msg = "could not find vcx project for this target: {} (glob={}, got={})".format(t, pat, projs)
+                #     raise Exception(msg)
+                # elif len(projs) > 1:
+                #     msg = "multiple vcx projects for this target: {} (glob={}, got={})".format(t, pat, projs)
+                #     raise Exception(msg)
+                # proj = projs[0]
+                # cmd = [self.build.compiler.vs.msbuild, proj,
+                #        '/property:Configuration='+bt,
+                #        '/maxcpucount:' + str(self.num_jobs)]
+                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt,
+                       '--',
+                       #'/property:Configuration='+bt,
                        '/maxcpucount:' + str(self.num_jobs)]
             return cmd
 
