@@ -207,7 +207,6 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
     # #lexer.whitespace_split = True
     # li = list(lexer)
     # return li
-    print("\nAQUI 0", string)
     out = []
     i = 0
     l = len(string)
