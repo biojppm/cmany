@@ -27,17 +27,19 @@ class Test01splitesc_quoted(ut.TestCase):
     def t(self, input, expected, split_char=' '):
         with self.subTest(input=input):
             output = util.splitesc_quoted(input, split_char)
+            if output != expected:
+                print("\nFAIL:\ninp=" + str(input) + "\nout=" + str(output) + "\nexp=" + str(expected) + "\n")
             self.assertEqual(output, expected)
 
     def _run(self, fn):
         fn('{} {}')
+        fn('{} {} ')
         fn(' {} {}')
         fn(' {} {} ')
-        fn('{} {} ')
         fn('{}     {}')
+        fn('{}     {}     ')
         fn('     {}     {}')
         fn('     {}     {}     ')
-        fn('{}     {}     ')
 
     def test00_spaces_only(self):
         t = lambda fmt: self.t(fmt, [])
@@ -114,6 +116,15 @@ class Test01splitesc_quoted(ut.TestCase):
         var0 = '"var0: -X \\"-g\\",\\"-g3\\",\\"-Wall\\" -D VAR0,DBG"'
         var1 = '"var1: -X \\"-O1\\",\\"-ffast-math\\" -D VAR1,OPTM"'
         self.t('{},{}'.format(var0, var1), [var0, var1], ',')
+
+
+    def test50_buggy_args(self):
+        spec = "-c c++ -t Debug,Release -v none -v 'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X wall -C wall','bar: -V BAR_VAR=1 -D BAR_DEF=1 -X g3 -C g3'"
+        expected = ['-c', 'c++',
+                    '-t', 'Debug,Release',
+                    '-v', 'none',
+                    '-v', "'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X wall -C wall','bar: -V BAR_VAR=1 -D BAR_DEF=1 -X g3 -C g3'"]
+        self.t(spec, expected, ' ')
 
 
 # -----------------------------------------------------------------------------

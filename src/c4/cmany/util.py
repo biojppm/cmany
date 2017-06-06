@@ -200,6 +200,14 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
     characters inside a quote_chars pair (including escaped quote_chars and
     split_chars). split_char can also be escaped when outside of a
     quote_chars pair."""
+    # lexer = shlex.shlex(string)
+    # lexer.quotes = quote_chars
+    # lexer.escape = escape_char
+    # lexer.whitespace = split_char
+    # #lexer.whitespace_split = True
+    # li = list(lexer)
+    # return li
+    print("\nAQUI 0", string)
     out = []
     i = 0
     l = len(string)
@@ -225,10 +233,22 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                 i += 1
             else:
                 s = string[prev:j]
+                if (j < l and string[j] != split_char):
+                    s += string[j]
                 if s:
-                    out.append(s)
-                prev = j+1
-                i = prev
+                    if (prev > 0 and string[prev-1] == split_char):
+                        prev = j+1
+                        i = prev
+                        out.append(s)
+                    else:
+                        prev = j+1
+                        i = prev
+                        if j < l and string[j] != split_char:
+                            s += string[j]
+                        if out:
+                            out[-1] += s
+                        else:
+                            out.append(s)
         # when a split_char is found, append to the list
         elif c == split_char and not is_escaped:
             if i > 0 and i < l and i > prev:
@@ -236,7 +256,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                 if s:
                     out.append(s)
             prev = i+1
-            i += 1
+            i = prev
         # this is a regular character, just go on scanning
         else:
             i += 1
