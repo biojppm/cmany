@@ -102,7 +102,7 @@ cmany is permissively licensed under the `MIT license`_.
 .. |pypi| image:: https://img.shields.io/pypi/v/cmany.svg
       :alt: Version
       :target: https://pypi.python.org/pypi/cmany/
-.. |license| image:: https://img.shields.io/badge/License-MIT-yellow.svg
+.. |license| image:: https://img.shields.io/badge/License-MIT-green.svg
    :alt: License: MIT
    :target: https://github.com/biojppm/cmany/blob/master/LICENSE.txt
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
