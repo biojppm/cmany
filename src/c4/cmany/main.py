@@ -28,7 +28,8 @@ cmds = odict([
 
 def cmany_main(in_args=None):
     if in_args is None:
-        in_args = c4args.merge_envargs(cmds, sys.argv[1:])
+        in_args = sys.argv[1:]
+    in_args = c4args.merge_envargs(cmds, in_args)
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
     argcomplete.autocomplete(parser)

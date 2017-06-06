@@ -176,8 +176,8 @@ def run_projs(testobj, args, check_fn=None):
         return
 
     # run all sys,arch,compiler,buildtype,variant combinations at once
-    bd = '.test/2--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
-    id = '.test/2--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
+    bd = '.test/2.1--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
+    id = '.test/2.1--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
     for p in projs:
         with testobj.subTest(msg="run all combinations at once", proj=p.proj):
             p.run(args + ['--build-dir', bd,
@@ -195,6 +195,30 @@ def run_projs(testobj, args, check_fn=None):
                                            numbuilds=numbuilds)
                             check_fn(tb)
 
+    # run all sys,arch,compiler,buildtype,variant combinations at once - envargs
+    bd = '.test/2.2--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
+    id = '.test/2.2--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
+    for p in projs:
+        with testobj.subTest(msg="run all combinations at once", proj=p.proj):
+            os.environ['CMANY_ARGS'] = '-c {} -t {} -v {}'.format(
+                ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
+                ','.join([str(b) for b in build_types]),
+                ','.join([v.full_specs for v in variant_set])
+            )
+            util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
+            p.run(args + ['--build-dir', bd,
+                          '--install-dir', id,
+            ])
+            os.environ['CMANY_ARGS'] = ''
+            if check_fn:
+                for c in compiler_set:
+                    for t in build_types:
+                        for v in variant_set:
+                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                           compiler=c, build_type=t, variant=v,
+                                           numbuilds=numbuilds)
+                            check_fn(tb)
+
     # run sys,arch,compiler,buildtype combinations individually
     for p in projs:
         for c in compiler_set:
@@ -202,14 +226,36 @@ def run_projs(testobj, args, check_fn=None):
                 for v in variant_set:
                     with testobj.subTest(msg="run all combinations individually",
                                          proj=p.proj, compiler=c, build_type=t, variant=v):
-                        bd = '.test/3--{}--{}--{}--build'.format(c, t, v.name)
-                        id = '.test/3--{}--{}--{}--install'.format(c, t, v.name)
+                        bd = '.test/3.1--{}--{}--{}--build'.format(c, t, v.name)
+                        id = '.test/3.1--{}--{}--{}--install'.format(c, t, v.name)
                         p.run(args + ['--build-dir', bd,
                                       '--install-dir', id,
                                       '-c', c.name if c.is_msvc else c.path,
                                       '-t', str(t),
                                       '-v', v.full_specs,
                         ])
+                        if check_fn:
+                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                                           compiler=c, build_type=t, variant=v,
+                                           numbuilds=1)
+                            check_fn(tb)
+
+    # run sys,arch,compiler,buildtype combinations individually - envargs
+    for p in projs:
+        for c in compiler_set:
+            for t in build_types:
+                for v in variant_set:
+                    with testobj.subTest(msg="run all combinations individually - envargs",
+                                         proj=p.proj, compiler=c, build_type=t, variant=v):
+                        bd = '.test/3.2--envargs--{}--{}--{}--build'.format(c, t, v.name)
+                        id = '.test/3.2--envargs--{}--{}--{}--install'.format(c, t, v.name)
+                        os.environ['CMANY_ARGS'] = '-c {} -t {} -v {}'.format(
+                            c.name if c.is_msvc else c.path,
+                            str(t),
+                            v.full_specs)
+                        util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
+                        p.run(args + ['--build-dir', bd, '--install-dir', id])
+                        os.environ['CMANY_ARGS'] = ''
                         if check_fn:
                             tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,

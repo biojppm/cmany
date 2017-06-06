@@ -58,12 +58,18 @@ def argerror(parser, *msg_args):
 
 def merge_envargs(cmds, sysargs):
     """gets any arguments from environment vars"""
+    #
     pfxargs = os.environ.get('CMANY_PFX_ARGS', '')
     pfxargs = util.splitesc_quoted(pfxargs, ' ')
+    pfxargs = [util.unquote(a) for a in pfxargs]
+    #
     cmdargs = os.environ.get('CMANY_ARGS', '')
     cmdargs = util.splitesc_quoted(cmdargs, ' ')
+    cmdargs = [util.unquote(a) for a in cmdargs]
+    #
     if not pfxargs and not cmdargs:
         return sysargs
+    #
     pos = find_subcommand(cmds, sysargs)
     args = sysargs
     cmd = sysargs[pos]
