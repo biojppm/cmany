@@ -368,6 +368,13 @@ def ctor(cls, args):
     return l
 
 
+def find_files_with_ext(folder, ext):
+    for root, dirs, files in os.walk(folder):
+        for file in files:
+            if file.endswith(ext):
+                yield os.path.join(root, file)
+
+
 # -----------------------------------------------------------------------------
 def nested_lookup(dictionary, *entry):
     """get a nested entry from a dictionary"""
