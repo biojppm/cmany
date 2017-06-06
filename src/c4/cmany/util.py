@@ -5,7 +5,6 @@ import re
 import sys
 import subprocess
 import platform
-import collections
 import copy
 
 import colorama #from colorama import Fore, Back, Style, init
