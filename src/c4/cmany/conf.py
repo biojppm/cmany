@@ -9,7 +9,8 @@ CONF_DIR = osp.join(osp.dirname(__file__), "conf")
 # maybe cmany is not installed. Then it must be a source distribution.
 if not osp.exists(CONF_DIR):
     CONF_DIR = osp.abspath(osp.join(osp.dirname(__file__), "../../../conf"))
-    assert osp.exists(CONF_DIR)
+    if not osp.exists(CONF_DIR):
+        raise Exception("cmany: conf dir not found: {}".format(CONF_DIR))
 
 USER_DIR = osp.expanduser("~/.cmany/")
 
