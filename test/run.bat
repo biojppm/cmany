@@ -9,8 +9,8 @@ echo %PIPINSTALL%
 
 if not defined PYTHON set PYTHON=python3
 if "%PYTHON%" == "" set PYTHON=python3
-if not defined PIP set PIP=%PYTHON%\Scripts\pip
-if "%PIP%" == "" set PIP=%PYTHON%\Scripts\pip
+if not defined PIP set PIP=%PYTHON%\..\..\Scripts\pip
+if "%PIP%" == "" set PIP=%PYTHON%\..\..\Scripts\pip
 if not defined PIPINSTALL set "PIPINSTALL=%PIP% install"
 if "%PIPINSTALL%" == "" set "PIPINSTALL=%PIP% install"
 

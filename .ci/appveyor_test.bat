@@ -5,6 +5,7 @@ cd %0\..\..
 set root=%cd%
 cd test
 
+set PATH=%PYTHON\Scripts;%PATH%
 set PIP=%PYTHON%\Scripts\pip
 set "PIPINSTALL=%PIP% install"
 set PYTHON=%PYTHON%\python.exe
