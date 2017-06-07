@@ -10,8 +10,9 @@ Easily batch-build cmake projects!
 
 `cmany <https://github.com/biojppm/cmany>`_ is a command line tool to easily
 build variations of a CMake C/C++ project.  It combines different compilers,
-cmake build types, compilation flags, processor architectures and
-operating systems.
+cmake build types, bundles of compilation flags, processor architectures and
+operating systems. Each of these items can also have associated compilation
+flags.
 
 For example, to configure and build a project combining clang++ and g++
 with both Debug and Release::
@@ -19,7 +20,7 @@ with both Debug and Release::
     $ cmany build -c clang++,g++ -t Debug,Release path/to/CMakeLists.txt
 
 The command above will result in four different build trees, placed by default
-under a ``build`` directory placed in the current working directory::
+under a ``build`` subdirectory in the current working directory::
 
     $ ls build/*
     build/linux-x86_64-clang++3.9-Debug
@@ -27,11 +28,12 @@ under a ``build`` directory placed in the current working directory::
     build/linux-x86_64-gcc++6.1-Debug
     build/linux-x86_64-gcc++6.1-Release
 
-Each build tree is obtained by first configuring CMake with the given
-parameters, and then invoking ``cmake --build`` to build the project at once.
+Each build tree is obtained by first configuring the project with the items
+in each combination, and then invoking ``cmake --build`` to build the project
+at once.
 
 You can also use cmany just to simplify your cmake workflow! These two
-command sequences have the same effect:
+command sequences have the same effect (``b`` is an alias to ``build``):
 
 +-------------------------------+-------------------------------+
 | typical cmake                 | cmany                         |
@@ -61,6 +63,7 @@ Features
   already exists in multi-configuration cmake generators like Visual Studio,
   it is missing from mono-configuration generators like Unix Makefiles.
 * Runs arbitrary commands in every build tree or install tree.
+* Full control over how the build items are combined.
 * Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 More info
