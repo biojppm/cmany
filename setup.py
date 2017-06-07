@@ -20,14 +20,6 @@ def read(*rnames):
         return f.read()
 
 
-def read_manifest():
-    thisd = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(thisd, 'MANIFEST.in')) as f:
-        lines = [re.sub(r'include (.*)$', r'\1', l) for l in f.readlines()]
-        lines = [os.path.join(thisd, l) for l in lines]
-        return lines
-
-
 def readreqs(*rnames):
     def _skipcomment(line):
         return line if (line and not line.startswith('--')
@@ -44,12 +36,12 @@ def get_binaries_directory():
         paths = (site.getusersitepackages(),)
     else:
         if hasattr(site, 'getsitepackages'):
-            print("setup: site-packages", site.getsitepackages())
-            print("setup: site-user-packages", site.getusersitepackages())
-            print("setup: site-prefix", os.path.dirname(sys.executable))
+            print("cmany setup: site-packages", site.getsitepackages())
+            print("cmany setup: site-user-packages", site.getusersitepackages())
+            print("cmany setup: site-prefix", os.path.dirname(sys.executable))
             paths = site.getsitepackages()
         else:
-            print("setup: no site.getsitepackages()...")
+            print("cmany setup: no site.getsitepackages()...")
             py_prefix = os.path.dirname(sys.executable)
             paths = [
                 py_prefix + '/lib/site-packages',
@@ -66,16 +58,16 @@ def get_binaries_directory():
         ))
     for path in paths:
         if os.path.exists(path):
-            print('setup: installation path:', path)
+            print('cmany setup: installation path:', path)
             return path
-    raise Exception('setup: no installation path found', file=sys.stderr)
+    raise Exception('cmany setup: no installation path found', file=sys.stderr)
     return None
 
 
 def get_data_files():
     dest = get_binaries_directory()
-    d = lambda d: os.path.join(dest, d)
-    return [
+    d = lambda d: "share/" + d #os.path.join(dest, d)
+    df = [
           (d("c4/cmany/"), [
               "LICENSE.txt",
               "README.rst",
@@ -88,6 +80,7 @@ def get_data_files():
           (d("c4/cmany/doc"),
               glob.glob("doc/_build/text/*.txt")),
       ]
+    return df
 
 
 setup(name="cmany",
@@ -114,12 +107,13 @@ setup(name="cmany",
       author_email="dev@jpmag.me",
       zip_safe=False,
       namespace_packages=['c4'],
-      packages=find_packages('src', exclude=['test']),
+      packages=find_packages('src'),
       package_dir={'': 'src'},
       entry_points={'console_scripts': ['cmany=c4.cmany.main:cmany_main'], },
       install_requires=readreqs('requirements.txt'),
       tests_require=readreqs('requirements_test.txt'),
+      test_suite='nose.collector',
       include_package_data=True,
       # package_data={'c4.cmany':read_manifest()},
-      data_files=get_data_files()
+      data_files=get_data_files(),
 )

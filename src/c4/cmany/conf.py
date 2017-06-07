@@ -1,22 +1,38 @@
-from ruamel import yaml
-from ruamel.yaml.comments import CommentedMap as CommentedMap
-
+import sys
 import os.path as osp
 from collections import OrderedDict as odict
 from . import util
 
-CONF_DIR = osp.join(osp.dirname(__file__), "conf")
-# maybe cmany is not installed. Then it must be a source distribution.
-if not osp.exists(CONF_DIR):
-    CONF_DIR = osp.abspath(osp.join(osp.dirname(__file__), "../../../conf"))
-    if not osp.exists(CONF_DIR):
-        raise Exception("cmany: conf dir not found: {}".format(CONF_DIR))
-
-USER_DIR = osp.expanduser("~/.cmany/")
+from ruamel import yaml
+from ruamel.yaml.comments import CommentedMap as CommentedMap
 
 if yaml.version_info < (0, 15):
     raise Exception("cmany now requires ruamel.yaml>=0.15.0")
 
+# -----------------------------------------------------------------------------
+SHARE_DIR = osp.abspath(
+    osp.join(
+        osp.dirname(osp.dirname(sys.executable)),
+        'share', 'c4', 'cmany'
+    )
+)
+CONF_DIR = osp.join(SHARE_DIR, 'conf')
+DOC_DIR = osp.join(SHARE_DIR, 'doc')
+USER_DIR = osp.expanduser("~/.cmany/")
+
+# maybe cmany is not installed. Then it must be a source distribution.
+if not osp.exists(SHARE_DIR):
+    SHARE_DIR = osp.abspath(osp.join(osp.dirname(__file__), "../../.."))
+    CONF_DIR = osp.join(SHARE_DIR, 'conf')
+    DOC_DIR = osp.join(SHARE_DIR, 'doc/_build/text')
+
+assert osp.exists(SHARE_DIR), "cmany: share dir not found: {}".format(SHARE_DIR)
+assert osp.exists(CONF_DIR), "cmany: conf dir not found: {}".format(CONF_DIR)
+assert osp.exists(DOC_DIR), "cmany: doc dir not found: {}".format(DOC_DIR)
+assert osp.exists(USER_DIR), "cmany: user dir not found: {}".format(USER_DIR)
+
+util.logwarn("CONF_DIR", CONF_DIR)
+util.logwarn("DOC_DIR", DOC_DIR)
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
