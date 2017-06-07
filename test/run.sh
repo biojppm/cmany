@@ -6,6 +6,7 @@ set -e
 root=$(cd $(dirname $0)/.. ; pwd)
 PY=${PYTHON:-python3}
 PIP=${PIP:-pip3}
+PIP_INSTALL=${PIP_INSTALL:pip install}
 
 # test that cmany can be installed and ran
 cd $root
@@ -14,7 +15,7 @@ if [ -d build ] ; then rm -rf build/* ; fi
 export PATH=$PATH:$HOME/.local/bin
 $PY setup.py sdist bdist_wheel
 $PIP uninstall -y cmany || echo ""
-$PIP install --user dist/cmany-*.whl
+$PIP_INSTALL dist/cmany-*.whl
 $PIP show -f cmany
 cmany h
 cmany h quick_tour
