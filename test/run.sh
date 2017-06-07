@@ -6,7 +6,7 @@ set -e
 root=$(cd $(dirname $0)/.. ; pwd)
 PY=${PYTHON:-python3}
 PIP=${PIP:-pip3}
-PIP_INSTALL=${PIP_INSTALL:pip install}
+PIP_INSTALL=${PIP_INSTALL:-pip install}
 
 # test that cmany can be installed and ran
 cd $root
