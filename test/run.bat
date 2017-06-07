@@ -28,7 +28,7 @@ if exist dist (
 %PYTHON% setup.py sdist bdist_wheel
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 dir dist
-%PIPINSTALL% "dist/cmany-*.whl"
+%PIPINSTALL% dist\cmany-*.whl
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 %PIP% show -f cmany
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
