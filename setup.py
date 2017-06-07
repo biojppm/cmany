@@ -84,7 +84,7 @@ def get_data_files():
 
 
 setup(name="cmany",
-      version="0.1.1",
+      version="0.1.2",
       description="CMake build tree batching tool",
       long_description=read('README.rst') + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
