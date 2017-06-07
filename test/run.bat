@@ -32,7 +32,7 @@ for %%X IN (dist\cmany-*.whl) do (
       set WHEEL=%%X
       )
 echo %WHEEL%
-%PIPINSTALL% %WHEEL=%
+%PIPINSTALL% %WHEEL%
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 %PIP% show -f cmany
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
