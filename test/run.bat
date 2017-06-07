@@ -3,12 +3,20 @@ echo on
 cd %0\..\..
 set root=%cd%
 
+echo %PYTHON%
+echo %PIP%
+echo %PIPINSTALL%
+
 if not defined PYTHON set PYTHON=python3
 if "%PYTHON%" == "" set PYTHON=python3
 if not defined PIP set PIP=%PYTHON%\Scripts\pip
 if "%PIP%" == "" set PIP=%PYTHON%\Scripts\pip
 if not defined PIPINSTALL set "PIPINSTALL=%PIP% install"
 if "%PIPINSTALL%" == "" set "PIPINSTALL=%PIP% install"
+
+echo %PYTHON%
+echo %PIP%
+echo %PIPINSTALL%
 
 :: test that cmany can be installed and ran
 cd %root%
