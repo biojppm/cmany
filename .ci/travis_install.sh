@@ -70,6 +70,8 @@ which $PYTHON
 which $PIP
 $PYTHON -V
 $PIP -V
+$PIP install --upgrade setuptools
+$PIP install --upgrade pip
 $PIP install -r requirements.txt .
 $PIP install -r requirements_test.txt .
 

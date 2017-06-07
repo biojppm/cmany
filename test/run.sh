@@ -13,12 +13,12 @@ if [ -d dist ] ; then rm -vf dist/cmany-* ; fi
 if [ -d build ] ; then rm -rf build/* ; fi
 export PATH=$PATH:$HOME/.local/bin
 $PY setup.py sdist bdist_wheel
-$PIP uninstall cmany || echo ""
+$PIP uninstall -y cmany || echo ""
 $PIP install --user dist/cmany-*.whl
 $PIP show -f cmany
 cmany h
 cmany h quick_tour
-$PIP uninstall cmany
+$PIP uninstall -y cmany
 
 # cd test
 # export PYTHONPATH=$cwd/../src

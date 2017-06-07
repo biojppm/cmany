@@ -16,7 +16,7 @@ if exist dist (
 )
 %PYTHON% setup.py sdist bdist_wheel
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-%PIP% uninstall cmany
+%PIP% uninstall -y cmany
 %PIP% install --user dist/cmany-*.whl
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 %PIP% show -f cmany
@@ -25,7 +25,7 @@ cmany h
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 cmany h quick_tour
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-%PIP% uninstall cmany
+%PIP% uninstall -y cmany
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 :: cd test

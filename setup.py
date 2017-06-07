@@ -5,7 +5,6 @@ from setuptools import setup, find_packages
 import os.path
 import sys
 import site
-import re
 import glob
 
 
@@ -65,8 +64,8 @@ def get_binaries_directory():
 
 
 def get_data_files():
-    dest = get_binaries_directory()
-    d = lambda d: "share/" + d #os.path.join(dest, d)
+    # dest = get_binaries_directory()
+    d = lambda d: "share/" + d # os.path.join(dest, d)
     df = [
           (d("c4/cmany/"), [
               "LICENSE.txt",
@@ -78,7 +77,8 @@ def get_data_files():
               "conf/cmany.yml"
           ]),
           (d("c4/cmany/doc"),
-              glob.glob("doc/_build/text/*.txt")),
+              glob.glob("doc/_build/text/*.txt")
+          ),
       ]
     return df
 

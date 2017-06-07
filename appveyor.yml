@@ -65,6 +65,7 @@ install:
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
   - "%PYTHON%\\Scripts\\pip install --disable-pip-version-check --user --upgrade pip"
+  - "%PYTHON%\\Scripts\\pip install --disable-pip-version-check --user --upgrade setuptools"
 
   # Install the build dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,
