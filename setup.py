@@ -67,7 +67,7 @@ def get_data_files():
     # dest = get_binaries_directory()
     d = lambda d: "share/" + d # os.path.join(dest, d)
     df = [
-          (d("c4/cmany/"), [
+          (d("c4/cmany"), [
               "LICENSE.txt",
               "README.rst",
               "requirements.txt",
