@@ -17,7 +17,7 @@ if [ -d dist ] ; then
 fi
 export PATH=$PATH:$HOME/.local/bin
 $PY setup.py sdist bdist_wheel
-$PIP uninstall --user cmany || echo ""
+$PIP uninstall cmany || echo ""
 $PIP install --user dist/cmany-*.whl
 $PIP show -f cmany
 cmany h
