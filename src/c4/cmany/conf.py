@@ -31,9 +31,6 @@ assert osp.exists(CONF_DIR), "cmany: conf dir not found: {}".format(CONF_DIR)
 assert osp.exists(DOC_DIR), "cmany: doc dir not found: {}".format(DOC_DIR)
 assert osp.exists(USER_DIR), "cmany: user dir not found: {}".format(USER_DIR)
 
-util.logwarn("CONF_DIR", CONF_DIR)
-util.logwarn("DOC_DIR", DOC_DIR)
-
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
