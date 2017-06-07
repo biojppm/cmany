@@ -29,7 +29,7 @@ if exist dist (
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 dir dist
 for %%X IN (dist\cmany-*.whl) do (
-      set WHEEL=%%x
+      set WHEEL=%%X
       )
 echo %WHEEL%
 %PIPINSTALL% %WHEEL=%
