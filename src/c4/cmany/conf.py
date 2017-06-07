@@ -10,12 +10,14 @@ if yaml.version_info < (0, 15):
     raise Exception("cmany now requires ruamel.yaml>=0.15.0")
 
 # -----------------------------------------------------------------------------
-SHARE_DIR = osp.abspath(
-    osp.join(
-        osp.dirname(osp.dirname(sys.executable)),
-        'share', 'c4', 'cmany'
+if util.in_windows():
+    SHARE_DIR = osp.abspath(
+        osp.join(osp.dirname(sys.executable), 'share', 'c4', 'cmany')
     )
-)
+else:
+    SHARE_DIR = osp.abspath(
+        osp.join(osp.dirname(osp.dirname(sys.executable)), 'share', 'c4', 'cmany')
+    )
 CONF_DIR = osp.join(SHARE_DIR, 'conf')
 DOC_DIR = osp.join(SHARE_DIR, 'doc')
 USER_DIR = osp.expanduser("~/.cmany/")
