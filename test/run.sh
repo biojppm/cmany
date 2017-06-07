@@ -3,18 +3,14 @@
 set -x
 set -e
 
-cwd=$(cd $(dirname $0) ; pwd)
-export PYTHONPATH=$cwd/../src
+root=$(cd $(dirname $0)/.. ; pwd)
 PY=${PYTHON:-python3}
 PIP=${PIP:-pip3}
 
-$PY -m nose -d -v --with-id --nocapture $*
-
 # test that cmany can be installed and ran
-cd $cwd/..
-if [ -d dist ] ; then
-    rm -vf dist/cmany-*
-fi
+cd $root
+if [ -d dist ] ; then rm -vf dist/cmany-* ; fi
+if [ -d build ] ; then rm -rf build/* ; fi
 export PATH=$PATH:$HOME/.local/bin
 $PY setup.py sdist bdist_wheel
 $PIP uninstall cmany || echo ""
@@ -23,5 +19,9 @@ $PIP show -f cmany
 cmany h
 cmany h quick_tour
 $PIP uninstall cmany
+
+# cd test
+# export PYTHONPATH=$cwd/../src
+# $PY -m nose -d -v --with-id --nocapture $*
 
 exit $?
