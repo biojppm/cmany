@@ -43,10 +43,11 @@ if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 %PIP% uninstall -y cmany
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
-:: cd test
-:: if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
-:: set PYTHONPATH=%root%\src
-:: %PYTHON% -m nose -d -v --with-id --nocapture %*
-:: if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+:: run the cmany unit tests
+cd test
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+set PYTHONPATH=%root%\src
+%PYTHON% -m nose -d -v --with-id --nocapture %*
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 exit /b %ERRORLEVEL%

@@ -21,8 +21,9 @@ cmany h
 cmany h quick_tour
 $PIP uninstall -y cmany
 
-# cd test
-# export PYTHONPATH=$cwd/../src
-# $PY -m nose -d -v --with-id --nocapture $*
+# run the cmany unit tests
+cd test
+export PYTHONPATH=$root/src
+$PY -m nose -d -v --with-id --nocapture $*
 
 exit $?
