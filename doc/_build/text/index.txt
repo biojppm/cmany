@@ -5,8 +5,9 @@ Easily batch-build cmake projects!
 
 cmany is a command line tool to easily build variations of a CMake
 C/C++ project.  It combines different compilers, cmake build types,
-compilation flags, processor architectures (WIP) and operating systems
-(also WIP).
+bundles of compilation flags, processor architectures and operating
+systems. Each of these items can also have associated compilation
+flags.
 
 For example, to configure and build a project combining clang++ and
 g++ with both Debug and Release:
@@ -14,8 +15,7 @@ g++ with both Debug and Release:
    $ cmany build -c clang++,g++ -t Debug,Release path/to/CMakeLists.txt
 
 The command above will result in four different build trees, placed by
-default under a "build" directory placed in the current working
-directory:
+default under a "build" subdirectory in the current working directory:
 
    $ ls build/*
    build/linux-x86_64-clang++3.9-Debug
@@ -23,12 +23,12 @@ directory:
    build/linux-x86_64-gcc++6.1-Debug
    build/linux-x86_64-gcc++6.1-Release
 
-Each build tree is obtained by first configuring CMake with the given
-parameters, and then invoking "cmake --build" to build the project at
-once.
+Each build tree is obtained by first configuring the project with the
+items in each combination, and then invoking "cmake --build" to build
+the project at once.
 
 You can also use cmany just to simplify your cmake workflow! These two
-command sequences have the same effect:
+command sequences have the same effect ("b" is an alias to "build"):
 
 +---------------------------------+---------------------------------+
 | typical cmake                   | cmany                           |
@@ -44,7 +44,8 @@ Features
 * Easily configures and builds many variations of your project with
   one simple command.
 
-* Saves the tedious work of dealing with many build trees by hand.
+* Saves the tedious and error-prone work of dealing with many build
+  trees by hand.
 
 * Sensible defaults: "cmany build" will create and build a single
   project using CMake's defaults.
@@ -66,6 +67,8 @@ Features
   like Unix Makefiles.
 
 * Runs arbitrary commands in every build tree or install tree.
+
+* Full control over how the build items are combined.
 
 * Emacs integration! https://github.com/biojppm/cmany.el
 

@@ -12,9 +12,9 @@ Session arguments
 
 You can store arguments in the environment variable ``CMANY_ARGS``. Then the
 resulting cmany command is taken as if it were given ``cmany <subcommand>
-$CMANY_ARGS``. In the example below, the configure, build and install
-commands will all use the five given compilers and two build types, resulting
-in 10 build trees:
+$CMANY_ARGS <command line arguments>``. In the example below, the configure,
+build and install commands will all use the five given compilers and two
+build types, resulting in 10 build trees:
 
 .. code:: bash
 
@@ -42,8 +42,8 @@ or as another example, you can process only a single build tree via the
 
 Some arguments to cmany are meant to be used before the cmany subcommand. For
 those arguments, you should use the ``CMANY_PFX_ARGS`` environment variable
-instead of ``CMANY_ARGS``. cmany will see commands given to it as
-``cmany $CMANY_PFX_ARGS <subcommand> $CMANY_ARGS``.
+instead of ``CMANY_ARGS``. cmany will see commands given to it as ``cmany
+$CMANY_PFX_ARGS <subcommand> $CMANY_ARGS <command line arguments>``.
 
 .. note::
    The values of the ``CMANY_ARGS`` and ``CMANY_PFX_ARGS`` environment
@@ -61,6 +61,5 @@ Project file
 
 ``cmany`` also allows you to permanently store its arguments in a
 ``cmany.yml`` file which should be placed alongside the project
-``CMakeLists.txt``. This feature is under current development and should be
-used with care.
-
+``CMakeLists.txt``. This feature is under current development and is not
+ready.
