@@ -13,8 +13,11 @@ from c4.cmany import help as c4help
 cmds = odict([
     ('help', ['h']),
     ('configure', ['c']),
+    ('reconfigure', ['rc']),
     ('build', ['b']),
+    ('rebuild', ['rb']),
     ('install', ['i']),
+    ('reinstall', ['ri']),
     ('run', ['r']),
     ('show_vars', ['sv']),
     ('show_builds', ['sb']),
@@ -45,6 +48,7 @@ class cmdbase:
         """add arguments to a command parser"""
         pass
     def proj(self, args):
+        """create a project given the configuration."""
         return None
     def _exec(self, proj, args):
         assert False, 'never call the base class method. Implement this in derived classes'
@@ -80,10 +84,19 @@ class help(cmdbase):
 
 
 # -----------------------------------------------------------------------------
+class globcmd(cmdbase):
+    """a command applying to a python glob pattern matching build directory names"""
+    def proj(self, args):
+        return Project(**vars(args))
+    def add_args(self, parser):
+        super().add_args(parser)
+        c4args.add_glob(parser)
+
+
+# -----------------------------------------------------------------------------
 class projcmd(cmdbase):
     """a command which refers to a project"""
     def proj(self, args):
-        """create a project given the configuration."""
         return Project(**vars(args))
     def add_args(self, parser):
         super().add_args(parser)
@@ -102,8 +115,12 @@ class configure(selectcmd):
     """configure the selected builds"""
     def _exec(self, proj, args):
         proj.configure()
-    def add_args(self, parser):
-        super().add_args(parser)
+
+
+class reconfigure(globcmd):
+    """reconfigure the selected builds, selecting by name using a python glob pattern"""
+    def _exec(self, proj, args):
+        proj.reconfigure()
 
 
 class build(selectcmd):
@@ -116,10 +133,26 @@ class build(selectcmd):
         proj.build()
 
 
+class rebuild(globcmd):
+    """rebuild the selected builds, selecting by name using a python glob pattern"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', default=[], nargs='*',
+                            help="""specify a subset of targets to build""")
+    def _exec(self, proj, args):
+        proj.rebuild()
+
+
 class install(selectcmd):
     """install the selected builds, building before if necessary"""
     def _exec(self, proj, args):
         proj.install()
+
+
+class reinstall(globcmd):
+    """rebuild the selected builds, selecting by name using a python glob pattern"""
+    def _exec(self, proj, args):
+        proj.reinstall()
 
 
 class run(selectcmd):

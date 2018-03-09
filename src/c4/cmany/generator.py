@@ -62,7 +62,7 @@ class Generator(BuildItem):
         # args += self.build.flags.cmake_flags
         return args
 
-    def cmd(self, targets):
+    def cmd(self, targets, override_build_type=None, override_num_jobs=None):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
         else:

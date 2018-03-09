@@ -126,7 +126,7 @@ def _handle_hidden_args__skip_rest(args):
 
 
 # -----------------------------------------------------------------------------
-def add_proj(parser):
+def add_basic(parser):
     parser.add_argument("proj_dir", nargs="?", default=".",
                         help="""the directory where the project's CMakeLists.txt
                         is located. An empty argument will default to the
@@ -137,13 +137,30 @@ def add_proj(parser):
     parser.add_argument("--install-dir", default="./install",
                         help="set the install root (defaults to ./install)")
     parser.add_argument("-j", "--jobs", default=cpu_count(),
-                        help="""build with the given number of parallel jobs
+                        help="""use the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
-    parser.add_argument("-E", "--export-compile", default=False,
+
+
+# -----------------------------------------------------------------------------
+def add_glob(parser):
+
+    add_basic(parser)
+
+    parser.add_argument("glob", nargs="*", default="*",
+                        help="""glob pattern(s) matching build names (NOTE:
+                        not paths to the build dirs)""")
+
+
+# -----------------------------------------------------------------------------
+def add_proj(parser):
+
+    add_basic(parser)
+
+    parser.add_argument("-E", "--export-compile", default=True,
                         action="store_true",
                         help="""Have cmake export a compile_commands.json
                         containing the compile commands for each file. This
-                        is useful eg for clang-based indexing tools.""")
+                        is useful e.g. for clang-based indexing tools.""")
 
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",

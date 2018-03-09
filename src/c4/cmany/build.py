@@ -1,7 +1,7 @@
 import os
 import copy
-import glob
 import re
+import dill
 from datetime import datetime
 
 from .generator import Generator
@@ -142,6 +142,24 @@ class Build(NamedItem):
         if not os.path.exists(self.builddir):
             os.makedirs(self.builddir)
 
+    def _serialize(self):
+        # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
+        protocol = 0  # serialize in ASCII
+        fn = os.path.join(self.builddir, 'cmany_build.dill')
+        with open(fn, 'wb') as f:
+            dill.dump(self, f)
+
+    @staticmethod
+    def deserialize(builddir):
+        # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
+        if not os.path.exists(builddir):
+            msg = "build directory does not exist: {}"
+            raise Exception(msg.format(builddir))
+        fn = os.path.join(builddir, 'cmany_build.dill')
+        with open(fn, 'rb') as f:
+            return dill.load(f)
+        raise Exception("not found: " + fn)
+
     def configure_cmd(self, for_json=False):
         if for_json:
             return ('-C ' + self.preload_file
@@ -166,7 +184,27 @@ class Build(NamedItem):
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
 
+    def reconfigure(self):
+        """reconfigure a build directory, without touching any cache entry"""
+        self._check_successful_configure('reconfigure')
+        with util.setcwd(self.builddir, silent=False):
+            cmd = ['cmake', self.projdir]
+            util.runsyscmd(cmd)
+
+    def _check_successful_configure(self, purpose):
+        if not os.path.exists(self.builddir):
+            msg = "cannot {}: build dir does not exist: {}"
+            raise Exception(msg.format(purpose, self.builddir))
+        if not os.path.exists(self.varcache.cache_file):
+            msg = "cannot {}: cache file not found: {}"
+            raise Exception(msg.format(purpose, self.varcache.cache_file))
+        pkf = os.path.join(self.builddir, 'cmany_build.pkl')
+        if not os.path.exists(pkf):
+            msg = "cannot {}: build save file not found: {}"
+            raise Exception(msg.format(purpose, pkf))
+
     def mark_configure_done(self, cmd):
+        self._serialize()
         with util.setcwd(self.builddir):
             with open("cmany_configure.done", "w") as f:
                 f.write(" ".join(cmd) + "\n")
@@ -206,6 +244,20 @@ class Build(NamedItem):
             # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
 
+    def rebuild(self, targets=[]):
+        self._check_successful_configure('rebuild')
+        with util.setcwd(self.builddir, silent=False):
+            if len(targets) == 0:
+                if self.compiler.is_msvc:
+                    targets = ["ALL_BUILD"]
+                else:
+                    targets = ["all"]
+            # cmake --build and visual studio won't handle
+            # multiple targets at once, so loop over them.
+            for t in targets:
+                cmd = self.generator.cmd([t])
+                util.runsyscmd(cmd)
+
     def mark_build_done(self, cmd):
         with util.setcwd(self.builddir):
             with open("cmany_build.done", "w") as f:
@@ -227,7 +279,14 @@ class Build(NamedItem):
             if self.needs_build():
                 self.build()
             cmd = self.generator.install()
-            print(cmd)
+            util.runsyscmd(cmd)
+
+    def reinstall(self):
+        self._check_successful_configure('reinstall')
+        with util.setcwd(self.builddir, silent=False):
+            if self.needs_build():
+                self.build()
+            cmd = self.generator.install()
             util.runsyscmd(cmd)
 
     def clean(self):

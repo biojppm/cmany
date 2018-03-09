@@ -78,6 +78,9 @@ class CMakeCache(odict):
     def __init__(self, builddir=None):
         super().__init__(loadvars(builddir))
         self.dirty = False
+        self.cache_file = None
+        if builddir:
+            self.cache_file = os.path.join(builddir, 'CMakeCache.txt')
 
     def getvars(self, names):
         out = odict()

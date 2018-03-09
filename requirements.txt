@@ -1,3 +1,4 @@
 ruamel.yaml>=0.15.0
 colorama
 argcomplete
+dill

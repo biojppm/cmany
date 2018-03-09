@@ -54,8 +54,23 @@ class Project:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
 
-        self.load_configs()
+        if kwargs.get('glob'):
+            self._init_with_glob(**kwargs)
+        else:
+            self.load_configs()
+            self._init_with_build_items(**kwargs)
 
+    def _init_with_glob(self, **kwargs):
+        g = kwargs.get('glob')
+        self.builds = []
+        for pattern in g:
+            bp = os.path.join(self.build_dir, pattern)
+            li = glob.glob(bp)
+            for b in li:
+                build = Build.deserialize(b)
+                self.builds.append(build)
+
+    def _init_with_build_items(self, **kwargs):
         s, a, c, t, v = __class__.get_build_items(**kwargs)
 
         cr = CombinationRules(kwargs.get('combination_rules', []))
@@ -223,16 +238,29 @@ class Project:
             os.makedirs(self.build_dir)
         self._execute(Build.configure, "Configure", silent=False, **restrict_to)
 
+    def reconfigure(self, **restrict_to):
+        if not os.path.exists(self.build_dir):
+            os.makedirs(self.build_dir)
+        self._execute(Build.reconfigure, "Reconfigure", silent=False, **restrict_to)
+
     def build(self, **restrict_to):
         def do_build(build):
             build.build(self.targets)
         self._execute(do_build, "Build", silent=False, **restrict_to)
+
+    def rebuild(self, **restrict_to):
+        def do_rebuild(build):
+            build.rebuild(self.targets)
+        self._execute(do_rebuild, "Rebuild", silent=False, **restrict_to)
 
     def clean(self, **restrict_to):
         self._execute(Build.clean, "Clean", silent=False, **restrict_to)
 
     def install(self, **restrict_to):
         self._execute(Build.install, "Install", silent=False, **restrict_to)
+
+    def reinstall(self, **restrict_to):
+        self._execute(Build.reinstall, "Reinstall", silent=False, **restrict_to)
 
     def run_cmd(self, cmd, **restrict_to):
         cmds = util.splitesc_quoted(cmd, ' ')
