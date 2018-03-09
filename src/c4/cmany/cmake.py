@@ -145,13 +145,27 @@ class CMakeCache(odict):
         def __init__(self, name, val, vartype=None, dirty=False, from_input=False):
             self.name = name
             self.val = val
-            self.vartype = 'STRING' if vartype is None else vartype
+            self.vartype = self._guess_var_type(name, val, vartype)
             self.dirty = dirty
             self.from_input = from_input
 
+        def _guess_var_type(self, name, val, vartype):
+            """make an informed guess of the var type
+            @todo: add a test for this"""
+            if vartype is not None:
+                return vartype
+            elif val.upper() in ("ON", "OFF", "NO", "YES", "1", "0", "TRUE", "FALSE", "T", "F", "N", "Y"):
+                # https://cmake.org/pipermail/cmake/2007-December/018548.html
+                return "BOOL"
+            elif os.path.isfile(val) or "PATH" in name.upper():
+                return "FILEPATH"
+            elif os.path.isdir(val) or "DIR" in name.upper() or os.path.isabs(val):
+                return "PATH"
+            else:
+                return "STRING"
+
         def reset(self, val, vartype='', **kwargs):
             """
-
             :param val:
             :param vartype:
             :param kwargs:
