@@ -51,6 +51,14 @@ them with particular build items, you can use the pattern ``'item_name:
 
     $ cmany b -s x86,'x86_64: -V ENABLE_X64_ASM=1'
 
+CMake's cache variables are typed, and this sometimes can affect subtly the
+outcome of a build. cmany will try to guess the type variable type (ie,
+whether it is a ``BOOL``, ``PATH``, ``FILEPATH`` or ``STRING``), based on its
+name and value. You can override this behaviour by using the standard CMake
+syntax for specifying the variable type::
+
+    $ cmany b -V CMAKE_VERBOSE_MAKEFILE:BOOL=1,PROJECT_FOO:STRING=BAR
+
 
 Preprocessor macros
 -------------------

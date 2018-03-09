@@ -2,18 +2,9 @@ Excluding builds
 ================
 
 cmany accepts arguments for excluding certain combinations of build
-items. These arguments specify rules which apply either to a build's name or
-to the items of which the build is composed.
-
-Like all the arguments above, item combination arguments can be used both at
-the cmany command level or at each build item level.
-
-You may notice below that it does not make much sense to provide the
-``--include-*`` arguments in a build item specification, as combination is
-implied for every build item. However, being able to use these at the scope
-of the command is certainly useful, either as a form of saving extensive
-editing when reusing complicated cmany commands (for example in shell
-sessions), or with :doc:`Project mode </project_mode>`.
+items. These arguments specify combination exclusion rules which apply either
+to a build's name or to the individual build items of which the build is
+composed.
 
 When multiple combination arguments are given, they are processed in the
 order in which they are given. A build is then included if it successfully 
@@ -165,3 +156,13 @@ rewriting them every time is something we would like to avoid. So when you
 want to narrow down your previous command (or your project setup) just to a
 certain combination of builds, the ``--include-*`` arguments usually come in
 very handy.
+
+Like all the arguments above, item combination arguments can be used both at
+the cmany command level or at each build item level.
+
+You may have noticed that it does not make much sense to provide the
+``--include-*`` arguments in a build item specification, as combination is
+implied for every build item. However, being able to use these at the scope
+of the command is certainly useful, either as a form of saving extensive
+editing when reusing complicated cmany commands (for example in shell
+sessions), or with :doc:`Project mode </project_mode>`.
