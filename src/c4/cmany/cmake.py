@@ -1,7 +1,5 @@
-
 import re
 import os
-import tempfile
 
 from collections import OrderedDict as odict
 
@@ -10,6 +8,13 @@ from .util import cacheattr, setcwd, runsyscmd
 from . import util
 
 _cache_entry = r'^(.*?)(:.*?)=(.*)$'
+
+
+def hascache(builddir):
+    c = os.path.join(builddir, 'CMakeCache.txt')
+    if os.path.exists(c):
+        return c
+    return None
 
 
 def setcachevar(builddir, var, value):
