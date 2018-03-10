@@ -21,6 +21,7 @@ class Build(NamedItem):
     """Holds a build's settings"""
 
     pfile = "cmany_preload.cmake"
+    sfile = "cmany_build.dill"
 
     def __init__(self, proj_root, build_root, install_root,
                  system, arch, build_type, compiler, variant, flags,
@@ -145,9 +146,9 @@ class Build(NamedItem):
     def _serialize(self):
         # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
         protocol = 0  # serialize in ASCII
-        fn = os.path.join(self.builddir, 'cmany_build.dill')
+        fn = os.path.join(self.builddir, __class__.sfile)
         with open(fn, 'wb') as f:
-            dill.dump(self, f)
+            dill.dump(self, f, protocol)
 
     @staticmethod
     def deserialize(builddir):
@@ -155,7 +156,7 @@ class Build(NamedItem):
         if not os.path.exists(builddir):
             msg = "build directory does not exist: {}"
             raise Exception(msg.format(builddir))
-        fn = os.path.join(builddir, 'cmany_build.dill')
+        fn = os.path.join(builddir, __class__.sfile)
         with open(fn, 'rb') as f:
             return dill.load(f)
         raise Exception("not found: " + fn)
@@ -198,7 +199,7 @@ class Build(NamedItem):
         if not os.path.exists(self.varcache.cache_file):
             msg = "cannot {}: cache file not found: {}"
             raise Exception(msg.format(purpose, self.varcache.cache_file))
-        pkf = os.path.join(self.builddir, 'cmany_build.pkl')
+        pkf = os.path.join(self.builddir, __class__.sfile)
         if not os.path.exists(pkf):
             msg = "cannot {}: build save file not found: {}"
             raise Exception(msg.format(purpose, pkf))
