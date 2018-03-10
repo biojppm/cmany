@@ -24,6 +24,18 @@ from .build import Build
 
 from .combination_rules import CombinationRules
 from .cmake import getcachevars
+from . import cmake
+
+
+# -----------------------------------------------------------------------------
+def _getdir(attr_name, default, kwargs):
+    d = kwargs.get(attr_name)
+    if d is None:
+        d = os.path.join(os.getcwd(), default)
+    else:
+        if not os.path.isabs(d):
+            d = os.path.join(os.getcwd(), d)
+    return d
 
 
 # -----------------------------------------------------------------------------
@@ -32,33 +44,46 @@ class Project:
     def __init__(self, **kwargs):
 
         self.kwargs = kwargs
-
-        proj_dir = kwargs.get('proj_dir', os.getcwd())
-        proj_dir = os.getcwd() if proj_dir == "." else proj_dir
-        if not os.path.isabs(proj_dir):
-            proj_dir = os.path.abspath(proj_dir)
-        self.root_dir = proj_dir
-
-        def _getdir(attr_name, default):
-            d = kwargs.get(attr_name)
-            if d is None:
-                d = os.path.join(os.getcwd(), default)
-            else:
-                if not os.path.isabs(d):
-                    d = os.path.join(os.getcwd(), d)
-            return d
-        self.build_dir = _getdir('build_dir', 'build')
-        self.install_dir = _getdir('install_dir', 'install')
-
-        self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
 
-        if kwargs.get('glob'):
+        pdir = kwargs.get('proj_dir', os.getcwd())
+        pdir = os.getcwd() if pdir == "." else pdir
+        if not os.path.isabs(pdir):
+            pdir = os.path.abspath(pdir)
+
+        p, b, i = __class__._find_proj_build_install_dir(pdir, kwargs)
+        self.root_dir = p
+        self.build_dir = b
+        self.install_dir = i
+        self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
+
+        if cmake.hascache(pdir):
+            self._init_with_build_dir(pdir, **kwargs)
+        elif kwargs.get('glob'):
             self._init_with_glob(**kwargs)
         else:
             self.load_configs()
             self._init_with_build_items(**kwargs)
+
+    @staticmethod
+    def _find_proj_build_install_dir(d, kwargs):
+        if os.path.exists(os.path.join(d, "CMakeLists.txt")):
+            b = _getdir('build_dir', 'build', kwargs)
+            i = _getdir('install_dir', 'install', kwargs)
+            return d, b, i
+        elif os.path.exists(os.path.join(d, "CMakeCache.txt")):
+            ch = cmake.CMakeCache(d)
+            p = ch['CMAKE_HOME_DIRECTORY'].val
+            b = os.path.dirname(d)
+            i = ch['CMAKE_INSTALL_PREFIX'].val
+            return p, b, i
+        else:
+            return None, None, None
+
+    def _init_with_build_dir(self, pdir, **kwargs):
+        build = Build.deserialize(pdir)
+        self.builds = [build]
 
     def _init_with_glob(self, **kwargs):
         g = kwargs.get('glob')
