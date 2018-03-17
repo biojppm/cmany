@@ -6,7 +6,7 @@ from .named_item import NamedItem
 from .build_flags import BuildFlags
 from .combination_rules import CombinationRules
 
-_dbg_parse = True
+_dbg_parse = False
 
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
