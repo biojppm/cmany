@@ -6,6 +6,7 @@ from .named_item import NamedItem
 from .build_flags import BuildFlags
 from .combination_rules import CombinationRules
 
+_dbg_parse = True
 
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
@@ -46,8 +47,11 @@ class BuildItem(NamedItem):
         self.refs = []
         self.combination_rules = CombinationRules([])
         self._resolved_references = False
+        if _dbg_parse: print("\n\n{}: spec... 0: quoted={}".format("<build item>", spec))
         spec = util.unquote(spec)
-        spl = spec.split(':')
+        if _dbg_parse: print("{}: spec... 1: unquoted={}".format("<build item>", spec))
+        spl = util.splitesc_quoted_first(spec, ':')
+        if _dbg_parse: print("{}: spec... 2: splitted={}".format("<build item>", spl))
         if len(spl) == 1:
             name = spec
             self.flags = BuildFlags(name)
@@ -58,12 +62,17 @@ class BuildItem(NamedItem):
         # super().__init__(name)  # DON'T!!! will overwrite
         self.name = name
         self.flags = BuildFlags(name)
+        if _dbg_parse: print("{}: parsing flags... 0: rest={}".format(name, rest))
         spl = util.splitesc_quoted(rest, ' ')
+        if _dbg_parse: print("{}: parsing flags... 1: split={}".format(name, spl))
         curr = ""
         for s in spl:
+            if _dbg_parse: print("{}: parsing flags... 2  : {}".format(name, s))
             if s[0] != '@':
                 curr += " " + s
+                if _dbg_parse: print("{}: parsing flags... 2.1: append to curr: {}".format(name, curr))
             else:
+                if _dbg_parse: print("{}: parsing flags... 2.2: it's a reference".format(name))
                 self.refs.append(s[1:])
                 if curr:
                     self.flag_specs.append(curr)
@@ -122,20 +131,19 @@ class BuildItem(NamedItem):
         In some cases the shell (or argparse? or what?) removes quotes, so we
         have to deal with that too.
         """
-
-        #util.lognotice("parse_args 0: input=____{}____".format(v_))
+        if _dbg_parse: util.lognotice("parse_args 0: input=____{}____".format(v_))
 
         # remove start and end quotes if there are any
         v = v_
         if util.is_quoted(v_):
             v = util.unquote(v_)
 
-        # print("parse_args 1: unquoted=____{}____".format(v))
+        if _dbg_parse: print("parse_args 1: unquoted=____{}____".format(v))
 
         if util.has_interior_quotes(v):
             # this is the simple case: we assume everything is duly delimited
             vli = util.splitesc_quoted(v, ',')
-            # print("parse_args 2: vli=__{}__".format(vli))
+            if _dbg_parse: print("parse_args 2: vli=__{}__".format(vli))
         else:
             # in the absence of interior quotes, parsing is more complicated.
             # Does the string have ':'?
@@ -157,19 +165,22 @@ class BuildItem(NamedItem):
                         if not withc:
                             vli.append(v[b:i])
                             b = i + 1
-                        # print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
+                        if _dbg_parse: print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                         lastcomma = i
                     elif c == ':':
-                        if not withc:
-                            withc = True
-                        else:
-                            vli.append(v[b:(lastcomma + 1)])
-                        b = lastcomma + 1
-                        # print("parse_args 3.2.2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
+                        vvv = v[b:(lastcomma+1)]
+                        if _dbg_parse: print("parse_args 3.2.2-1:  ':'@ i={}:  vvv={}".format(i, vvv))
+                        if vvv != "":
+                            if not withc:
+                                withc = True
+                            else:
+                                vli.append(vvv)
+                            b = lastcomma + 1
+                            if _dbg_parse: print("parse_args 3.2.2-2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
                 rest = v[b:]
                 if rest:
                     vli.append(rest)
-                # print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
+                if _dbg_parse: print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
 
         # print("parse_args 4: vli=", vli)
         # unquote split elements
@@ -207,7 +218,7 @@ class BuildItemCollection(odict):
         if not self.get(cls_name):
             self[cls_name] = []
         self[cls_name].append(item)
-        # store the
+        # store the class name
         if not hasattr(self, 'collections'):
             setattr(self, 'collections', [])
         if not cls_name in self.collections:
