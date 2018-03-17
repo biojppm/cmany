@@ -126,6 +126,33 @@ class Test01splitesc_quoted(ut.TestCase):
                     '-v', "'foo: -V FOO_VAR=1 -D FOO_DEF=1 -X wall -C wall','bar: -V BAR_VAR=1 -D BAR_DEF=1 -X g3 -C g3'"]
         self.t(spec, expected, ' ')
 
+    def test51_buggy_args(self):
+        spec =      """cuda_shared: -V WITH_QT=OFF -V WITH_OPENGL=ON -V ENABLE_FAST_MATH=1 -V OPENCV_ENABLE_NONFREE=ON -V OPENCV_EXTRA_MODULES_PATH=d:/opencv-3.4.1/contrib/opencv_contrib-master/modules -V BUILD_EXAMPLES=OFF -V BUILD_TESTS=OFF -V BUILD_PERF_TESTS=OFF -V WITH_CUDA=ON -V CUDA_VERBOSE_BUILD=ON -V WITH_CUBLAS=ON -V CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/ -V CUDA_FAST_MATH=1 -V CUDA_SEPARABLE_COMPILATION=OFF -V CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr' -V CUDA_ARCH_BIN='52 61' -V BUILD_SHARED_LIBS=ON"""
+        expected = ["cuda_shared", "-V WITH_QT=OFF -V WITH_OPENGL=ON -V ENABLE_FAST_MATH=1 -V OPENCV_ENABLE_NONFREE=ON -V OPENCV_EXTRA_MODULES_PATH=d","/opencv-3.4.1/contrib/opencv_contrib-master/modules -V BUILD_EXAMPLES=OFF -V BUILD_TESTS=OFF -V BUILD_PERF_TESTS=OFF -V WITH_CUDA=ON -V CUDA_VERBOSE_BUILD=ON -V WITH_CUBLAS=ON -V CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/ -V CUDA_FAST_MATH=1 -V CUDA_SEPARABLE_COMPILATION=OFF -V CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr' -V CUDA_ARCH_BIN='52 61' -V BUILD_SHARED_LIBS=ON"]
+        self.t(spec, expected, ':')
+
+    def test52_buggy_args(self):
+        spec ="""cuda_shared: -V WITH_QT=OFF -V WITH_OPENGL=ON -V ENABLE_FAST_MATH=1 -V OPENCV_ENABLE_NONFREE=ON -V OPENCV_EXTRA_MODULES_PATH=d:/opencv-3.4.1/contrib/opencv_contrib-master/modules -V BUILD_EXAMPLES=OFF -V BUILD_TESTS=OFF -V BUILD_PERF_TESTS=OFF -V WITH_CUDA=ON -V CUDA_VERBOSE_BUILD=ON -V WITH_CUBLAS=ON -V CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/ -V CUDA_FAST_MATH=1 -V CUDA_SEPARABLE_COMPILATION=OFF -V CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr' -V CUDA_ARCH_BIN='52 61' -V BUILD_SHARED_LIBS=ON"""
+        expected = ["cuda_shared:",
+            "-V", "WITH_QT=OFF",
+            "-V", "WITH_OPENGL=ON",
+            "-V", "ENABLE_FAST_MATH=1",
+            "-V", "OPENCV_ENABLE_NONFREE=ON",
+            "-V", "OPENCV_EXTRA_MODULES_PATH=d:/opencv-3.4.1/contrib/opencv_contrib-master/modules",
+            "-V", "BUILD_EXAMPLES=OFF",
+            "-V", "BUILD_TESTS=OFF",
+            "-V", "BUILD_PERF_TESTS=OFF",
+            "-V", "WITH_CUDA=ON",
+            "-V", "CUDA_VERBOSE_BUILD=ON",
+            "-V", "WITH_CUBLAS=ON",
+            "-V", "CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/",
+            "-V", "CUDA_FAST_MATH=1",
+            "-V", "CUDA_SEPARABLE_COMPILATION=OFF",
+            "-V", "CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr'",
+            "-V", "CUDA_ARCH_BIN='52 61'",
+            "-V", "BUILD_SHARED_LIBS=ON"]
+        self.t(spec, expected, ' ')
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

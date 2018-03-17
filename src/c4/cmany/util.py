@@ -200,6 +200,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
     characters inside a quote_chars pair (including escaped quote_chars and
     split_chars). split_char can also be escaped when outside of a
     quote_chars pair."""
+    _debug_on = False
     # lexer = shlex.shlex(string)
     # lexer.quotes = quote_chars
     # lexer.escape = escape_char
@@ -211,11 +212,13 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
     i = 0
     l = len(string)
     prev = 0
+    if _debug_on: print("\n\n\nsplitting:", string)
     while i < l:
         is_escaped = (i > 0 and string[i - 1] == escape_char)
         c = string[i]
         # consume at once everything between quotes
         if c in quote_chars:
+            if _debug_on: print("{}: case 1: got a quote char: {}".format(i, c))
             j = i+1  # start counting only on the next position
             closes_quotes = False
             while j < l:
@@ -229,41 +232,57 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
             # but defend against unbalanced quotes,
             # treating them as regular characters
             if not closes_quotes:
+                if _debug_on: print("{}: case 1.1: quote char is not closed".format(i))
                 i += 1
             else:
                 s = string[prev:j]
+                if _debug_on: print("{}: case 1.2: quote char closes at {}: __|{}|__".format(i, j, s))
                 if (j < l and string[j] != split_char):
                     s += string[j]
+                    if _debug_on: print("{}: case 1.2-0: append one char: {}".format(i, s))
                 if s:
                     if (prev > 0 and string[prev-1] == split_char):
                         prev = j+1
                         i = prev
                         out.append(s)
+                        if _debug_on: print("{}: case 1.2-1.1: added __|{}|__ as last entry: {}".format(i, s, out))
                     else:
                         prev = j+1
                         i = prev
                         if j < l and string[j] != split_char:
                             s += string[j]
+                            if _debug_on: print("{}: case 1.2-2.0: append one char to string: __|{}|__".format(i, s))
                         if out:
                             out[-1] += s
+                            if _debug_on: print("{}: case 1.2-2.1: appended to last entry: {}".format(i, out[-1]))
                         else:
                             out.append(s)
-        # when a split_char is found, append to the list
+                            if _debug_on: print("{}: case 1.2-2.1: added __|{}|__ as last entry: {}".format(i, s, out))
+        # when a split_char is found, just append to the list
         elif c == split_char and not is_escaped:
+            if _debug_on: print("{}: case 2: got a split char: '{}'".format(i, c))
             if i > 0 and i < l and i > prev:
                 s = string[prev:i]
+                if _debug_on: print("{}: case 2.1: s='{}'".format(i, s))
                 if s:
                     out.append(s)
+                    if _debug_on: print("{}: case 2.1-0: appended, out={}".format(i, out))
             prev = i+1
             i = prev
-        # this is a regular character, just go on scanning
+        # this is a regular character, so just go on scanning
         else:
             i += 1
     # if there are still unread characters, append them as well
     if prev < l:
         s = string[prev:l]
+        if _debug_on: print("there are remaining characters: {}".format(s))
         if s:
-            out.append(s)
+            if (prev >= 1 and prev < l and string[prev-1] != split_char) and out:
+                out[-1] += s
+                if _debug_on: print("appended to last entry: {}".format(out))
+            else:
+                out.append(s)
+                if _debug_on: print("add __|{}|__ as last entry: {}".format(s, out))
     return out
 
 
