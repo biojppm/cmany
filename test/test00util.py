@@ -24,12 +24,18 @@ class Test00splitesc(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test01splitesc_quoted(ut.TestCase):
 
-    def t(self, input, expected, split_char=' '):
+    def _t(self, input, expected, split_char, fn=util.splitesc_quoted):
         with self.subTest(input=input):
             output = util.splitesc_quoted(input, split_char)
             if output != expected:
                 print("\nFAIL:\ninp=" + str(input) + "\nout=" + str(output) + "\nexp=" + str(expected) + "\n")
             self.assertEqual(output, expected)
+
+    def t(self, input, expected, split_char=' '):
+        self._t(input, expected, split_char)
+
+    def tf(self, input, expected, split_char=' '):
+        self._t(input, expected, split_char, util.split_esc_quoted_first)
 
     def _run(self, fn):
         fn('{} {}')
@@ -152,6 +158,13 @@ class Test01splitesc_quoted(ut.TestCase):
             "-V", "CUDA_ARCH_BIN='52 61'",
             "-V", "BUILD_SHARED_LIBS=ON"]
         self.t(spec, expected, ' ')
+
+
+    def test151_buggy_args(self):
+        # tests only the first split by using split_esc_quoted_first
+        spec =      """cuda_shared: -V WITH_QT=OFF -V WITH_OPENGL=ON -V ENABLE_FAST_MATH=1 -V OPENCV_ENABLE_NONFREE=ON -V OPENCV_EXTRA_MODULES_PATH=d:/opencv-3.4.1/contrib/opencv_contrib-master/modules -V BUILD_EXAMPLES=OFF -V BUILD_TESTS=OFF -V BUILD_PERF_TESTS=OFF -V WITH_CUDA=ON -V CUDA_VERBOSE_BUILD=ON -V WITH_CUBLAS=ON -V CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/ -V CUDA_FAST_MATH=1 -V CUDA_SEPARABLE_COMPILATION=OFF -V CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr' -V CUDA_ARCH_BIN='52 61' -V BUILD_SHARED_LIBS=ON"""
+        expected = ["cuda_shared", "-V WITH_QT=OFF -V WITH_OPENGL=ON -V ENABLE_FAST_MATH=1 -V OPENCV_ENABLE_NONFREE=ON -V OPENCV_EXTRA_MODULES_PATH=d:/opencv-3.4.1/contrib/opencv_contrib-master/modules -V BUILD_EXAMPLES=OFF -V BUILD_TESTS=OFF -V BUILD_PERF_TESTS=OFF -V WITH_CUDA=ON -V CUDA_VERBOSE_BUILD=ON -V WITH_CUBLAS=ON -V CUDA_TOOLKIT_ROOT_DIR=/d/cuda/9.1/sdk/ -V CUDA_FAST_MATH=1 -V CUDA_SEPARABLE_COMPILATION=OFF -V CUDA_NVCC_FLAGS='-D_FORCE_INLINES --expt-relaxed-constexpr' -V CUDA_ARCH_BIN='52 61' -V BUILD_SHARED_LIBS=ON"]
+        self.tf(spec, expected, ':')
 
 
 # -----------------------------------------------------------------------------
