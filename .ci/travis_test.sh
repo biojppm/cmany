@@ -14,6 +14,7 @@ elif [ "$TRAVIS_OS_NAME" == "osx" ] ; then
 fi
 
 sdir=$(cd $(dirname $0) ; pwd)
+$sdir/../test/install.sh $*
 $sdir/../test/run.sh $*
 
 exit $?

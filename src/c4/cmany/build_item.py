@@ -6,7 +6,9 @@ from .named_item import NamedItem
 from .build_flags import BuildFlags
 from .combination_rules import CombinationRules
 
+# some of parsing functions below are difficult, and this is enables verbose prints for debugging
 _dbg_parse = False
+
 
 # -----------------------------------------------------------------------------
 class BuildItem(NamedItem):
