@@ -150,43 +150,68 @@ class BuildItem(NamedItem):
             if v.find(':') == -1:
                 # no ':' was found; a simple split will nicely do
                 vli = v.split(',')
-                # print("parse_args 3.1: vli=__{}__".format(vli))
+                if _dbg_parse: print("parse_args 3.1: vli=__{}__".format(vli))
             else:
                 # uh oh. we have ':' in the string, but no quotes in it. This
                 # means we have to do it the hard way. There's probably a
-                # less hard way, but for now this is short enough.
-                # print("parse_args 3.2: parsing manually...")
+                # less hard and more robust way, but for now this is quick
+                # enough to write.
+                if _dbg_parse: print("parse_args 3.2: parsing without quotes...")
                 vli = []
-                withc = False
-                b = 0
-                lastcomma = -1
-                for i, c in enumerate(v):
-                    if c == ',':
-                        if not withc:
-                            vli.append(v[b:i])
-                            b = i + 1
-                        if _dbg_parse: print("parse_args 3.2.1:  ','@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
-                        lastcomma = i
-                    elif c == ':':
-                        vvv = v[b:(lastcomma+1)]
-                        if _dbg_parse: print("parse_args 3.2.2-1:  ':'@ i={}:  vvv={}".format(i, vvv))
-                        if vvv != "":
-                            if not withc:
-                                withc = True
-                            else:
-                                vli.append(vvv)
-                            b = lastcomma + 1
-                            if _dbg_parse: print("parse_args 3.2.2-2:  ':'@ i={}:  v[b:i]={} vli={}".format(i, v[b:i], vli))
-                rest = v[b:]
+                i = 0
+                while i < len(v):
+                    if _dbg_parse: print("---\nparse_args 3.2.1: scanning at {}: __|{}|__".format(i, v[i:]))
+                    entry, i = __class__._consume_next_item(v, i)
+                    if _dbg_parse: print("parse_args 3.2.2: i={} entry=__|{}|__ remainder=__|{}|___".format(i, entry, v[i:]))
+                    if entry:
+                        vli.append(entry)
+                        if _dbg_parse: print("parse_args 3.2.3: appended entry. vli={}".format(vli))
+                rest = v[i:]
                 if rest:
                     vli.append(rest)
                 if _dbg_parse: print("parse_args 3.2.3: rest={} vli={}".format(rest, vli))
-
-        # print("parse_args 4: vli=", vli)
+        if _dbg_parse: print("parse_args 4: vli=", vli)
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
-        # util.logdone("parse_args 4: input=____{}____ output=__{}__".format(v_, vli))
+        if _dbg_parse: print("parse_args 5: input=____{}____ output=__{}__".format(v_, vli))
         return vli
+
+    @staticmethod
+    def _consume_next_item(s, start_pos):
+        if _dbg_parse: print("_cni: input_str=|{}|".format(s))
+        # find the first colon-space
+        icolon = s.find(': ', start_pos)
+        if icolon == -1:
+            if _dbg_parse: print("_cni: no colon. return full string[{}-{}]: |{}|".format(start_pos, len(s), s))
+            # this is the last entry, so return the current string
+            return s, len(input_str)
+        if _dbg_parse: print("_cni: colon! string[{}:{}]=|{}|".format(start_pos, icolon, s[start_pos:icolon]))
+        icomma = s.rfind(',', start_pos, icolon)
+        if icomma != -1:
+            if _dbg_parse: print("_cni: comma behind! string[{}:{}]=|{}|".format(start_pos, icomma, s[start_pos:icomma]))
+            # there is a comma, so stop there
+            return s[start_pos:icomma], icomma+1
+        # there's no comma behind. So it starts at start_pos and extends
+        # to the next entry. Now, where does the next entry start?
+        if _dbg_parse: print("_cni: no comma behind. string[{}:{}]=|{}|".format(start_pos, icolon, s[start_pos:icolon]))
+        # Look ahead for a colon-space
+        beg = icolon + 2
+        end = s.find(': ', icolon+2) # add 2 to skip the known ': ' at the start
+        if end == -1:
+            if _dbg_parse: print("_cni: this is the last entry. string[{}:{}]=|{}|".format(start_pos, len(s), s[start_pos:]))
+            return s[start_pos:], len(s)
+        # we found a colon-space
+        if _dbg_parse: print("_cni: colon ahead! string[{}:{}]=|{}|".format(start_pos, end, s[start_pos:end]))
+        #
+        # now starting at the colon-space, look back for a comma
+        icomma = s.rfind(',', start_pos, end)
+        if icomma != -1:
+            # there is a comma, so stop just before it
+            end = icomma
+            if _dbg_parse: print("_cni: comma before colon! string[{}:{}]=|{}|".format(start_pos, end, s[start_pos:end]))
+            return s[start_pos:end], end+1
+        if _dbg_parse: print("_cni: no comma. string[{}:{}]=|{}|".format(start_pos, end, s[start_pos:end]))
+        return s[start_pos:end], end+1
 
     def save_config(self, yml_node):
         if not self.flags.empty():

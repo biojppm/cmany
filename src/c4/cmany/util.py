@@ -249,7 +249,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                 if _debug_on: print("{}: case 1.2: quote char closes at {}: __|{}|__".format(i, j, s))
                 if (j < l and string[j] != split_char):
                     s += string[j]
-                    if _debug_on: print("{}: case 1.2-0: append one char: {}".format(i, s))
+                    if _debug_on: print("{}: case 1.2-0: append one char: __|{}|__".format(i, s))
                 if s:
                     if (prev > 0 and string[prev-1] == split_char):
                         prev = j+1
@@ -259,15 +259,12 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                     else:
                         prev = j+1
                         i = prev
-                        if j < l and string[j] != split_char:
-                            s += string[j]
-                            if _debug_on: print("{}: case 1.2-2.0: append one char to string: __|{}|__".format(i, s))
                         if out:
                             out[-1] += s
                             if _debug_on: print("{}: case 1.2-2.1: appended to last entry: {}".format(i, out[-1]))
                         else:
                             out.append(s)
-                            if _debug_on: print("{}: case 1.2-2.1: added __|{}|__ as last entry: {}".format(i, s, out))
+                            if _debug_on: print("{}: case 1.2-2.2: added __|{}|__ as last entry: {}".format(i, s, out))
         # when a split_char is found, just append to the list
         elif c == split_char and not is_escaped:
             if _debug_on: print("{}: case 2: got a split char: '{}'".format(i, c))
