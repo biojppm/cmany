@@ -125,7 +125,7 @@ class CMakeCache(odict):
             self.dirty |= changed
             return changed
         else:
-            v = CMakeCache.Var(name, val, vartype, dirty=True, **kwargs)
+            v = CMakeCacheVar(name, val, vartype, dirty=True, **kwargs)
             self[name] = v
             self.dirty = True
             return True
@@ -147,67 +147,67 @@ class CMakeCache(odict):
         self.dirty = False
         return True
 
-    # -------------------------------------------------------------------------
-    class Var:
+# -------------------------------------------------------------------------
+class CMakeCacheVar:
 
-        def __init__(self, name, val, vartype=None, dirty=False, from_input=False):
-            self.name = name
-            self.val = val
-            self.vartype = self._guess_var_type(name, val, vartype)
-            self.dirty = dirty
+    def __init__(self, name, val, vartype=None, dirty=False, from_input=False):
+        self.name = name
+        self.val = val
+        self.vartype = self._guess_var_type(name, val, vartype)
+        self.dirty = dirty
+        self.from_input = from_input
+
+    def _guess_var_type(self, name, val, vartype):
+        """make an informed guess of the var type
+        @todo: add a test for this"""
+        if vartype is not None:
+            return vartype
+        elif val.upper() in ("ON", "OFF", "NO", "YES", "1", "0", "TRUE", "FALSE", "T", "F", "N", "Y"):
+            # https://cmake.org/pipermail/cmake/2007-December/018548.html
+            return "BOOL"
+        elif os.path.isfile(val) or "PATH" in name.upper():
+            return "FILEPATH"
+        elif os.path.isdir(val) or "DIR" in name.upper() or os.path.isabs(val):
+            return "PATH"
+        else:
+            return "STRING"
+
+    def reset(self, val, vartype='', **kwargs):
+        """
+        :param val:
+        :param vartype:
+        :param kwargs:
+            force_dirty, defaults to False
+            from_input, defaults to None
+        :return:
+        """
+        force_dirty = kwargs.get('force_dirty', False)
+        from_input = kwargs.get('from_input')
+        if from_input is not None:
             self.from_input = from_input
+        if vartype == 'STRING' or (vartype is None and self.vartype == 'STRING'):
+            candidates = (val, val.strip("'"), val.strip('"'))
+            equal = False
+            for c in candidates:
+                if c == self.val:
+                    equal = True
+                    break
+        else:
+            equal = (self.val == val)
+        if not equal or (vartype is not None and vartype != self.vartype):
+            self.val = val
+            self.vartype = vartype if vartype is not None else self.vartype
+            self.dirty = True
+            return True
+        if force_dirty:
+            self.dirty = True
+        return force_dirty
 
-        def _guess_var_type(self, name, val, vartype):
-            """make an informed guess of the var type
-            @todo: add a test for this"""
-            if vartype is not None:
-                return vartype
-            elif val.upper() in ("ON", "OFF", "NO", "YES", "1", "0", "TRUE", "FALSE", "T", "F", "N", "Y"):
-                # https://cmake.org/pipermail/cmake/2007-December/018548.html
-                return "BOOL"
-            elif os.path.isfile(val) or "PATH" in name.upper():
-                return "FILEPATH"
-            elif os.path.isdir(val) or "DIR" in name.upper() or os.path.isabs(val):
-                return "PATH"
-            else:
-                return "STRING"
+    def __repr__(self):
+        return self.name + ':' + self.vartype + '=' + self.val
 
-        def reset(self, val, vartype='', **kwargs):
-            """
-            :param val:
-            :param vartype:
-            :param kwargs:
-                force_dirty, defaults to False
-                from_input, defaults to None
-            :return:
-            """
-            force_dirty = kwargs.get('force_dirty', False)
-            from_input = kwargs.get('from_input')
-            if from_input is not None:
-                self.from_input = from_input
-            if vartype == 'STRING' or (vartype is None and self.vartype == 'STRING'):
-                candidates = (val, val.strip("'"), val.strip('"'))
-                equal = False
-                for c in candidates:
-                    if c == self.val:
-                        equal = True
-                        break
-            else:
-                equal = (self.val == val)
-            if not equal or (vartype is not None and vartype != self.vartype):
-                self.val = val
-                self.vartype = vartype if vartype is not None else self.vartype
-                self.dirty = True
-                return True
-            if force_dirty:
-                self.dirty = True
-            return force_dirty
-
-        def __repr__(self):
-            return self.name + ':' + self.vartype + '=' + self.val
-
-        def __str__(self):
-            return self.name + ':' + self.vartype + '=' + self.val
+    def __str__(self):
+        return self.name + ':' + self.vartype + '=' + self.val
 
 
 # -----------------------------------------------------------------------------
