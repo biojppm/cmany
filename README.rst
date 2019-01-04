@@ -79,10 +79,10 @@ Support
 
 Current status
 --------------
-cmany is in alpha state, under current development.
+cmany is in beta state, under current development.
 
-Known issues
-^^^^^^^^^^^^
+Limitations & Known issues
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * cmany invokes the compilers given to it to find their name and version. So
   far, this successfully works with Visual Studio, gcc (also with arm-linux and
@@ -100,11 +100,12 @@ License
 -------
 cmany is permissively licensed under the `MIT license`_.
 
+
 .. _MIT license: LICENSE.txt
 
-.. |pypi| image:: https://img.shields.io/pypi/v/cmany.svg
-      :alt: Version
-      :target: https://pypi.python.org/pypi/cmany/
+.. |pypi| image:: https://badge.fury.io/py/cmany.svg
+    :alt: Version
+    :target: https://badge.fury.io/py/cmany
 .. |license| image:: https://img.shields.io/badge/License-MIT-green.svg
    :alt: License: MIT
    :target: https://github.com/biojppm/cmany/blob/master/LICENSE.txt
