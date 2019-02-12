@@ -39,27 +39,27 @@ class Build(NamedItem):
         self.build_type = build_type
         self.compiler = compiler
         self.variant = variant
-
+        #
         self.adjusted = False
-
+        #
         if util.in_64bit and self.architecture.is32:
             if self.compiler.gcclike:
                 self.compiler.make_32bit()
         elif util.in_32bit and self.architecture.is64:
             if self.compiler.gcclike:
                 self.compiler.make_64bit()
-
+        #
         self._set_name_and_paths()  # calls super().__init__(self.tag)
-
+        #
         self.toolchain_file = self._get_toolchain()
         if self.toolchain_file:
             comps = cmake.extract_toolchain_compilers(self.toolchain_file)
             c = Compiler(comps['CMAKE_CXX_COMPILER'])
             self.adjust(compiler=c)
-
+        #
         # WATCHOUT: this may trigger a readjustment of this build's parameters
         self.generator = self.create_generator(num_jobs)
-
+        #
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
         self.varcache = cmake.CMakeCache(self.builddir)
@@ -67,7 +67,7 @@ class Build(NamedItem):
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
         self.gather_input_cache_vars()
-
+        #
         self.deps = kwargs.get('deps', '')
         if self.deps and not os.path.isabs(self.deps):
             self.deps = os.path.abspath(self.deps)

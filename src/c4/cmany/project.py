@@ -42,22 +42,22 @@ def _getdir(attr_name, default, kwargs):
 class Project:
 
     def __init__(self, **kwargs):
-
+        #
         self.kwargs = kwargs
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
-
+        #
         pdir = kwargs.get('proj_dir', os.getcwd())
         pdir = os.getcwd() if pdir == "." else pdir
         if not os.path.isabs(pdir):
             pdir = os.path.abspath(pdir)
-
+        #
         p, b, i = __class__._find_proj_build_install_dir(pdir, kwargs)
         self.root_dir = p
         self.build_dir = b
         self.install_dir = i
         self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
-
+        #
         if cmake.hascache(pdir):
             self._init_with_build_dir(pdir, **kwargs)
         elif kwargs.get('glob'):
@@ -97,21 +97,21 @@ class Project:
 
     def _init_with_build_items(self, **kwargs):
         s, a, c, t, v = __class__.get_build_items(**kwargs)
-
+        #
         cr = CombinationRules(kwargs.get('combination_rules', []))
         combs = cr.valid_combinations(s, a, c, t, v)
         self.combination_rules = cr
-
+        #
         self.builds = []
         for s_, a_, c_, t_, v_ in combs:
             self.add_build(s_, a_, c_, t_, v_)
-
+        #
         self.systems = s
         self.architectures = a
         self.compilers = c
         self.build_types = t
         self.variants = v
-
+        #
         # add new build params as needed to deal with adjusted builds
         def _addnew(b, name):
             a = getattr(b, name)
@@ -211,18 +211,18 @@ class Project:
         #
         f = BuildFlags('all_builds', **self.kwargs)
         f.resolve_flag_aliases(compiler, aliases=self.configs.flag_aliases)
-
+        #
         # create the build
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   s, a, t, c, v, f,
                   self.num_jobs, dict(self.kwargs))
-
+        #
         # When a build is created, its parameters may have been adjusted
         # because of an incompatible generator specification.
         # So drop this build if an equal one already exists
         if b.adjusted and self.exists(b):
             return False  # a similar build already exists
-
+        #
         # finally, this.
         self.builds.append(b)
         return True  # build successfully added

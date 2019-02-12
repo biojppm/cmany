@@ -143,9 +143,9 @@ def add_basic(parser):
 
 # -----------------------------------------------------------------------------
 def add_glob(parser):
-
+    #
     add_basic(parser)
-
+    #
     parser.add_argument("glob", nargs="*", default="*",
                         help="""glob pattern(s) matching build names (NOTE:
                         not paths to the build dirs)""")
@@ -153,15 +153,15 @@ def add_glob(parser):
 
 # -----------------------------------------------------------------------------
 def add_proj(parser):
-
+    #
     add_basic(parser)
-
+    #
     parser.add_argument("-E", "--export-compile", default=True,
                         action="store_true",
                         help="""Have cmake export a compile_commands.json
                         containing the compile commands for each file. This
                         is useful e.g. for clang-based indexing tools.""")
-
+    #
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",
                    help="""Specify a file containing configurations. Relative
@@ -173,7 +173,7 @@ def add_proj(parser):
     g.add_argument("--no-default-config", default=False, action="store_true",
                    help="""Do not read the default config file. Run
                    `cmany help flags` to get help about this.""")
-
+    #
     d = parser.add_argument_group('Dependencies')
     d.add_argument('--deps', default='', type=str,
                    metavar='path/to/extern/CMakeLists.txt',
@@ -211,14 +211,14 @@ def add_select(parser):
         given either as a comma-separated list or with repeated invokations
         of their arguments. Commas can be escaped by using a backslash,
         \\.""")
-
+    #
     dft = [system.System.default_str()]
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
                    default=dft, action=BuildItemArgument,
                    help="""Specify a comma-separated list of operating systems
                    to combine. Defaults to the current system, """ +
                    _item_printer(dft) + """.""")
-
+    #
     dft = [architecture.Architecture.default_str()]
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
                    default=dft, action=BuildItemArgument,
@@ -226,7 +226,7 @@ def add_select(parser):
                    architectures to combine. Defaults to CMake's default
                    architecture on this system, """ +
                    _item_printer(dft) + """.""")
-
+    #
     dft = [compiler.Compiler.default_str()]
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
                    default=dft, action=BuildItemArgument,
@@ -236,14 +236,14 @@ def add_select(parser):
                    the current shell's PATH.  Defaults to CMake's default
                    compiler on this system, """ +
                    _item_printer(dft) + """.""")
-
+    #
     # dft = [build_type.BuildType.default_str()]  # avoid a circular dependency
     dft = ["Release"]
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
                    default=dft, action=BuildItemArgument,
                    help="""Specify a comma-separated list of build types
                    to combine. Defaults to """ + _item_printer(dft) + """.""")
-
+    #
     # dft = [variant.Variant.default_str()]  # avoid a circular dependency
     dft = ["none"]
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
@@ -298,7 +298,7 @@ def add_item_combination_flags(parser):
         generally for use in specifications of build items; however, they may
         also be of use when using arguments via the CMANY_ARGS environment
         or with a project file.""")
-
+    #
     g.add_argument("-xs", "--exclude-systems", metavar="sys1,[sys2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
@@ -307,7 +307,7 @@ def add_item_combination_flags(parser):
                    default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any
                    of the following systems.""")
-
+    #
     g.add_argument("-xa", "--exclude-architectures", metavar="arch1,[arch2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
@@ -316,7 +316,7 @@ def add_item_combination_flags(parser):
                    default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any of the
                    following architectures.""")
-
+    #
     g.add_argument("-xc", "--exclude-compilers", metavar="comp1,[comp2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
@@ -325,7 +325,7 @@ def add_item_combination_flags(parser):
                    default=[], action=CombinationArgument,
                    help="""Include only builds which combine this item with any of the
                    following compilers.""")
-
+    #
     g.add_argument("-xt", "--exclude-build-types", metavar="btype1,[btype2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
@@ -334,7 +334,7 @@ def add_item_combination_flags(parser):
                    default=[], action=CombinationArgument,
                    help="""Exclude only builds which combine this item with any of the
                    following build types.""")
-
+    #
     g.add_argument("-xv", "--exclude-variants", metavar="var1,[var2[,...]]",
                    default=[], action=CombinationArgument,
                    help="""Exclude builds which combine this item with any of the
@@ -455,7 +455,7 @@ class CombinationArgument(argparse.Action):
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
         prev = getattr(namespace, 'combination_rules')
-
+        #
         if self.dest == 'exclude_builds':
             li = ('x', 'builds_any', li)
         elif self.dest == 'include_builds':
@@ -464,27 +464,27 @@ class CombinationArgument(argparse.Action):
             li = ('x', 'builds_all', li)
         elif self.dest == 'include_builds_all':
             li = ('i', 'builds_all', li)
-
+        #
         elif self.dest == 'exclude_systems':
             li = ('x', 'systems', li)
         elif self.dest == 'include_systems':
             li = ('i', 'systems', li)
-
+        #
         elif self.dest == 'exclude_architectures':
             li = ('x', 'architectures', li)
         elif self.dest == 'include_architectures':
             li = ('i', 'architectures', li)
-
+        #
         elif self.dest == 'exclude_compilers':
             li = ('x', 'compilers', li)
         elif self.dest == 'include_compilers':
             li = ('i', 'compilers', li)
-
+        #
         elif self.dest == 'exclude_build_types':
             li = ('x', 'build_types', li)
         elif self.dest == 'include_build_types':
             li = ('i', 'build_types', li)
-
+        #
         elif self.dest == 'exclude_variants':
             li = ('x', 'variants', li)
         elif self.dest == 'include_variants':
