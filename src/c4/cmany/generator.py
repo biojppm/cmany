@@ -147,6 +147,7 @@ class Generator(BuildItem):
     Visual Studio 12 2013 [Win64|ARM]
     Visual Studio 14 2015 [Win64|ARM]
     Visual Studio 15 2017 [Win64|ARM]
+    Visual Studio 16 2019 [Win64|ARM]
 
     Green Hills MULTI
     Xcode

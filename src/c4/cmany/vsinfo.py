@@ -61,6 +61,7 @@ def find_any():
 # -----------------------------------------------------------------------------
 # a reversible dictionary for the VS version numbers
 _versions = {
+    'vs2019':16, 16:'vs2019', 'vs2019_64':16, 'vs2019_32':16, 'vs2019_arm':16 ,  # nopep8
     'vs2017':15, 15:'vs2017', 'vs2017_64':15, 'vs2017_32':15, 'vs2017_arm':15 ,  # nopep8
     'vs2015':14, 14:'vs2015', 'vs2015_64':14, 'vs2015_32':14, 'vs2015_arm':14 ,  # nopep8
     'vs2013':12, 12:'vs2013', 'vs2013_64':12, 'vs2013_32':12, 'vs2013_arm':12 ,  # nopep8
@@ -73,10 +74,14 @@ _versions = {
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-_sfx = ' Win64' if util.in_64bit() else ''
+_sfx = ' Win64' if util.in_64bit() else ''  # suffix
 
 # a reversible dictionary for the names
 _names = {
+    'vs2019'      : 'Visual Studio 16 2019' + _sfx , 'Visual Studio 16 2019' + _sfx : 'vs2019'      ,  # nopep8
+    'vs2019_32'   : 'Visual Studio 16 2019'        , 'Visual Studio 16 2019'        : 'vs2019_32'   ,  # nopep8
+    'vs2019_64'   : 'Visual Studio 16 2019 Win64'  , 'Visual Studio 16 2019 Win64'  : 'vs2019_64'   ,  # nopep8
+    'vs2019_arm'  : 'Visual Studio 16 2019 ARM'    , 'Visual Studio 16 2019 ARM'    : 'vs2019_arm'  ,  # nopep8
     'vs2017'      : 'Visual Studio 15 2017' + _sfx , 'Visual Studio 15 2017' + _sfx : 'vs2017'      ,  # nopep8
     'vs2017_32'   : 'Visual Studio 15 2017'        , 'Visual Studio 15 2017'        : 'vs2017_32'   ,  # nopep8
     'vs2017_64'   : 'Visual Studio 15 2017 Win64'  , 'Visual Studio 15 2017 Win64'  : 'vs2017_64'   ,  # nopep8
@@ -107,6 +112,9 @@ _names = {
 }
 
 _architectures = {
+    'Visual Studio 16 2019'        : 'x86'    ,
+    'Visual Studio 16 2019 Win64'  : 'x86_64' ,
+    'Visual Studio 16 2019 ARM'    : 'arm'    ,
     'Visual Studio 15 2017'        : 'x86'    ,
     'Visual Studio 15 2017 Win64'  : 'x86_64' ,
     'Visual Studio 15 2017 ARM'    : 'arm'    ,
@@ -166,6 +174,8 @@ def to_gen(name_or_gen_or_ver):
 # -----------------------------------------------------------------------------
 
 _toolsets = (
+    # vs2019 compiler toolsets
+    'v142_clang_c2', 'v142_clang', 'v142_xp', 'v142',
     # vs2017 compiler toolsets
     'v141_clang_c2', 'v141_clang', 'v141_xp', 'v141',
     # vs2015 compiler toolsets
@@ -204,7 +214,9 @@ def sep_name_toolset(name, canonize=True):
     if toolset in ('clang_c2', 'clang', 'xp'):
         assert re.match('vs....', name)
         year = int(re.sub(r'^vs(....).*', r'\1', name))
-        if year == 2017:
+        if year == 2019:
+            vs_toolset = 'v142_' + toolset
+        elif year == 2017:
             vs_toolset = 'v141_' + toolset
         elif year == 2015:
             vs_toolset = 'v140_' + toolset
