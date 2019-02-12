@@ -57,7 +57,6 @@ class cmdbase:
 class help(cmdbase):
     """get help on a particular subcommand or topic"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
     def _exec(self, proj, args):
         sct = args.subcommand_or_topic
@@ -99,7 +98,6 @@ class projcmd(cmdbase):
     def proj(self, args):
         return Project(**vars(args))
     def add_args(self, parser):
-        super().add_args(parser)
         c4args.add_proj(parser)
         c4args.add_bundle_flags(parser)
 
@@ -107,7 +105,6 @@ class projcmd(cmdbase):
 class selectcmd(projcmd):
     """a command which selects several builds"""
     def add_args(self, parser):
-        super().add_args(parser)
         c4args.add_select(parser)
 
 
@@ -126,7 +123,6 @@ class reconfigure(globcmd):
 class build(selectcmd):
     """build the selected builds, configuring before if necessary"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('target', default=[], nargs='*',
                             help="""specify a subset of targets to build""")
     def _exec(self, proj, args):
@@ -136,7 +132,6 @@ class build(selectcmd):
 class rebuild(globcmd):
     """rebuild the selected builds, selecting by name using a python glob pattern"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('target', default=[], nargs='*',
                             help="""specify a subset of targets to build""")
     def _exec(self, proj, args):
@@ -158,7 +153,6 @@ class reinstall(globcmd):
 class run(selectcmd):
     """run a command in each build directory"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('command', default="",
                             help="""command to be run in each build directory""")
     def _exec(self, proj, args):
@@ -168,7 +162,6 @@ class run(selectcmd):
 class show_vars(selectcmd):
     """show the value of certain CMake cache vars"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('var_names', default="", nargs='+')
     def _exec(self, proj, args):
         proj.show_vars(args.var_names)
@@ -202,7 +195,6 @@ class show_targets(selectcmd):
 class create_proj(selectcmd):
     """create cmany.yml alongside CMakeLists.txt to hold project-settings"""
     def add_args(self, parser):
-        super().add_args(parser)
         parser.add_argument('-o', '--output-file', default="cmany.yml",
                             help="""file where the project should be written.
                             Accepts relative or absolute paths. Relative paths
