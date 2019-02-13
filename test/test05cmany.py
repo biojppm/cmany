@@ -7,6 +7,7 @@ import sys
 import glob
 import argparse
 import copy
+import tempfile
 from itertools import combinations
 
 import c4.cmany as cmany
@@ -85,47 +86,6 @@ def _get_variant_spec(test_name):
 os.environ['CMANY_ARGS'] = ''
 os.environ['CMANY_PFX_ARGS'] = ''
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
-
-from contextlib import contextmanager
-
-
-def fileno(file_or_fd):
-    fd = getattr(file_or_fd, 'fileno', lambda: file_or_fd)()
-    if not isinstance(fd, int):
-        raise ValueError("Expected a file (`.fileno()`) or a file descriptor")
-    return fd
-
-
-def merged_stderr_stdout():  # $ exec 2>&1
-    return stdout_redirected(to=sys.stdout, stdout=sys.stderr)
-
-
-@contextmanager
-def stdout_redirected(to=os.devnull, stdout=None):
-    if stdout is None:
-       stdout = sys.stdout
-    stdout_fd = fileno(stdout)
-    # copy stdout_fd before it is overwritten
-    #NOTE: `copied` is inheritable on Windows when duplicating a standard stream
-    with os.fdopen(os.dup(stdout_fd), 'wb') as copied:
-        stdout.flush()  # flush library buffers that dup2 knows nothing about
-        try:
-            os.dup2(fileno(to), stdout_fd)  # $ exec >&to
-        except ValueError:  # filename
-            with open(to, 'wb') as to_file:
-                os.dup2(to_file.fileno(), stdout_fd)  # $ exec > to
-        try:
-            yield stdout # allow code to be run with the redirected stdout
-        finally:
-            # restore stdout to its previous value
-            #NOTE: dup2 makes stdout_fd inheritable unconditionally
-            stdout.flush()
-            os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
-
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -156,18 +116,23 @@ class CMakeTestProj:
                     os.makedirs(root)
                 projdir = os.path.abspath('.')
                 args.append(projdir)
+        args = maincmd + args
         with util.setcwd(root):
-            args = maincmd + args
-            #print("----->run():", self.proj, "at", os.getcwd(), " ".join(args))
-            util.runsyscmd(args)
-            #print("----->finished run():", self.proj, "at", os.getcwd(), " ".join(args))
-
-    def run_silently(self, *args, **kwargs):
-        # https://stackoverflow.com/questions/6796492/temporarily-redirect-stdout-stderr
-        with stdout_redirected(to=os.devnull), merged_stderr_stdout():
-            # stdout goes to devnull
-            # stderr also goes to stdout that goes to devnull', file=sys.stderr)
-            self.run(*args, **kwargs)
+            tmpfile, tmpname = tempfile.mkstemp(prefix="_cmany_tmp.out.")
+            with util.stdout_redirected(tmpfile):
+                #print("----->run():", self.proj, "at", os.getcwd(), " ".join(args))
+                util.runsyscmd(args)
+                #print("----->finished run():", self.proj, "at", os.getcwd(), " ".join(args))
+            # close the mkstemp handle
+            outsock = os.fdopen(tmpfile, "r")
+            outsock.close()
+            # read the input
+            with open(tmpname, "r") as fh:
+                output = fh.read()
+            # remove the tmpfile
+            os.remove(tmpname)
+            #print("\n"*2, self.root, args[4:], "output len=", len(output), output[:min(len(output), 256)]+".................\n\n")
+        return output
 
 
 # -----------------------------------------------------------------------------
@@ -186,6 +151,7 @@ else:
 build_types = [cmany.BuildType(b) for b in util.splitesc(build_types, ',')]
 
 variant_set = cmany.Variant.create_variants(variant_set)
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -253,7 +219,7 @@ def run_projs(testobj, args, check_fn=None):
                 ','.join([str(b) for b in build_types]),
                 ','.join([v.full_specs for v in variant_set])
             )
-            util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
+            #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
             p.run(args + ['--build-dir', bd,
                           '--install-dir', id,
             ])
@@ -301,7 +267,7 @@ def run_projs(testobj, args, check_fn=None):
                             c.name if c.is_msvc else c.path,
                             str(t),
                             v.full_specs)
-                        util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
+                        #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
                         p.run(args + ['--build-dir', bd, '--install-dir', id])
                         os.environ['CMANY_ARGS'] = ''
                         if check_fn:
@@ -360,6 +326,37 @@ class TestBuild:
         ch = glob.glob(res)
         return ch
 
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+class Outputs(dict):
+
+    "a class to store several outputs which should be the same"
+
+    def add_one(self, k, kk, vv):
+        l = self.get(k)
+        if l is None:
+            l = []
+            self[k] = l
+        l.append((kk, vv))
+
+    def compare_outputs(self, test):
+        for k, outs in self.items():
+            rk, rv = outs[0]
+            rv = self._filter_output(rv)
+            for kk, vv in outs[1:]:
+                vv = self._filter_output(vv)
+                test.assertEqual(rv, vv, "{}: refkey: '{}' vs key '{}'".format(k, rk, kk))
+
+    def _filter_output(self, s):
+        # the first three lines contain the command, so skip them
+        out = "\n".join(s.split("\n")[3:])
+        return out
+
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -367,59 +364,92 @@ class Test00Help(ut.TestCase):
 
     # TODO: grab the output and compare it to make sure it is the same
 
+    def setUp(self):
+        super().setUp()
+        self.maxDiff = None
+        # make sure --show-args is not used to projs.run()
+        global maincmd
+        self.maincmd = maincmd
+        maincmd = [c for c in maincmd if c != '--show-args']
+    def tearDown(self):
+        super().tearDown()
+        global maincmd
+        maincmd = self.maincmd
+
+
+    cmany_help = Outputs()
     def test00_cmany_help_short(self):
-        projs[0].run_silently(['-h'])
-
+        out = projs[0].run(['-h'])
+        __class__.cmany_help.add_one('-h', '-h', out)
     def test01_cmany_help_long(self):
-        projs[0].run_silently(['--help'])
+        out = projs[0].run(['--help'])
+        __class__.cmany_help.add_one('-h', '--help', out)
+    def test0x_cmany_help_compare(self):
+        __class__.cmany_help.compare_outputs(self)
 
 
+    sc_help_short = Outputs()
     def test10_subcommand_help_short(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
-            projs[0].run_silently([c, '-h'])
-
+            out = projs[0].run([c, '-h'])
+            __class__.sc_help_short.add_one(c, c, out)
     def test11_subcommand_help_short_aliases(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
             for a in aliases:
-                projs[0].run_silently([a, '-h'])
+                out = projs[0].run([a, '-h'])
+                __class__.sc_help_short.add_one(c, a, out)
+    def test1x_subcommand_help_compare(self):
+        __class__.sc_help_short.compare_outputs(self)
 
 
+    sc_help_short_rev = Outputs()
     def test20_subcommand_help_short_rev(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
-            projs[0].run_silently(['h', c])
-
+            out = projs[0].run(['h', c])
+            __class__.sc_help_short_rev.add_one(c, c, out)
     def test21_subcommand_help_short_rev_aliases(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
             for a in aliases:
-                projs[0].run_silently(['h', a])
+                out = projs[0].run(['h', a])
+                __class__.sc_help_short_rev.add_one(c, a, out)
+    def test2x_subcommand_help_compare(self):
+        __class__.sc_help_short_rev.compare_outputs(self)
 
 
+    sc_help_long = Outputs()
     def test30_subcommand_help_long(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
-            projs[0].run_silently([c, '--help'])
-
+            out = projs[0].run([c, '--help'])
+            __class__.sc_help_long.add_one(c, c, out)
     def test31_subcommand_help_long_aliases(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
             for a in aliases:
-                projs[0].run_silently([a, '--help'])
+                out = projs[0].run([a, '--help'])
+                __class__.sc_help_long.add_one(c, a, out)
+    def test3x_subcommand_help_long_compare(self):
+        __class__.sc_help_long.compare_outputs(self)
 
 
+    sc_help_long_rev = Outputs()
     def test40_subcommand_help_long_rev(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
-            projs[0].run_silently(['help', c])
-
+            out = projs[0].run(['help', c])
+            __class__.sc_help_long_rev.add_one(c, c, out)
     def test41_subcommand_help_long_rev_aliases(self):
         for c, aliases in main.cmds.items():
             if c == 'help': continue
             for a in aliases:
-                projs[0].run_silently(['help', a])
+                out = projs[0].run(['help', a])
+                __class__.sc_help_long_rev.add_one(c, a, out)
+    def test4x_subcommand_help_long_compare(self):
+        __class__.sc_help_long_rev.compare_outputs(self)
 
 
 # -----------------------------------------------------------------------------
