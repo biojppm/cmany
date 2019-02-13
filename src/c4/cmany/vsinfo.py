@@ -15,7 +15,6 @@ from .cmake import CMakeSysInfo
 
 class VisualStudioInfo:
     """encapsulates info on Visual Studio installations"""
-
     def __init__(self, name):
         cn, toolset = sep_name_toolset(name)
         if cn not in _versions.keys():
@@ -39,6 +38,27 @@ class VisualStudioInfo:
             self.is_clang = re.search(r'clang', self.toolset) is not None
         else:
             self.is_clang = False
+    def runsyscmd(self, cmd, **kwargs):
+        """
+        vcvarsall.bat usage:
+        Syntax:
+            vcvarsall.bat [arch] [platform_type] [winsdk_version] [-vcvars_ver=vc_version] [-vcvars_spectre_libs=spectre_mode]
+        where :
+            [arch]: x86 | amd64 | x86_amd64 | x86_arm | x86_arm64 | amd64_x86 | amd64_arm | amd64_arm64
+            [platform_type]: {empty} | store | uwp
+            [winsdk_version] : full Windows 10 SDK number (e.g. 10.0.10240.0) or "8.1" to use the Windows 8.1 SDK.
+            [vc_version] : {none} for default VS 2017 VC++ compiler toolset |
+                           "14.0" for VC++ 2015 Compiler Toolset |
+                           "14.1x" for the latest 14.1x.yyyyy toolset installed (e.g. "14.11") |
+                           "14.1x.yyyyy" for a specific full version number (e.g. 14.11.25503)
+            [spectre_mode] : {none} for default VS 2017 libraries without spectre mitigations |
+                             "spectre" for VS 2017 libraries with spectre mitigations
+        """
+        a = str(self.architecture)
+        if "64" in a:
+            a = "x64"
+        cmd = ["cmd", "/C", "call", self.vcvarsall, a, "8.1", "&"] + cmd
+        runsyscmd(cmd, **kwargs)
 
 
 # -----------------------------------------------------------------------------
@@ -56,6 +76,7 @@ def find_any():
             return VisualStudioInfo(vs)
     return None
 
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -70,6 +91,7 @@ _versions = {
     'vs2008':9 , 9 :'vs2008', 'vs2008_64':9 , 'vs2008_32':9 , 'vs2008_ia64':9 ,  # nopep8
     'vs2005':8 , 8 :'vs2005', 'vs2005_64':8 , 'vs2005_32':8 ,   # nopep8
 }
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -285,7 +307,7 @@ def vsdir(name_or_gen_or_ver):
 
 
 def devenv(name_or_gen_or_ver):
-    """get the path to vcvarsall.bat"""
+    """get the path to devenv.exe"""
     ver = to_ver(name_or_gen_or_ver)
     d = vsdir(ver)
     # devenv can have different names:

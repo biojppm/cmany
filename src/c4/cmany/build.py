@@ -28,6 +28,7 @@ class Build(NamedItem):
                  num_jobs, kwargs):
         #
         self.kwargs = kwargs
+        self.export_compile_commands = self.kwargs.get('export_compile', True)
         #
         self.projdir = util.chkf(proj_root)
         self.buildroot = os.path.abspath(build_root)
@@ -100,6 +101,7 @@ class Build(NamedItem):
             g = Generator(vsi.gen, self, num_jobs)
             arch = Architecture(vsi.architecture)
             self.adjust(architecture=arch)
+            self.vsinfo = vsi
             return g
         else:
             if self.system.name == "windows":
@@ -164,11 +166,9 @@ class Build(NamedItem):
     def configure_cmd(self, for_json=False):
         if for_json:
             return ('-C ' + self.preload_file
-                    + ' ' + self.generator.configure_args(for_json))
+                    + ' ' + self.generator.configure_args(for_json=for_json))
         cmd = (['cmake', '-C', self.preload_file]
-               + self.generator.configure_args())
-        if self.kwargs.get('export_compile', False):
-            cmd.append('-DCMAKE_EXPORT_COMPILE_COMMANDS=1')
+               + self.generator.configure_args(export_compile_commands=self.export_compile_commands))
         if self.toolchain_file:
             cmd.append('-DCMAKE_TOOLCHAIN_FILE=' + self.toolchain_file)
         cmd.append(self.projdir)
@@ -184,6 +184,34 @@ class Build(NamedItem):
             cmd = self.configure_cmd()
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
+        if self.export_compile_commands:
+            if not self.generator.export_compile_commands:
+                util.logwarn("WARNING: this generator cannot export compile commands. Use 'cmany export_compile_commands/xcc to export the compile commands.'")
+
+    def export_compile_commands(self):
+        # some generators (notably VS/msbuild) cannot export compile
+        # commands, so to get that, we'll configure a second build using the
+        # ninja generator so that compile_commands.json is generated;
+        # finally, copy over that file to this build directory
+        if self.needs_configure():
+            self.configure()
+        trickdir = os.path.join(self.builddir, '.export_compile_commands')
+        if not os.path.exists(trickdir):
+            os.makedirs(trickdir)
+        with util.setcwd(trickdir, silent=False):
+            cmd = ['cmake', '-G', 'Ninja', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON', '-C', self.preload_file, self.projdir]
+            if not self.compiler.is_msvc:
+                util.runsyscmd(cmd)
+            else:
+                self.vsinfo.runsyscmd(cmd)
+        src = os.path.join(trickdir, "compile_commands.json")
+        dst = os.path.join(self.builddir, "compile_commands.json")
+        if os.path.exists(src):
+            from shutil import copyfile
+            if os.path.exists(dst):
+                os.remove(dst)
+            copyfile(src, dst)
+            util.loginfo("exported compile_commands.json:", dst)
 
     def reconfigure(self):
         """reconfigure a build directory, without touching any cache entry"""

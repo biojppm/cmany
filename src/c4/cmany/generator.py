@@ -38,10 +38,13 @@ class Generator(BuildItem):
         if self.is_msvc:
             ts = build.compiler.vs.toolset
             self.sysinfo_name += (' ' + ts) if ts is not None else ""
+        # EXPORT_COMPILE_COMMANDS is valid only for makefiles and ninja generators
+        # https://cmake.org/cmake/help/v3.14/variable/CMAKE_EXPORT_COMPILE_COMMANDS.html
+        self.exports_compile_commands = (self.is_makefile or self.is_ninja)
         # these vars would not change cmake --system-information
         # self.full_name += " ".join(self.build.flags.cmake_vars)
 
-    def configure_args(self, for_json=False):
+    def configure_args(self, for_json=False, export_compile_commands=True):
         if self.name != "":
             if self.is_msvc and self.build.compiler.vs.toolset is not None:
                 if for_json:
@@ -60,11 +63,17 @@ class Generator(BuildItem):
                 args = []
         # cmake vars are explicitly set in the preload file
         # args += self.build.flags.cmake_flags
+        if self.is_makefile or self.is_ninja:
+            args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
+        elif self.is_msvc:
+            pass
         return args
 
     def cmd(self, targets, override_build_type=None, override_num_jobs=None):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
+        elif self.is_ninja:
+            return ['ninja', '-j', str(self.num_jobs)] + targets
         else:
             bt = str(self.build.build_type)
             if len(targets) > 1:

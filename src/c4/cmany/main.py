@@ -25,6 +25,7 @@ cmds = odict([
     ('show_build_dirs', ['sd']),
     ('show_targets', ['st']),
     ('create_proj', ['cp']),
+    ('export_compile_commands', ['xc']),
     ('export_vs', []),
 ])
 
@@ -201,6 +202,15 @@ class create_proj(selectcmd):
                             are taken from the current working directory.""")
     def _exec(self, proj, args):
         proj.create_proj()
+
+
+class export_compile_commands(selectcmd):
+    """create a compile_commands.json in each build dir, for cases (such as VS)
+    _even if_ the build's generator is unable to export one. This requires
+    creating a dummy build dir using the Ninja generator, from where
+    compile_commands.json is copied to the build's dir."""
+    def _exec(self, proj, args):
+        proj.export_compile_commands()
 
 
 class export_vs(selectcmd):

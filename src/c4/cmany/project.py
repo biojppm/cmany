@@ -150,7 +150,7 @@ class Project:
             conf.CONF_DIR, conf.USER_DIR, self.root_dir)]
         if self.kwargs.get('no_default_config'):
             seq = []
-        for f in self.kwargs['config_file']:
+        for f in self.kwargs.get('config_file', []):
             if not os.path.isabs(f):
                 f = os.path.join(self.root_dir, f)
             if not os.path.exists(f):
@@ -267,6 +267,11 @@ class Project:
         if not os.path.exists(self.build_dir):
             os.makedirs(self.build_dir)
         self._execute(Build.reconfigure, "Reconfigure", silent=False, **restrict_to)
+
+    def export_compile_commands(self, **restrict_to):
+        if not os.path.exists(self.build_dir):
+            os.makedirs(self.build_dir)
+        self._execute(Build.export_compile_commands, "Export compile commands", silent=False, **restrict_to)
 
     def build(self, **restrict_to):
         def do_build(build):
