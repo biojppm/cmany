@@ -274,31 +274,33 @@ class CMakeSysInfo:
         p = _genid(gen)
         d = os.path.join(USER_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
-        if os.path.exists(p):
+        if os.path.exists(p) and util.time_since_modification(p).months < 1:
+            # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
             # print("CMakeSystemInfo: asked info for", which_generator, "... found", p)
             with open(p, "r") as f:
                 i = f.readlines()
+                return i
+        #
+        if isinstance(gen, Generator):
+            cmd = ['cmake'] + gen.configure_args() + ['--system-information']
         else:
-            if isinstance(gen, Generator):
-                cmd = ['cmake'] + gen.configure_args() + ['--system-information']
+            if gen == "default" or gen == "":
+                cmd = ['cmake', '--system-information']
             else:
-                if gen == "default" or gen == "":
-                    cmd = ['cmake', '--system-information']
-                else:
-                    if gen.startswith('vs') or gen.startswith('Visual Studio'):
-                        from . import vsinfo
-                        gen = vsinfo.to_gen(gen)
-                    cmd = ['cmake', '-G', str(gen), '--system-information']
-
-            if not os.path.exists(d):
-                os.makedirs(d)
-            print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
-            with setcwd(d):
-                out = runsyscmd(cmd, echo_output=False, capture_output=True)
-            print("cmany: finished generating information for generator '{}'\n".format(gen))
-            with open(p, "w") as f:
-                f.write(out)
-            i = out.split("\n")
+                if gen.startswith('vs') or gen.startswith('Visual Studio'):
+                    from . import vsinfo
+                    gen = vsinfo.to_gen(gen)
+                cmd = ['cmake', '-G', str(gen), '--system-information']
+        #
+        if not os.path.exists(d):
+            os.makedirs(d)
+        print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
+        with setcwd(d):
+            out = runsyscmd(cmd, echo_output=False, capture_output=True)
+        print("cmany: finished generating information for generator '{}'\n".format(gen))
+        with open(p, "w") as f:
+            f.write(out)
+        i = out.split("\n")
         return i
 
 

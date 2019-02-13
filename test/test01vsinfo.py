@@ -18,9 +18,12 @@ if util.in_windows():
                     if not os.path.exists(w):
                         self.fail(vs.name + ": " + w + " does not exist")
                 if vs.is_installed:
-                    print("Found", vs.name, "aka", vs.gen + ":", vs.dir)
+                    print("\nFound", vs.name, "aka", vs.gen + ":", vs.dir)
+                    for i in ('dir', 'vcvarsall', 'devenv', 'msbuild', 'cxx_compiler', 'c_compiler'):
+                        print(i, "----", getattr(vs, i))
                     c(vs.dir)
                     c(vs.vcvarsall)
+                    c(vs.devenv)
                     c(vs.msbuild)
                     c(vs.cxx_compiler)
                     c(vs.c_compiler)

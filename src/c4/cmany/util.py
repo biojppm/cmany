@@ -6,6 +6,8 @@ import sys
 import subprocess
 import platform
 import copy
+import datetime
+from dateutil.relativedelta import relativedelta
 
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
@@ -456,8 +458,20 @@ class setcwd:
         chkf(self.old)
         os.chdir(self.old)
 
+
 # -----------------------------------------------------------------------------
 
+def time_since_modification(path):
+    """return the time elapsed since a path has been last modified, as a
+    dateutil.relativedelta"""
+    mtime = os.path.getmtime(path)
+    mtime = datetime.datetime.fromtimestamp(mtime)
+    currt = datetime.datetime.now()
+    r = relativedelta(currt, mtime)
+    return r
+
+
+# -----------------------------------------------------------------------------
 
 # subprocess.run() was introduced only in Python 3.5,
 # so we provide a replacement implementation to use in older Python versions.
