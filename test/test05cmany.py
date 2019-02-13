@@ -85,6 +85,47 @@ def _get_variant_spec(test_name):
 os.environ['CMANY_ARGS'] = ''
 os.environ['CMANY_PFX_ARGS'] = ''
 
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# https://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python/22434262#22434262
+
+from contextlib import contextmanager
+
+
+def fileno(file_or_fd):
+    fd = getattr(file_or_fd, 'fileno', lambda: file_or_fd)()
+    if not isinstance(fd, int):
+        raise ValueError("Expected a file (`.fileno()`) or a file descriptor")
+    return fd
+
+
+def merged_stderr_stdout():  # $ exec 2>&1
+    return stdout_redirected(to=sys.stdout, stdout=sys.stderr)
+
+
+@contextmanager
+def stdout_redirected(to=os.devnull, stdout=None):
+    if stdout is None:
+       stdout = sys.stdout
+    stdout_fd = fileno(stdout)
+    # copy stdout_fd before it is overwritten
+    #NOTE: `copied` is inheritable on Windows when duplicating a standard stream
+    with os.fdopen(os.dup(stdout_fd), 'wb') as copied:
+        stdout.flush()  # flush library buffers that dup2 knows nothing about
+        try:
+            os.dup2(fileno(to), stdout_fd)  # $ exec >&to
+        except ValueError:  # filename
+            with open(to, 'wb') as to_file:
+                os.dup2(to_file.fileno(), stdout_fd)  # $ exec > to
+        try:
+            yield stdout # allow code to be run with the redirected stdout
+        finally:
+            # restore stdout to its previous value
+            #NOTE: dup2 makes stdout_fd inheritable unconditionally
+            stdout.flush()
+            os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -121,6 +162,13 @@ class CMakeTestProj:
             util.runsyscmd(args)
             #print("----->finished run():", self.proj, "at", os.getcwd(), " ".join(args))
 
+    def run_silently(self, *args, **kwargs):
+        # https://stackoverflow.com/questions/6796492/temporarily-redirect-stdout-stderr
+        with stdout_redirected(to=os.devnull), merged_stderr_stdout():
+            # stdout goes to devnull
+            # stderr also goes to stdout that goes to devnull', file=sys.stderr)
+            self.run(*args, **kwargs)
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -144,7 +192,7 @@ variant_set = cmany.Variant.create_variants(variant_set)
 # -----------------------------------------------------------------------------
 def run_projs(testobj, args, check_fn=None):
     numbuilds = len(compiler_set) * len(build_types) * len(variant_set)
-
+    #
     # run with default parameters
     bd = '.test/0--default--build'
     id = '.test/0--default--install'
@@ -158,7 +206,7 @@ def run_projs(testobj, args, check_fn=None):
                                variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
-
+    #
     # run with default parameters in a non root dir
     rd = '.test/1--non_root_dir'
     for p in projs:
@@ -171,10 +219,10 @@ def run_projs(testobj, args, check_fn=None):
                                variant=cmany.Variant.default(),
                                numbuilds=1)
                 check_fn(tb)
-
+    #
     if numbuilds == 1:
         return
-
+    #
     # run all sys,arch,compiler,buildtype,variant combinations at once
     bd = '.test/2.1--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
     id = '.test/2.1--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
@@ -194,7 +242,7 @@ def run_projs(testobj, args, check_fn=None):
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
-
+    #
     # run all sys,arch,compiler,buildtype,variant combinations at once - envargs
     bd = '.test/2.2--comps{}--types{}--variants{}--build'.format(len(compiler_set), len(build_types), len(variant_set))
     id = '.test/2.2--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
@@ -218,7 +266,7 @@ def run_projs(testobj, args, check_fn=None):
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
-
+    #
     # run sys,arch,compiler,buildtype combinations individually
     for p in projs:
         for c in compiler_set:
@@ -239,7 +287,7 @@ def run_projs(testobj, args, check_fn=None):
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
-
+    #
     # run sys,arch,compiler,buildtype combinations individually - envargs
     for p in projs:
         for c in compiler_set:
@@ -317,23 +365,61 @@ class TestBuild:
 # -----------------------------------------------------------------------------
 class Test00Help(ut.TestCase):
 
-    def test00_mh(self):
-        projs[0].run(['-h'])
+    # TODO: grab the output and compare it to make sure it is the same
 
-    def test01_mmhelp(self):
-        projs[0].run(['--help'])
+    def test00_cmany_help_short(self):
+        projs[0].run_silently(['-h'])
 
-    def test02_cmd_mhelp(self):
+    def test01_cmany_help_long(self):
+        projs[0].run_silently(['--help'])
+
+
+    def test10_subcommand_help_short(self):
         for c, aliases in main.cmds.items():
-            if c == 'help':
-                continue
-            projs[0].run([c, '-h'])
+            if c == 'help': continue
+            projs[0].run_silently([c, '-h'])
 
-    def test03_cmd_mmhelp(self):
+    def test11_subcommand_help_short_aliases(self):
         for c, aliases in main.cmds.items():
-            if c == 'help':
-                continue
-            projs[0].run([c, '--help'])
+            if c == 'help': continue
+            for a in aliases:
+                projs[0].run_silently([a, '-h'])
+
+
+    def test20_subcommand_help_short_rev(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            projs[0].run_silently(['h', c])
+
+    def test21_subcommand_help_short_rev_aliases(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            for a in aliases:
+                projs[0].run_silently(['h', a])
+
+
+    def test30_subcommand_help_long(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            projs[0].run_silently([c, '--help'])
+
+    def test31_subcommand_help_long_aliases(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            for a in aliases:
+                projs[0].run_silently([a, '--help'])
+
+
+    def test40_subcommand_help_long_rev(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            projs[0].run_silently(['help', c])
+
+    def test41_subcommand_help_long_rev_aliases(self):
+        for c, aliases in main.cmds.items():
+            if c == 'help': continue
+            for a in aliases:
+                projs[0].run_silently(['help', a])
 
 
 # -----------------------------------------------------------------------------
