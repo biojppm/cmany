@@ -185,7 +185,7 @@ class Build(NamedItem):
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
         if self.export_compile_commands:
-            if not self.generator.export_compile_commands:
+            if not self.generator.exports_compile_commands:
                 util.logwarn("WARNING: this generator cannot export compile commands. Use 'cmany export_compile_commands/xcc to export the compile commands.'")
 
     def export_compile_commands(self):
