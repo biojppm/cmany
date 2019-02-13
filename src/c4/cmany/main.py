@@ -60,27 +60,48 @@ class help(cmdbase):
     def add_args(self, parser):
         parser.add_argument('subcommand_or_topic', default="", nargs='?')
     def _exec(self, proj, args):
-        sct = args.subcommand_or_topic
+        sct = args.subcommand_or_topic.lower()
         if not sct:
             cmany_main(['-h'])
         else:
             sc = cmds.get(sct)
             # is it a subcommand?
             if sc is not None:
-                cmany_main([sct, '-h'])
+                self._show(sct)
             else:
-                # is it a topic?
-                subtopic = c4help.topics.get(args.subcommand_or_topic)
-                if subtopic is None:
-                    msg = ("{} is not a subcommand or topic.\n" +
-                           "Available subcommands are: {}\n" +
-                           "Available help topics are: {}\n")
-                    print(msg.format(args.subcommand_or_topic,
-                                     ', '.join(cmds.keys()),
-                                     ', '.join(c4help.topics.keys())))
-                    exit(1)
+                # is it a subcommand alias?
+                sc = None
+                for c, aliases in cmds.items():
+                    if sct in aliases:
+                        sc = c
+                        break
+                if sc is not None:
+                    self._show(sc)
                 else:
-                    print(subtopic.txt)
+                    # is it a topic?
+                    subtopic = c4help.topics.get(sct)
+                    if subtopic is not None:
+                        print(subtopic.txt)
+                    else:
+                        msg = ("{} is not a subcommand or topic.\n" +
+                               "Available subcommands are: {}\n" +
+                               "Available help topics are: {}\n")
+                        print(msg.format(args.subcommand_or_topic,
+                                         ', '.join(cmds.keys()),
+                                         ', '.join(c4help.topics.keys())))
+                        exit(1)
+    def _show(self, subcommand):
+        import textwrap
+        import re
+        mymod = sys.modules[__name__]
+        if hasattr(mymod, subcommand):
+            cls = getattr(mymod, subcommand)
+            sctxt = "/".join([subcommand] + cmds[subcommand])
+            block = re.sub("\n", " ", cls.__doc__)
+            block = re.sub("\ +", " ", block)
+            block = textwrap.fill(block, 60)
+            print("{0}cmany {1}\n{0}\n{2}\n".format("--" * 20 + "\n", sctxt, block))
+        cmany_main([subcommand, '-h'])
 
 
 # -----------------------------------------------------------------------------
