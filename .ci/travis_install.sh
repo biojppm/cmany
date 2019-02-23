@@ -67,12 +67,18 @@ which clang++
 (clang++ -dumpversion ; clang++ --version)
 
 which $PYTHON
-which $PIP
 $PYTHON -V
+
+which $PIP
 $PIP -V
+
 $PIP install --upgrade setuptools
 $PIP install --upgrade pip
+
+cat requirements.txt
 $PIP install -r requirements.txt .
+
+cat requirements_test.txt
 $PIP install -r requirements_test.txt .
 
 exit 0

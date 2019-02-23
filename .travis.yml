@@ -14,7 +14,13 @@ matrix:
     - os: linux
       dist: trusty
       sudo: required
-      python: 3.7-dev
+      python: 3.8-dev
+      env: PY=3.8-dev
+
+    - os: linux
+      dist: trusty
+      sudo: required
+      python: 3.7
       env: PY=3.7
 
     - os: linux
@@ -35,11 +41,14 @@ matrix:
       python: 3.4
       env: PY=3.4
 
-    - os: linux
-      dist: trusty
-      sudo: required
-      python: 3.3
-      env: PY=3.3
+    # disable tests for 3.3:
+    #   * pip is no longer supporting python 3.3: https://pip.pypa.io/en/stable/installing/
+    #   * 3.3 development ceased 2017: https://lwn.net/Articles/733165/
+    #- os: linux
+    #  dist: trusty
+    #  sudo: required
+    #  python: 3.3
+    #  env: PY=3.3
 
     # OS X tests are *very* slow. enable only one.
     #- os: osx

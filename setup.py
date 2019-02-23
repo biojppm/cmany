@@ -8,9 +8,9 @@ import site
 import glob
 
 
-if sys.version_info < (3, 3):
-    # this is because of subprocess. That code is in c4/cmany/util.py.
-    msg = 'cmany requires at least Python 3.3. Current version is {}. Sorry.'
+if sys.version_info < (3, 4):
+    # python 3.3 is no longer supported by pip
+    msg = 'cmany requires at least Python 3.4. Current version is {}. Sorry.'
     sys.exit(msg.format(sys.version_info))
 
 
@@ -94,7 +94,11 @@ setup(name="cmany",
           "License :: OSI Approved :: MIT License",
           "Intended Audience :: Developers",
           "Development Status :: 3 - Alpha",
-          "Programming Language :: Python :: 3",
+          "Programming Language :: Python :: 3.4",
+          "Programming Language :: Python :: 3.5",
+          "Programming Language :: Python :: 3.6",
+          "Programming Language :: Python :: 3.7",
+          "Programming Language :: Python :: 3.8",
           "Programming Language :: C",
           "Programming Language :: C++",
           "Topic :: Software Development :: Build Tools",

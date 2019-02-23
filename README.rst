@@ -1,7 +1,7 @@
 
-=========== ===========  ===============  ========================  ======================
- |pypi|      |license|    |readthedocs|    Linux + OS X: |travis|    Windows: |appveyor|
-=========== ===========  ===============  ========================  ======================
+===========  ===========  =============== ========= ========================  ======================
+ |pypi|       |license|    |readthedocs|   |pyver|   Linux + OS X: |travis|    Windows: |appveyor|
+===========  ===========  =============== ========= ========================  ======================
 
 cmany
 =====
@@ -102,11 +102,15 @@ cmany is permissively licensed under the `MIT license`_.
 
 
 .. _MIT license: LICENSE.txt
-
+.. |pyver_pip| image:: https://img.shields.io/pypi/pyversions/cmany.svg?style=plastic
+    :alt: PyPI - Python Version
+.. |pyver| image:: https://img.shields.io/badge/python-3.4+-blue.svg?style=plastic
+    :alt: Supported Python versions
+    :target: https://www.python.org/download/releases/3.4.0/
 .. |pypi| image:: https://badge.fury.io/py/cmany.svg
     :alt: Version
     :target: https://badge.fury.io/py/cmany
-.. |license| image:: https://img.shields.io/badge/License-MIT-green.svg
+.. |license| image:: https://img.shields.io/badge/License-MIT-green.svg?style=plastic
    :alt: License: MIT
    :target: https://github.com/biojppm/cmany/blob/master/LICENSE.txt
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
