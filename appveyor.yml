@@ -75,6 +75,8 @@ install:
   - "%PYTHON%\\Scripts\\pip install -r requirements.txt"
   - "%PYTHON%\\Scripts\\pip install -r requirements_test.txt"
 
+  - "%PYTHON%\\Scripts\\pip show -f codecov"
+
   #- ".ci\\show_cmake_sysinfo.bat"
 
 build_script:
@@ -88,7 +90,7 @@ test_script:
   - "echo end test"
   - "echo %cd%"
 
-#after_test:
+after_test:
   ## If tests are successful, create binary packages for the project.
   #- "echo %cd%"
   #- "%PYTHON%\\python setup.py bdist_wheel"
@@ -100,9 +102,9 @@ test_script:
 #  # Archive the generated packages in the ci.appveyor.com build report.
 #  - path: dist\*
 
-#on_success:
+on_success:
 #  - TODO: upload the content of dist/*.whl to a public wheelhouse
-#
+  - codecov
 
 skip_commits:
   files:

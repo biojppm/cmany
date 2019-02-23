@@ -71,12 +71,12 @@ matrix:
     #  language: generic
     #  env: PY=3.3 PYENV=3.3.1
 
+# command to install dependencies
 install:
-  # command to install dependencies
   - ./.ci/travis_install.sh
 
 # command to run tests
 script: ./.ci/travis_test.sh
 
-#after_success:
-#  codecov
+after_success:
+  - codecov

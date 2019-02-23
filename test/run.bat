@@ -22,7 +22,7 @@ echo %PIPINSTALL%
 cd test
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 set PYTHONPATH=%root%\src
-%PYTHON% -m nose -d -v --with-id --nocapture %*
+%PYTHON% -m nose -d -v --with-id --nocapture --with-coverage %*
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 exit /b %ERRORLEVEL%

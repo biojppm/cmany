@@ -81,4 +81,8 @@ $PIP install -r requirements.txt .
 cat requirements_test.txt
 $PIP install -r requirements_test.txt .
 
+# https://github.com/codecov/codecov-python
+# CODECOV_TOKEN="40f841c8-b4a7-4186-9055-dfcd09ed842a"
+$PIP install codecov
+
 exit 0
