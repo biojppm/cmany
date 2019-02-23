@@ -253,7 +253,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                 i += 1
             else:
                 s = string[prev:j]
-                _logf("{}: case 1.2: quote char closes at {}: __|{}|__", i, j, s))
+                _logf("{}: case 1.2: quote char closes at {}: __|{}|__", i, j, s)
                 if (j < l and string[j] != split_char):
                     s += string[j]
                     _logf("{}: case 1.2-0: append one char: __|{}|__", i, s)
