@@ -64,10 +64,10 @@ matrix:
 
 install:
   # command to install dependencies
-  - chmod a+x ./.ci/travis_install.sh ; ./.ci/travis_install.sh
+  - ./.ci/travis_install.sh
 
 # command to run tests
-script: chmod a+x ./.ci/travis_test.sh ; ./.ci/travis_test.sh
+script: ./.ci/travis_test.sh
 
 #after_success:
 #  codecov
