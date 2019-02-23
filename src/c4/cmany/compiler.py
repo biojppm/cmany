@@ -135,7 +135,7 @@ class Compiler(BuildItem):
                     macros = slntout([path, '-dM', '-E', f.name])
                     os.unlink(f.name)
                 macros = macros.split("\n")
-            except:
+            except Exception as e:
                 macros = []
             for m in sorted(macros):
                 if re.search("#define __clang__", m):

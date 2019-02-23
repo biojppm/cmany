@@ -60,7 +60,6 @@ def get_binaries_directory():
             print('cmany setup: installation path:', path)
             return path
     raise Exception('cmany setup: no installation path found', file=sys.stderr)
-    return None
 
 
 def get_data_files():

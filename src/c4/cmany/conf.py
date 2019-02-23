@@ -7,7 +7,8 @@ from ruamel import yaml
 from ruamel.yaml.comments import CommentedMap as CommentedMap
 
 if yaml.version_info < (0, 15):
-    raise Exception("cmany now requires ruamel.yaml>=0.15.0")
+    raise Exception("cmany requires ruamel.yaml>=0.15.0")
+
 
 # -----------------------------------------------------------------------------
 if util.in_windows():
@@ -32,6 +33,7 @@ assert osp.exists(SHARE_DIR), "cmany: share dir not found: {}".format(SHARE_DIR)
 assert osp.exists(CONF_DIR), "cmany: conf dir not found: {}".format(CONF_DIR)
 assert osp.exists(DOC_DIR), "cmany: doc dir not found: {}".format(DOC_DIR)
 # assert osp.exists(USER_DIR), "cmany: user dir not found: {}".format(USER_DIR)
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

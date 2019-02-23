@@ -159,7 +159,8 @@ class Project:
         self.configs = conf.Configs.load_seq(seq)
 
     def save_configs(self):
-        c = Configs()
+        # c = Configs()
+        pass
 
     def create_proj(self):
         yml = CommentedMap()

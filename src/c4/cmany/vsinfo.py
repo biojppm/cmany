@@ -71,7 +71,6 @@ order = ('vs2017', 'vs2015', 'vs2013', 'vs2012', 'vs2010',
 
 def find_any():
     for vs in order:
-        ver = to_ver(vs)
         if is_installed(vs):
             return VisualStudioInfo(vs)
     return None
@@ -288,7 +287,7 @@ def vsdir(name_or_gen_or_ver):
             try:
                 v = os.environ['VS{}0COMNTOOLS'.format(str(ver))]
                 d = os.path.abspath(os.path.join(v, '..', '..'))
-            except:
+            except Exception as e:
                 pass
     elif ver == 15:
         # VS 2017+ is no longer a singleton, and may be installed anywhere;
@@ -298,7 +297,7 @@ def vsdir(name_or_gen_or_ver):
                 idata = _vs2017_get_instance_data()
                 path = nested_lookup(idata, 'installationPath')
                 return path
-            except:
+            except Exception as e:
                 return ""
         d = cacheattr(sys.modules[__name__], '_vs2017dir', fn)
     else:
@@ -342,16 +341,16 @@ def msbuild(name_or_gen_or_ver):
         for v in msbvers:
             key = "SOFTWARE\\Microsoft\\MSBuild\\ToolsVersions\\{}\\MS‌​BuildToolsPath"
             try:
-                val = wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
+                val = wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(v), 0, wr.KEY_READ)
                 msbuild = os.path.join(val, 'MSBuild.exe')
                 break
-            except:
+            except Exception as e:
                 pass
         # default to some probable value if no registry key was found
         if msbuild is None:
             val = 'C:\\Windows\Microsoft.NET\Framework{}\\v{}\\MSBuild.exe'
             for v in msbvers:
-                msbuild = val.format('64' if util.in_64bit() else '', '3.5')
+                msbuild = val.format('64' if util.in_64bit() else '', v)#'3.5')
                 if os.path.exists(msbuild):
                     break
     else:
@@ -392,7 +391,7 @@ def _is_installed_impl(ver):
             if not os.path.exists(vcvarsall(ver)):
                 return False
             return True
-        except:
+        except Exception as e:
             return False
     else:
         #
@@ -407,7 +406,7 @@ def _is_installed_impl(ver):
         for i in iter(_vs2017_get_instances().keys()):
             try:
                 d = _vs2017_get_instance_data(i)
-            except:
+            except Exception as e:
                 continue
             # check that the version matches
             version_string = nested_lookup(d, 'catalogInfo', 'buildVersion')

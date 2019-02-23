@@ -1,7 +1,3 @@
-import re
-import os.path
-import glob
-
 from . import cmake
 from . import vsinfo
 

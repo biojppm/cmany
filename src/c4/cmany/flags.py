@@ -205,7 +205,6 @@ def load_yml(dump):
 def merge(flags, into_flags=None):
     """merge flags into the previously existing flags"""
     into_flags = into_flags if into_flags is not None else known_flags
-    result_flags = into_flags
     comps = get_all_compilers(flags, into_flags)
     result_flags = copy.deepcopy(into_flags)
     for k, v in flags.items():
@@ -215,7 +214,7 @@ def merge(flags, into_flags=None):
             result_flags[k] = copy.deepcopy(v)
     for f in result_flags:
         for c in comps:
-            result_flags[k].add_compiler(c)
+            result_flags[f].add_compiler(c)
     return result_flags
 
 

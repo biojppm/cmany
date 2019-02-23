@@ -1,7 +1,6 @@
 
-===========  ===========  =============== ========= ========================  ======================
- |pypi|       |license|    |readthedocs|   |pyver|   Linux + OS X: |travis|    Windows: |appveyor|
-===========  ===========  =============== ========= ========================  ======================
+ |license|    |pypi|       |readthedocs|   |pyver|
+ |travis|     |appveyor|   |lgtm_alerts|
 
 cmany
 =====
@@ -122,3 +121,10 @@ cmany is permissively licensed under the `MIT license`_.
 .. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
     :alt: Documentation status
     :target: https://cmany.readthedocs.io/
+
+.. |lgtm_grade| image:: https://img.shields.io/lgtm/grade/python/g/biojppm/cmany.svg?style=plastic
+    :alt: LGTM Grade
+    :target: https://lgtm.com/projects/g/biojppm/cmany/
+.. |lgtm_alerts| image:: https://img.shields.io/lgtm/alerts/g/biojppm/cmany.svg?style=plastic
+    :alt: LGTM Alerts
+    :target: https://lgtm.com/projects/g/biojppm/cmany/

@@ -50,7 +50,8 @@ class Build(NamedItem):
             if self.compiler.gcclike:
                 self.compiler.make_64bit()
         #
-        self._set_name_and_paths()  # calls super().__init__(self.tag)
+        tag = self._set_name_and_paths()
+        super().__init__(tag)
         #
         self.toolchain_file = self._get_toolchain()
         if self.toolchain_file:
@@ -82,13 +83,13 @@ class Build(NamedItem):
         self.tag = __class__.get_tag(
             self.system, self.architecture,
             self.compiler, self.build_type, self.variant, '-')
-        super().__init__(self.tag)
         self.buildtag = self.tag
         self.installtag = self.tag  # this was different in the past and may become so in the future
         self.builddir = os.path.abspath(os.path.join(self.buildroot, self.buildtag))
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
+        return self.tag
 
     def create_generator(self, num_jobs, fallback_generator="Unix Makefiles"):
         """create a generator, adjusting the build parameters if necessary"""
@@ -161,7 +162,6 @@ class Build(NamedItem):
         fn = os.path.join(builddir, __class__.sfile)
         with open(fn, 'rb') as f:
             return dill.load(f)
-        raise Exception("not found: " + fn)
 
     def configure_cmd(self, for_json=False):
         if for_json:
@@ -353,7 +353,7 @@ class Build(NamedItem):
         if append_to_sysinfo_var:
             try:
                 flags = [cmake.CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
-            except:
+            except Exception as e:
                 pass
         # append overall build flags
         # append variant flags
@@ -467,9 +467,8 @@ class Build(NamedItem):
             # if the dependencies cmake project is purely consisted of
             # external projects, there won't be an install target.
             dup.install()
-        except:
+        except Exception as e:
             util.logwarn(self.name + ": could not install. Maybe there's no install target?")
-            pass
         util.logdone(self.name + ': finished building dependencies. Install dir=', self.installdir)
         self.varcache.p('CMAKE_PREFIX_PATH', self.installdir)
         self.mark_deps_done()

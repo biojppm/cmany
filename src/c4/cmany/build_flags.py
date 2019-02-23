@@ -1,5 +1,4 @@
 from .named_item import NamedItem as NamedItem
-from . import flags as c4flags
 
 from . import util
 
