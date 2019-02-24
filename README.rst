@@ -1,6 +1,8 @@
 
-|license|    |pypi|       |readthedocs|   |pyver|
-|travis|     |appveyor|   |lgtm_grade|    |lgtm_alerts|
+|license|    |pypi|       |pyver|
+
+|readthedocs|   |travis|     |appveyor|   |lgtm_grade|    |lgtm_alerts|
+
 
 cmany
 =====
