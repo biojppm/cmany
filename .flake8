@@ -1,0 +1,24 @@
+# http://flake8.pycqa.org/en/3.3.0/user/configuration.html#configuration
+
+[flake8]
+# E201: whitespace after ')'
+# E202: whitespace before ')'
+# E203: whitespace before ','
+# E221: multiple spaces before operator
+# E222: multiple spaces after operator
+# E241: multiple spaces after ','
+# E261: at least two spaces before end-of-line comment
+# E262: inline comment should start with '# '
+# E265: block comment should start with #
+# E271: multiple spaces after keyword
+# E301: expected 1 blank line, found 0
+# E303: too many blank lines
+# E306: expected 1 blank line before nested definition
+# E402: module level import not at top of the file
+# E501: line too long
+# E701: multiple statements in one line
+# E702: multiple statements in one line
+# E704: multiple statements in one line
+# W503: line break before binary operator
+# W504: line break after binary operator
+ignore = E201,E202,E203,E221,E222,E241,E261,E262,E265,E271,E301,E303,E306,E402,E501,E701,E702,E704,W503,W504
