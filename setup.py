@@ -19,6 +19,19 @@ def read(*rnames):
         return f.read()
 
 
+def get_readme():
+    # skip the badge section
+    contents = read('README.rst')
+    s1 = "\ncmany\n====="
+    s2 = "\ncmany\r\n====="
+    i = contents.find(s1)
+    if i == -1:
+        i = contents.find(s2)
+    if i == -1:
+        raise Exception("malformed README")
+    return contents[i:]
+
+
 def readreqs(*rnames):
     def _skipcomment(line):
         return line if (line and not line.startswith('--')
@@ -85,7 +98,7 @@ def get_data_files():
 setup(name="cmany",
       version="0.1.2",
       description="CMake build tree batching tool",
-      long_description=read('README.rst') + "\n" + read('LICENSE.txt'),
+      long_description=get_readme() + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
       download_url="https://github.com/biojppm/cmany",
       license="License :: OSI Approved :: MIT License",

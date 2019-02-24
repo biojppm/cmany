@@ -1,6 +1,6 @@
 
- |license|    |pypi|       |readthedocs|   |pyver|
- |travis|     |appveyor|   |lgtm_alerts|
+|license|    |pypi|       |readthedocs|   |pyver|
+|travis|     |appveyor|   |lgtm_grade|    |lgtm_alerts|
 
 cmany
 =====
@@ -101,23 +101,27 @@ cmany is permissively licensed under the `MIT license`_.
 
 
 .. _MIT license: LICENSE.txt
-.. |pyver_pip| image:: https://img.shields.io/pypi/pyversions/cmany.svg?style=plastic
-    :alt: PyPI - Python Version
-.. |pyver| image:: https://img.shields.io/badge/python-3.4+-blue.svg?style=plastic
-    :alt: Supported Python versions
-    :target: https://www.python.org/download/releases/3.4.0/
-.. |pypi| image:: https://badge.fury.io/py/cmany.svg
-    :alt: Version
-    :target: https://badge.fury.io/py/cmany
+
 .. |license| image:: https://img.shields.io/badge/License-MIT-green.svg?style=plastic
    :alt: License: MIT
    :target: https://github.com/biojppm/cmany/blob/master/LICENSE.txt
-.. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
+
+.. |pypi| image:: https://img.shields.io/pypi/v/cmany.svg?color=green&style=plastic
+   :alt: Version
+   :target: https://pypi.org/project/cmany/
+
+.. |pyver| image:: https://img.shields.io/badge/python-3.4+-blue.svg?style=plastic
+    :alt: Supported Python versions
+    :target: https://www.python.org/download/releases/3.4.0/
+
+.. |travis| image:: https://img.shields.io/travis/biojppm/cmany.svg?style=plastic
     :alt: Linux+OSX build status
     :target: https://travis-ci.org/biojppm/cmany
-.. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
+
+.. |appveyor| image:: https://img.shields.io/appveyor/ci/biojppm/cmany.svg?style=plastic
     :alt: Windows build status
     :target: https://ci.appveyor.com/project/biojppm/cmany
+
 .. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
     :alt: Documentation status
     :target: https://cmany.readthedocs.io/
@@ -125,6 +129,7 @@ cmany is permissively licensed under the `MIT license`_.
 .. |lgtm_grade| image:: https://img.shields.io/lgtm/grade/python/g/biojppm/cmany.svg?style=plastic
     :alt: LGTM Grade
     :target: https://lgtm.com/projects/g/biojppm/cmany/
+
 .. |lgtm_alerts| image:: https://img.shields.io/lgtm/alerts/g/biojppm/cmany.svg?style=plastic
     :alt: LGTM Alerts
     :target: https://lgtm.com/projects/g/biojppm/cmany/alerts/?mode=list
