@@ -465,12 +465,11 @@ class CombinationArgument(argparse.Action):
     a cleverer way to do this but for now this is fast to implement."""
     def __call__(self, parser, namespace, values, option_string=None):
         def _dbg(*args): _dbg_argparser(self, self.dest, licurr, values, *args)
-        _dbg("receive", self.dest, values)
         li = util.splitesc_quoted(values, ',')
         licurr = li
         li = [util.unquote(item) for item in li]
         prev = getattr(namespace, self.dest)
-        _dbg("receive", self.dest, values, ".... li", prev, "---->", prev + li)
+        _dbg("receive")
         setattr(namespace, self.dest, prev + li)
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
@@ -513,5 +512,5 @@ class CombinationArgument(argparse.Action):
             raise Exception("unoknown argument: " + self.dest)
         curr = prev
         curr.append(li)
-        _dbg("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
+        _dbg("final", curr)
         setattr(namespace, 'combination_rules', curr)
