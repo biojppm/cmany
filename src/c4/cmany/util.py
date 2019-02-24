@@ -276,7 +276,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
         elif c == split_char and not is_escaped:
             _logf("{}: case 2: got a split char: '{}'", i, c)
             #if i > 0 and i < l and i > prev: # i is > 0 and because of the condition above, is always i<l
-            if i > 0 and i < l and i > prev:
+            if i > prev:
                 s = string[prev:i]
                 _logf("{}: case 2.1: s='{}'", i, s)
                 if s:

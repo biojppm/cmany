@@ -127,4 +127,4 @@ cmany is permissively licensed under the `MIT license`_.
     :target: https://lgtm.com/projects/g/biojppm/cmany/
 .. |lgtm_alerts| image:: https://img.shields.io/lgtm/alerts/g/biojppm/cmany.svg?style=plastic
     :alt: LGTM Alerts
-    :target: https://lgtm.com/projects/g/biojppm/cmany/
+    :target: https://lgtm.com/projects/g/biojppm/cmany/alerts/?mode=list

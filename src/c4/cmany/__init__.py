@@ -1,6 +1,6 @@
 #__import__('pkg_resources').declare_namespace(__name__)
 
-from .conf import *
+from .conf import *   # lgtm[py/polluting-import]
 
 from .build_flags import BuildFlags as BuildFlags
 from .system import System as System

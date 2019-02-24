@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # https://docs.travis-ci.com/user/multi-os/
 

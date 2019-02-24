@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 
 if [ "$TRAVIS_OS_NAME" == "linux" ] ; then
