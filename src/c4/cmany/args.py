@@ -15,6 +15,16 @@ from .util import cslist
 from multiprocessing import cpu_count as cpu_count
 
 
+_dbg_on = False
+
+
+def _dbg_argparser(parser, arg, curr, recv, *args):
+    if _dbg_on:
+        msg = "{}::{}: curr={} receive='{}'{}"
+        msg = msg.format(type(parser).__name__, arg, curr, recv, ":" if args else "")
+        util.logwarn(msg, *args)
+
+
 # -----------------------------------------------------------------------------
 def setup(subcommands, module):
     """creates a parser to process cmany's arguments"""
@@ -82,8 +92,8 @@ def merge_envargs(cmds, sysargs):
         if cmdargs:
             # print("inserting CMANY_ARGS:", cmdargs)
             args += cmdargs
-        if len(sysargs) > pos+1:
-            args += sysargs[(pos+1):]
+        if len(sysargs) > pos + 1:
+            args += sysargs[(pos + 1):]
     # print("resulting args:", args)
     return args
 
@@ -112,8 +122,8 @@ def _handle_hidden_args__skip_rest(args):
         if args.only_show_args:
             return True
     if args.show_args_list or args.only_show_args_list:
-        l = args.show_args_list + args.only_show_args_list
-        for a in l:
+        li = args.show_args_list + args.only_show_args_list
+        for a in li:
             print("args[", a, "]: ", sep='', end='')
             if not hasattr(args, a):
                 print("(does not exist!)")
@@ -405,17 +415,23 @@ class FlagArgument(argparse.Action):
     """a class to be used by argparse when parsing arguments which
     are compiler flags"""
     def __call__(self, parser, namespace, values, option_string=None):
+        def _dbg(*args): _dbg_argparser(self, self.dest, licurr, values, *args)
         li = getattr(namespace, self.dest)
+        licurr = li
         v = values
+        _dbg("initial.")
         # remove start and end quotes if there are any
         if util.is_quoted(v):
             v = util.unquote(v)
+            _dbg("unquoted:", v)
         # split at commas
         livals = cslist(v)
+        _dbg("split commas:", livals)
         # unquote splits
         for l in livals:
             ul = util.unquote(l)
             li.append(ul)
+        _dbg("final:", li)
         setattr(namespace, self.dest, li)
 
 
@@ -425,18 +441,20 @@ class BuildItemArgument(argparse.Action):
     Note that prettyprint shows the specs wrong.
     """
     def __call__(self, parser, namespace, values, option_string=None):
+        def _dbg(*args): _dbg_argparser(self, self.dest, licurr, values, *args)
         li = getattr(namespace, self.dest)
+        licurr = li
         vli = build_item.BuildItem.parse_args(values)
         # clear the defaults from the list
         if not hasattr(parser, 'non_default_args'):
             parser.non_default_args = {}
         if parser.non_default_args.get(self.dest) is None:
-            # util.logwarn("parsing: reset current li:", li)
+            _dbg("reset current li:", li)
             li = []
             parser.non_default_args[self.dest] = True
-        # util.logwarn("parsing: current li:", li, " + ", vli)
+        _dbg("current li:", li, " + ", vli)
         li += vli
-        # util.logwarn("parsing: resulting li:", li)
+        _dbg("resulting li:", li)
         setattr(namespace, self.dest, li)
 
 
@@ -446,11 +464,13 @@ class CombinationArgument(argparse.Action):
     entry (combination_rules), which retains the original order. Maybe there's
     a cleverer way to do this but for now this is fast to implement."""
     def __call__(self, parser, namespace, values, option_string=None):
-        # util.logwarn("parsing combinations: receive", self.dest, values)
+        def _dbg(*args): _dbg_argparser(self, self.dest, licurr, values, *args)
+        _dbg("receive", self.dest, values)
         li = util.splitesc_quoted(values, ',')
+        licurr = li
         li = [util.unquote(item) for item in li]
         prev = getattr(namespace, self.dest)
-        # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", prev + li)
+        _dbg("receive", self.dest, values, ".... li", prev, "---->", prev + li)
         setattr(namespace, self.dest, prev + li)
         if not hasattr(namespace, 'combination_rules'):
             setattr(namespace, 'combination_rules', [])
@@ -493,5 +513,5 @@ class CombinationArgument(argparse.Action):
             raise Exception("unoknown argument: " + self.dest)
         curr = prev
         curr.append(li)
-        # util.logwarn("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
+        _dbg("parsing combinations: receive", self.dest, values, ".... li", prev, "---->", curr)
         setattr(namespace, 'combination_rules', curr)
