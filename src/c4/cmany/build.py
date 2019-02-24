@@ -28,7 +28,7 @@ class Build(NamedItem):
                  num_jobs, kwargs):
         #
         self.kwargs = kwargs
-        self.export_compile_commands = self.kwargs.get('export_compile', True)
+        self.export_compile = self.kwargs.get('export_compile', True)
         #
         self.projdir = util.chkf(proj_root)
         self.buildroot = os.path.abspath(build_root)
@@ -168,7 +168,7 @@ class Build(NamedItem):
             return ('-C ' + self.preload_file
                     + ' ' + self.generator.configure_args(for_json=for_json))
         cmd = (['cmake', '-C', self.preload_file]
-               + self.generator.configure_args(export_compile_commands=self.export_compile_commands))
+               + self.generator.configure_args(export_compile_commands=self.export_compile))
         if self.toolchain_file:
             cmd.append('-DCMAKE_TOOLCHAIN_FILE=' + self.toolchain_file)
         cmd.append(self.projdir)
@@ -184,7 +184,7 @@ class Build(NamedItem):
             cmd = self.configure_cmd()
             util.runsyscmd(cmd)
             self.mark_configure_done(cmd)
-        if self.export_compile_commands:
+        if self.export_compile:
             if not self.generator.exports_compile_commands:
                 util.logwarn("WARNING: this generator cannot export compile commands. Use 'cmany export_compile_commands/xcc to export the compile commands.'")
 
