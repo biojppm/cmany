@@ -112,7 +112,7 @@ cmany is permissively licensed under the `MIT license`_.
    :alt: Version
    :target: https://pypi.org/project/cmany/
 
-.. |pyver| image:: https://img.shields.io/badge/python-3.4+-blue.svg?style=plastic
+.. |pyver| image:: https://img.shields.io/badge/python-3.4+-green.svg?style=plastic
     :alt: Supported Python versions
     :target: https://www.python.org/download/releases/3.4.0/
 
@@ -124,7 +124,7 @@ cmany is permissively licensed under the `MIT license`_.
     :alt: Windows build status
     :target: https://ci.appveyor.com/project/biojppm/cmany
 
-.. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
+.. |readthedocs| image:: https://img.shields.io/readthedocs/cmany.svg?style=plastic
     :alt: Documentation status
     :target: https://cmany.readthedocs.io/
 
