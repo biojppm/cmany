@@ -64,9 +64,37 @@ class ToolchainFileNotFound(Error):
         super().__init__(msg, tcfile)
 
 
+class ConfigFileNotFound(Error):
+    def __init__(self, cfgf):
+        msg = "config file not found: {}"
+        super().__init__(msg, tcfile)
+
+
+class FlagAliasNotFound(Error):
+    def __init__(self, name, known):
+        known = "" if known is None else ". Must be one of {}".format([str(n) for n in known])
+        super().__init__("flag alias not found: {}{}", name, known)
+
+
+class TooManyTargets(Error):
+    def __init__(self, generator):
+        msg = ("Building multiple targets with this generator is not "
+               "implemented. "
+               "cmake --build cannot handle multiple --target " +
+               "invokations. A generator-specific command must be "
+               "written to handle multiple targets with this "
+               "generator")
+        super().__init__(msg + '("{}")', generator.name)
+
+
 class BuildError(Error):
     def __init__(self, context, build, cmd, e):
-        super().__init__("{} {}: {}. Command was {}", context, build, e, cmd)
+        self.context = context
+        self.build = build
+        self.cmd = cmd
+        self.exc = e
+        #super().__init__("{} {}: {}. Command was {}", context, build, e, cmd)
+        super().__init__("{} {}: {}", context, build, e)
 
 
 class ConfigureFailed(BuildError):

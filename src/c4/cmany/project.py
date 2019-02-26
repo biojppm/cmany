@@ -152,10 +152,11 @@ class Project:
         if self.kwargs.get('no_default_config'):
             seq = []
         for f in self.kwargs.get('config_file', []):
-            if not os.path.isabs(f):
-                f = os.path.join(self.root_dir, f)
-            if not os.path.exists(f):
-                raise Exception(f + ": does not exist")
+            ff = f
+            if not os.path.isabs(ff):
+                ff = os.path.join(self.root_dir, ff)
+            if not os.path.exists(ff):
+                raise err.ConfigFileNotFound(ff)
             seq.append(f)
         self.configs = conf.Configs.load_seq(seq)
 

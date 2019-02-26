@@ -3,6 +3,7 @@ from ruamel import yaml
 import copy
 
 from .named_item import NamedItem
+from .err import FlagAliasNotFound
 from . import util
 
 
@@ -40,7 +41,7 @@ class FlagAliases:
     def get(self, name, compiler=None):
         opt = self.flags.get(name)
         if opt is None:
-            raise Exception("could not find flag alias: " + name)
+            raise FlagAliasNotFound(name, self.flags.keys())
         if compiler is not None:
             return opt.get(compiler)
         return opt

@@ -2,6 +2,7 @@ from . import cmake
 from . import vsinfo
 
 from .build_item import BuildItem
+from .err import TooManyTargets
 
 
 # -----------------------------------------------------------------------------
@@ -73,13 +74,7 @@ class Generator(BuildItem):
         else:
             bt = str(self.build.build_type)
             if len(targets) > 1:
-                msg = ("Building multiple targets with this generator is not "
-                       "implemented. "
-                       "cmake --build cannot handle multiple --target " +
-                       "invokations. A generator-specific command must be "
-                       "written to handle multiple targets with this "
-                       "generator " + '("{}")'.format(self.name))
-                raise Exception(msg)
+                raise TooManyTargets(self)
             if not self.is_msvc:
                 cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
             else:
