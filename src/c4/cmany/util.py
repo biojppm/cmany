@@ -31,10 +31,12 @@ def supports_color():
     return True
     # also this: https://gist.github.com/ssbarnea/1316877
 
+
 _suppress_colors = False
 def suppress_colors():
     global _suppress_colors
     _suppress_colors = True
+
 
 cmany_colored_output = (not _suppress_colors) and supports_color()
 
@@ -80,6 +82,21 @@ def logcmd(*args, **kwargs):
     # this print here is needed to prevent the command output
     # from being colored. Need to address this somehow.
     print("--------")
+
+
+# -----------------------------------------------------------------------------
+
+def path_exists(*path_components):
+    return os.path.exists(os.path.join(*path_components))
+
+
+def abspath(path):
+    if in_windows():
+        path = re.sub(r"^/([a-zA-Z])/(.*)", r"\1:\\\2", path)
+    if os.path.isabs(path):
+        return path
+    path = os.path.abspath(path)
+    return path
 
 
 # -----------------------------------------------------------------------------
@@ -603,7 +620,7 @@ def merged_stderr_stdout():  # $ exec 2>&1
 @contextmanager
 def stdout_redirected(to=os.devnull, stdout=None):
     if stdout is None:
-       stdout = sys.stdout
+        stdout = sys.stdout
     stdout_fd = fileno(stdout)
     # copy stdout_fd before it is overwritten
     #NOTE: `copied` is inheritable on Windows when duplicating a standard stream

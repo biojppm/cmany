@@ -32,8 +32,8 @@ class Build(NamedItem):
         self.export_compile = self.kwargs.get('export_compile', True)
         #
         self.projdir = util.chkf(proj_root)
-        self.buildroot = os.path.abspath(build_root)
-        self.installroot = os.path.abspath(install_root)
+        self.buildroot = util.abspath(build_root)
+        self.installroot = util.abspath(install_root)
         #
         self.flags = flags
         self.system = system
@@ -86,7 +86,10 @@ class Build(NamedItem):
             self.compiler, self.build_type, self.variant, '-')
         self.buildtag = self.tag
         self.installtag = self.tag  # this was different in the past and may become so in the future
-        self.builddir = os.path.abspath(os.path.join(self.buildroot, self.buildtag))
+        r = self.buildroot
+        if not os.path.isabs(r):
+            r = os.path.abspath(r)
+        self.builddir = os.path.join(self.buildroot, self.buildtag)
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')

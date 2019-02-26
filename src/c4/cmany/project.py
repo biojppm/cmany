@@ -4,6 +4,7 @@ import os
 import glob
 import json
 import copy
+import re
 import timeit
 from collections import OrderedDict as odict
 
@@ -26,21 +27,19 @@ from .combination_rules import CombinationRules
 from .cmake import getcachevars
 from . import cmake
 from . import err
+from .util import path_exists as _pexists
 
 
 # -----------------------------------------------------------------------------
-def _getdir(attr_name, default, kwargs):
+def _getdir(attr_name, default, kwargs, cwd):
     d = kwargs.get(attr_name)
     if d is None:
-        d = os.path.join(os.getcwd(), default)
+        d = os.path.join(cwd, default)
     else:
         if not os.path.isabs(d):
-            d = os.path.join(os.getcwd(), d)
+            d = os.path.join(cwd, d)
+    d = util.abspath(d)
     return d
-
-
-def _pexists(*args):
-    return os.path.exists(os.path.join(*args))
 
 
 # -----------------------------------------------------------------------------
@@ -52,24 +51,20 @@ class Project:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
         #
+        cwd = util.abspath(os.getcwd())
         pdir = kwargs.get('proj_dir')
         if pdir is None:
             raise err.ProjDirNotFound(None)
         if pdir == ".":
-            pdir = os.getcwd()
-        if not os.path.isabs(pdir):
-            pdir = os.path.abspath(pdir)
-        if util.in_windows():
-            import re
-            pdir = re.sub(r"^/([a-zA-Z])/(.*)", r"\1:\\\2", pdir)
-        pdir = os.path.normpath(pdir)
+            pdir = cwd
+        pdir = util.abspath(pdir)
         #
         if not _pexists(pdir):
             raise err.ProjDirNotFound(pdir)
         self.cmakelists = os.path.join(pdir, "CMakeLists.txt")
         if _pexists(self.cmakelists):
-            self.build_dir = _getdir('build_dir', 'build', kwargs)
-            self.install_dir = _getdir('install_dir', 'install', kwargs)
+            self.build_dir = _getdir('build_dir', 'build', kwargs, cwd)
+            self.install_dir = _getdir('install_dir', 'install', kwargs, cwd)
             self.root_dir = pdir
         elif _pexists(pdir, "CMakeCache.txt"):
             ch = cmake.CMakeCache(pdir)
@@ -80,8 +75,8 @@ class Project:
         else:
             raise err.CMakeListsNotFound(pdir)
         #
-        if cmake.hascache(pdir):
-            self._init_with_build_dir(pdir, **kwargs)
+        if cmake.hascache(self.root_dir):
+            self._init_with_build_dir(self.root_dir, **kwargs)
         elif kwargs.get('glob'):
             self._init_with_glob(**kwargs)
         else:
