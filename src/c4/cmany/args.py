@@ -10,6 +10,7 @@ from . import system
 from . import build_item
 from . import architecture
 from . import compiler
+from . import err
 
 from .util import cslist
 from multiprocessing import cpu_count as cpu_count
@@ -105,7 +106,7 @@ def find_subcommand(cmds, args):
             if a == c or a in aliases:
                 pos = i
                 return pos
-    raise Exception("could not find subcommand")
+    raise err.SubcommandNotFound(cmds, args)
 
 
 # -----------------------------------------------------------------------------
@@ -509,7 +510,7 @@ class CombinationArgument(argparse.Action):
         elif self.dest == 'include_variants':
             li = ('i', 'variants', li)
         else:
-            raise Exception("unoknown argument: " + self.dest)
+            raise err.UnknownCombinationArg(self.dest)
         curr = prev
         curr.append(li)
         _dbg("final", curr)

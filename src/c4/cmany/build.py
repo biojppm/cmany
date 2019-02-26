@@ -11,6 +11,7 @@ from .variant import Variant
 from .build_flags import BuildFlags
 from .compiler import Compiler
 from .architecture import Architecture
+from . import err
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -113,7 +114,7 @@ class Build(NamedItem):
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
             if k not in ('architecture', 'compiler'):
-                raise Exception("build adjustment for {} not supported".format(k))
+                raise err.NoSupport("build adjustment for {}".format(k))
         a = kwargs.get('architecture')
         if a and a != self.architecture:
             self.adjusted = True
@@ -157,9 +158,10 @@ class Build(NamedItem):
     def deserialize(builddir):
         # https://stackoverflow.com/questions/4529815/saving-an-object-data-persistence
         if not os.path.exists(builddir):
-            msg = "build directory does not exist: {}"
-            raise Exception(msg.format(builddir))
+            raise err.BuildDirNotFound(builddir)
         fn = os.path.join(builddir, __class__.sfile)
+        if not os.path.exists(fn):
+            raise err.BuildSerializationNotFound(fn)
         with open(fn, 'rb') as f:
             return dill.load(f)
 
@@ -222,15 +224,12 @@ class Build(NamedItem):
 
     def _check_successful_configure(self, purpose):
         if not os.path.exists(self.builddir):
-            msg = "cannot {}: build dir does not exist: {}"
-            raise Exception(msg.format(purpose, self.builddir))
+            raise err.BuildDirNotFound(self.builddir, purpose)
         if not os.path.exists(self.varcache.cache_file):
-            msg = "cannot {}: cache file not found: {}"
-            raise Exception(msg.format(purpose, self.varcache.cache_file))
+            raise err.CacheFileNotFound(self.varcache.cache_file, self.builddir, purpose)
         pkf = os.path.join(self.builddir, __class__.sfile)
         if not os.path.exists(pkf):
-            msg = "cannot {}: build save file not found: {}"
-            raise Exception(msg.format(purpose, pkf))
+            raise err.BuildSerializationNotFound(pkf, self.builddir)
 
     def mark_configure_done(self, cmd):
         self._serialize()
@@ -345,7 +344,7 @@ class Build(NamedItem):
             tc = os.path.join(os.getcwd(), tc)
             tc = os.path.abspath(tc)
         if not os.path.exists(tc):
-            raise Exception("file not found: " + tc)
+            raise err.ToolchainFileNotFound(tc)
         return tc
 
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
@@ -353,7 +352,7 @@ class Build(NamedItem):
         if append_to_sysinfo_var:
             try:
                 flags = [cmake.CMakeSysInfo.var(append_to_sysinfo_var, self.generator)]
-            except Exception as e:
+            except RuntimeError:
                 pass
         # append overall build flags
         # append variant flags
@@ -383,7 +382,7 @@ class Build(NamedItem):
                 elif len(nspl) == 2:
                     self.varcache.setvar(nspl[0], vval, nspl[1], from_input=True)
                 else:
-                    raise Exception('could not parse variable value: ' + v)
+                    raise err.Error('could not parse variable specification: {}', v)
 
     def gather_input_cache_vars(self):
         self._gather_cmake_vars()

@@ -6,6 +6,7 @@ from collections import OrderedDict as odict
 from .conf import USER_DIR
 from .util import cacheattr, setcwd, runsyscmd
 from . import util
+from . import err
 
 _cache_entry = r'^(.*?)(:.*?)=(.*)$'
 
@@ -268,9 +269,8 @@ class CMakeSysInfo:
                     s = re.sub(regex, r'\1', l)
                     # print(var_name, "result: '" + s + "'")
                     return s
-        err = "could not find variable {} in the output of `cmake --system-information` for generator {}"
-        err = err.format(var_name, which_generator)
-        raise Exception(err.format(var_name))
+        msg = "could not find variable {} in the output of `cmake --system-information` for generator {}"
+        raise err.Error(msg, var_name, which_generator)
 
     @staticmethod
     def system_info(gen):

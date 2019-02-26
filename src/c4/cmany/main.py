@@ -9,6 +9,8 @@ from c4.cmany.project import Project as Project
 from c4.cmany import args as c4args
 from c4.cmany import help as c4help
 
+from c4.cmany import err
+
 
 cmds = odict([
     ('help', ['h']),
@@ -37,9 +39,14 @@ def cmany_main(in_args=None):
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
     argcomplete.autocomplete(parser)
-    args = c4args.parse(parser, in_args)
-    if args:
-        args.func(args)
+    try:
+        args = c4args.parse(parser, in_args)
+        if args:
+            args.func(args)
+        return 0
+    except err.Error as e:
+        print(e, file=sys.stderr)
+        return 1
 
 
 # -----------------------------------------------------------------------------

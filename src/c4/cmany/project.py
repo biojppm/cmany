@@ -25,6 +25,7 @@ from .build import Build
 from .combination_rules import CombinationRules
 from .cmake import getcachevars
 from . import cmake
+from . import err
 
 
 # -----------------------------------------------------------------------------
@@ -38,6 +39,10 @@ def _getdir(attr_name, default, kwargs):
     return d
 
 
+def _pexists(*args):
+    return os.path.exists(os.path.join(*args))
+
+
 # -----------------------------------------------------------------------------
 class Project:
 
@@ -47,16 +52,33 @@ class Project:
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
         #
-        pdir = kwargs.get('proj_dir', os.getcwd())
-        pdir = os.getcwd() if pdir == "." else pdir
+        pdir = kwargs.get('proj_dir')
+        if pdir is None:
+            raise err.ProjDirNotFound(None)
+        if pdir == ".":
+            pdir = os.getcwd()
         if not os.path.isabs(pdir):
             pdir = os.path.abspath(pdir)
+        if util.in_windows():
+            import re
+            pdir = re.sub(r"^/([a-zA-Z])/(.*)", r"\1:\\\2", pdir)
+        pdir = os.path.normpath(pdir)
         #
-        p, b, i = __class__._find_proj_build_install_dir(pdir, kwargs)
-        self.root_dir = p
-        self.build_dir = b
-        self.install_dir = i
-        self.cmakelists = util.chkf(self.root_dir, "CMakeLists.txt")
+        if not _pexists(pdir):
+            raise err.ProjDirNotFound(pdir)
+        self.cmakelists = os.path.join(pdir, "CMakeLists.txt")
+        if _pexists(self.cmakelists):
+            self.build_dir = _getdir('build_dir', 'build', kwargs)
+            self.install_dir = _getdir('install_dir', 'install', kwargs)
+            self.root_dir = pdir
+        elif _pexists(pdir, "CMakeCache.txt"):
+            ch = cmake.CMakeCache(pdir)
+            self.build_dir = os.path.dirname(pdir)
+            self.install_dir = ch['CMAKE_INSTALL_PREFIX'].val
+            self.root_dir = ch['CMAKE_HOME_DIRECTORY'].val
+            self.cmakelists = os.path.join(self.root_dir, "CMakeLists.txt")
+        else:
+            raise err.CMakeListsNotFound(pdir)
         #
         if cmake.hascache(pdir):
             self._init_with_build_dir(pdir, **kwargs)
@@ -65,21 +87,6 @@ class Project:
         else:
             self.load_configs()
             self._init_with_build_items(**kwargs)
-
-    @staticmethod
-    def _find_proj_build_install_dir(d, kwargs):
-        if os.path.exists(os.path.join(d, "CMakeLists.txt")):
-            b = _getdir('build_dir', 'build', kwargs)
-            i = _getdir('install_dir', 'install', kwargs)
-            return d, b, i
-        elif os.path.exists(os.path.join(d, "CMakeCache.txt")):
-            ch = cmake.CMakeCache(d)
-            p = ch['CMAKE_HOME_DIRECTORY'].val
-            b = os.path.dirname(d)
-            i = ch['CMAKE_INSTALL_PREFIX'].val
-            return p, b, i
-        else:
-            return None, None, None
 
     def _init_with_build_dir(self, pdir, **kwargs):
         build = Build.deserialize(pdir)

@@ -1,6 +1,8 @@
 from .named_item import NamedItem as NamedItem
 
 from . import util
+from . import err
+
 
 # -----------------------------------------------------------------------------
 class BuildFlags(NamedItem):
@@ -58,7 +60,7 @@ class BuildFlags(NamedItem):
     @staticmethod
     def merge_toolchains(tc1, tc2):
         if ((tc1 != tc2) and (tc1 is not None and tc2 is not None)):
-            raise Exception("conflicting toolchains: " + tc1 + " vs. " + tc2)
+            raise err.Error("conflicting toolchains: {} vs {}", tc1, tc2)
         if tc1 is None and tc2 is not None:
             tc1 = tc2
         return tc1

@@ -2,6 +2,7 @@ from collections import OrderedDict as odict
 import re
 
 from . import util
+from . import err
 from .named_item import NamedItem
 from .build_flags import BuildFlags
 from .combination_rules import CombinationRules
@@ -97,7 +98,7 @@ class BuildItem(NamedItem):
                 r = item_collection.lookup_build_item(refname, self.__class__)
                 if self.name in r.refs:
                     msg = "circular references found in {} definitions: '{}'x'{}'"
-                    raise Exception(msg.format(self.__class__.__name__, self.name, r.name))
+                    raise err.Error(msg, self.__class__.__name__, self.name, r.name)
                 if not r._resolved_references:
                     r.resolve_references(item_collection)
                 self.flags.append_flags(r.flags, append_to_name=False)
@@ -275,9 +276,7 @@ class BuildItemCollection(odict):
             if i.name == item_name:
                 return i
         # at least one must be found
-        msg = "item not found: {} (class={})".format(item_name,
-                                                     item_cls.__name__)
-        raise Exception(msg)
+        raise err.Error("item not found: {} (class={})", item_name, item_cls.__name__)
 
     def resolve_references(self):
         for c in self.collections:

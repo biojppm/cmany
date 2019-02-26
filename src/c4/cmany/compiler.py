@@ -7,6 +7,7 @@ from .system import System
 from .cmake import CMakeSysInfo
 from . import util
 from . import vsinfo
+from . import err
 
 
 # -----------------------------------------------------------------------------
@@ -53,7 +54,7 @@ class Compiler(BuildItem):
                 spl = [path]
             p = util.which(path)
             if p is None:
-                raise Exception("compiler not found: " + path)
+                raise err.Error("compiler not found: " + path)
             # if p != path:
             #     print("compiler: selected {} for {}".format(p, path))
             path = os.path.abspath(p)
