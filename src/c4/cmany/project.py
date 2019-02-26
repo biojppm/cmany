@@ -49,6 +49,7 @@ class Project:
         self.kwargs = kwargs
         self.num_jobs = kwargs.get('jobs')
         self.targets = kwargs.get('target')
+        self.continue_on_fail = kwargs.get('continue')
         #
         cwd = util.abspath(os.getcwd())
         pdir = kwargs.get('proj_dir')
@@ -386,6 +387,8 @@ class Project:
                 word, logger = "failed", util.logerr
                 util.logerr("{} failed! {}".format(b, e))
                 failed[b] = e
+                if not self.continue_on_fail:
+                    raise
             t = timeit.default_timer() - t
             hrt = util.human_readable_time(t)
             durations[b] = (t, hrt)
@@ -397,7 +400,10 @@ class Project:
         if not silent:
             util.lognotice("-----------------------------------------------")
             if num > 1:
-                util.logdone(msg + ": finished", num, "builds:")
+                if failed:
+                    util.logdone(msg + ": processed", num, "builds: (with failures)")
+                else:
+                    util.logdone(msg + ": finished", num, "builds:")
                 tot = 0.
                 for _, (d, _) in durations.items():
                     tot += d
@@ -411,5 +417,10 @@ class Project:
                         util.logerr(b, times, "[FAIL]!!!", fail)
                     else:
                         util.logdone(b, times)
-                util.logdone("total time: {}".format(util.human_readable_time(tot)))
+                if failed:
+                    msg = "{}/{} builds failed ({:.1f}%)!"
+                    util.logerr(msg.format(len(failed), num, float(len(failed))/num*100.0))
+                else:
+                    util.logdone("all {} builds succeded!".format(num))
+                util.logdone("total time:", util.human_readable_time(tot))
                 util.lognotice("===============================================")

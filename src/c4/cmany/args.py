@@ -38,14 +38,19 @@ def setup(subcommands, module):
     )
     sp = p.add_subparsers(help='')
     add_hidden(p)
+    # for each subcommand...
     for cmd, aliases in subcommands.items():
+        # get the class for this subcommand from the module
         cl = getattr(module, cmd)
+        # create and setup a parser object for this subcommand
         h = sp.add_parser(name=cmd, aliases=aliases, help=cl.__doc__)
         cl().add_args(h)
+        # this function will be the entry point for executing this subcommand
         def exec_cmd(args, cmd_class=cl):
             obj = cmd_class()
             proj = obj.proj(args)
             obj._exec(proj, args)
+        # that's it.
         h.set_defaults(func=exec_cmd)
     return p
 
@@ -61,6 +66,7 @@ def parse(parser, in_args):
 
 
 def argerror(parser, *msg_args):
+    """report an argument error"""
     print(*msg_args, end='')
     print('\n')
     parse(parser, ['-h'])
@@ -150,6 +156,8 @@ def add_basic(parser):
     parser.add_argument("-j", "--jobs", default=cpu_count(),
                         help="""use the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
+    parser.add_argument("--continue", default=False, action="store_true",
+                        help="attempt to continue when a build fails")
 
 
 # -----------------------------------------------------------------------------
