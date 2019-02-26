@@ -62,3 +62,23 @@ class ToolchainFileNotFound(Error):
     def __init__(self, tcfile, build):
         msg = "toolchain file not found: {}"
         super().__init__(msg, tcfile)
+
+
+class BuildError(Error):
+    def __init__(self, context, build, cmd, e):
+        super().__init__("{} {}: {}. Command was {}", context, build, e, cmd)
+
+
+class ConfigureFailed(BuildError):
+    def __init__(self, build, cmd, e):
+        super().__init__("failed configure for build", build, cmd, e)
+
+
+class CompileFailed(BuildError):
+    def __init__(self, build, cmd, e):
+        super().__init__("failed compile for build", build, cmd, e)
+
+
+class InstallFailed(BuildError):
+    def __init__(self, build, cmd, e):
+        super().__init__("failed install for build", build, cmd, e)

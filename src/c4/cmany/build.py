@@ -3,6 +3,7 @@ import copy
 import re
 import dill
 from datetime import datetime
+from collections import OrderedDict as odict
 
 from .generator import Generator
 from . import util, cmake, vsinfo
@@ -187,8 +188,11 @@ class Build(NamedItem):
             self.varcache.commit(self.builddir)
         with util.setcwd(self.builddir, silent=False):
             cmd = self.configure_cmd()
-            util.runsyscmd(cmd)
-            self.mark_configure_done(cmd)
+            try:
+                util.runsyscmd(cmd)
+                self.mark_configure_done(cmd)
+            except Exception as e:
+                raise err.ConfigureFailed(self, cmd, e)
         if self.export_compile:
             if not self.generator.exports_compile_commands:
                 util.logwarn("WARNING: this generator cannot export compile commands. Use 'cmany export_compile_commands/xcc to export the compile commands.'")
@@ -205,10 +209,13 @@ class Build(NamedItem):
             os.makedirs(trickdir)
         with util.setcwd(trickdir, silent=False):
             cmd = ['cmake', '-G', 'Ninja', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON', '-C', self.preload_file, self.projdir]
-            if not self.compiler.is_msvc:
-                util.runsyscmd(cmd)
-            else:
-                self.vsinfo.runsyscmd(cmd)
+            try:
+                if not self.compiler.is_msvc:
+                    util.runsyscmd(cmd)
+                else:
+                    self.vsinfo.runsyscmd(cmd)
+            except Exception as e:
+                raise err.ConfigureFailed(self, cmd, e)
         src = os.path.join(trickdir, "compile_commands.json")
         dst = os.path.join(self.builddir, "compile_commands.json")
         if os.path.exists(src):
@@ -223,7 +230,10 @@ class Build(NamedItem):
         self._check_successful_configure('reconfigure')
         with util.setcwd(self.builddir, silent=False):
             cmd = ['cmake', self.projdir]
-            util.runsyscmd(cmd)
+            try:
+                util.runsyscmd(cmd)
+            except Exception as e:
+                raise err.ConfigureFailed(self, cmd, e)
 
     def _check_successful_configure(self, purpose):
         if not os.path.exists(self.builddir):
@@ -269,8 +279,11 @@ class Build(NamedItem):
             # cmake --build and visual studio won't handle
             # multiple targets at once, so loop over them.
             for t in targets:
-                cmd = self.generator.cmd([t])
-                util.runsyscmd(cmd)
+                try:
+                    cmd = self.generator.cmd([t])
+                    util.runsyscmd(cmd)
+                except Exception as e:
+                    raise err.CompileFailed(self, cmd, e)
             # this was written before using the loop above.
             # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
@@ -287,7 +300,10 @@ class Build(NamedItem):
             # multiple targets at once, so loop over them.
             for t in targets:
                 cmd = self.generator.cmd([t])
-                util.runsyscmd(cmd)
+                try:
+                    util.runsyscmd(cmd)
+                except Exception as e:
+                    raise err.CompileFailed(self, cmd, e)
 
     def mark_build_done(self, cmd):
         with util.setcwd(self.builddir):
@@ -310,7 +326,10 @@ class Build(NamedItem):
             if self.needs_build():
                 self.build()
             cmd = self.generator.install()
-            util.runsyscmd(cmd)
+            try:
+                util.runsyscmd(cmd)
+            except Exception as e:
+                raise err.InstallFailed(self, cmd, e)
 
     def reinstall(self):
         self._check_successful_configure('reinstall')
@@ -318,7 +337,10 @@ class Build(NamedItem):
             if self.needs_build():
                 self.build()
             cmd = self.generator.install()
-            util.runsyscmd(cmd)
+            try:
+                util.runsyscmd(cmd)
+            except Exception as e:
+                raise err.InstallFailed(self, cmd, e)
 
     def clean(self):
         self.create_dir()
@@ -535,7 +557,7 @@ class Build(NamedItem):
 
     def show_properties(self):
         util.logcmd(self.name)
-        p = lambda n, v: print("{}={}".format(n, v))
+        def p(n, v): print("{}={}".format(n, v))
         if self.toolchain_file:
             p('CMAKE_TOOLCHAIN_FILE', self.toolchain_file)
         p('CMAKE_C_COMPILER', self.compiler.c_compiler)

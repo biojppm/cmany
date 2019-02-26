@@ -4,7 +4,6 @@ import os
 import glob
 import json
 import copy
-import re
 import timeit
 from collections import OrderedDict as odict
 
@@ -351,6 +350,7 @@ class Project:
 
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)
+        failed = odict()
         durations = odict()
         num = len(builds)
         if not silent:
@@ -372,21 +372,27 @@ class Project:
                     util.lognotice("\n")
                 util.lognotice("-----------------------------------------------")
                 if num > 1:
-                    util.lognotice(msg + ": build #{} of {}:".format(i+1, num), b)
+                    util.lognotice(msg + ": build #{} of {}:".format(i + 1, num), b)
                 else:
                     util.lognotice(msg, b)
                 util.lognotice("-----------------------------------------------")
-            # this is where it happens
             t = timeit.default_timer()
-            fn(b)  # <-- here
+            try:
+                # this is where it happens
+                fn(b)  # <-- here
+                word, logger = "finished", util.logdone
+            except err.BuildError as e:
+                word, logger = "failed", util.logerr
+                util.logerr("{} failed! {}".format(b, e))
+                failed[b] = e
             t = timeit.default_timer() - t
             hrt = util.human_readable_time(t)
             durations[b] = (t, hrt)
             if num > 1:
-                info = "finished build #{} of {} ({})".format(i + 1, num, hrt)
+                info = "{} build #{} of {} ({})".format(word, i + 1, num, hrt)
             else:
-                info = "finished building ({})".format(hrt)
-            util.logdone(msg + ": " + info + ":",  b)
+                info = "{} building ({})".format(word, hrt)
+            logger(msg + ": " + info + ":",  b)
         if not silent:
             util.lognotice("-----------------------------------------------")
             if num > 1:
@@ -397,8 +403,12 @@ class Project:
                 for b in builds:
                     dur, hrt = durations[b]
                     times = "({}, {:.3f}%, {:.3f}x avg)".format(
-                        hrt, dur/tot*100., dur/(tot/float(num))
+                        hrt, dur / tot * 100., dur / (tot / float(num))
                     )
-                    util.logdone(b, times)
+                    fail = failed.get(b)
+                    if fail:
+                        util.logerr(b, times, "[FAIL]!!!", fail)
+                    else:
+                        util.logdone(b, times)
                 util.logdone("total time: {}".format(util.human_readable_time(tot)))
                 util.lognotice("===============================================")
