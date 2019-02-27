@@ -42,19 +42,20 @@ class Compiler(BuildItem):
         spl = spec.split(':')
         path = spl[0]
         if path.startswith("vs") or path.startswith("Visual Studio"):
+            if not util.in_windows():
+                raise err.CompilerNotFound(spec, "visual studio is only available in windows platforms")
             vs = vsinfo.VisualStudioInfo(path)
             self.vs = vs
             path = vs.cxx_compiler
         else:
             # in windows, defend against paths written for example as
             # C:\path\to\compiler. The split is inappropriate here.
-            if (util.in_windows() and len(path) == 1 and len(spl) > 1 and
-                (spl[1][0] == '/' or spl[1][0] == '\\')):
+            if (util.in_windows() and len(path) == 1 and len(spl) > 1 and (spl[1][0] == '/' or spl[1][0] == '\\')):
                 path = spec
                 spl = [path]
             p = util.which(path)
             if p is None:
-                raise err.Error("compiler not found: " + path)
+                raise err.CompilerNotFound(path)
             # if p != path:
             #     print("compiler: selected {} for {}".format(p, path))
             path = os.path.abspath(p)

@@ -9,6 +9,12 @@ class Error(Exception):
         super().__init__("ERROR: {}".format(msg))
 
 
+class CompilerNotFound(Error):
+    def __init__(self, compiler_spec, msg=None):
+        msg = "" if msg is None else ". {}.".format(msg)
+        super().__init__("compiler not found: {}{}", compiler_spec, msg)
+
+
 class NoSupport(Error):
     def __init__(self, feature):
         super().__init__("feature not supported: {}", feature)
@@ -67,7 +73,7 @@ class ToolchainFileNotFound(Error):
 class ConfigFileNotFound(Error):
     def __init__(self, cfgf):
         msg = "config file not found: {}"
-        super().__init__(msg, tcfile)
+        super().__init__(msg, cfgf)
 
 
 class FlagAliasNotFound(Error):
