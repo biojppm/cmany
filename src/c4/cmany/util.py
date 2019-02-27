@@ -34,7 +34,6 @@ def supports_color():
 _suppress_colors = False
 def suppress_colors():
     global _suppress_colors
-    assert False
     _suppress_colors = True
 
 
