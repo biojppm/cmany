@@ -1,6 +1,7 @@
 build
 install
 .test/
+test/.coverage
 README.html
 __cmake_systeminformation
 
