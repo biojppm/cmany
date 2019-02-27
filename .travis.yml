@@ -79,4 +79,4 @@ install:
 script: ./.ci/travis_test.sh
 
 after_success:
-  - codecov
+  - cd ./test && codecov

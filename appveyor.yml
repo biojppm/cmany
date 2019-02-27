@@ -104,7 +104,7 @@ after_test:
 
 on_success:
 #  - TODO: upload the content of dist/*.whl to a public wheelhouse
-  - codecov
+  - "cd test ; codecov"
 
 skip_commits:
   files:
