@@ -260,32 +260,39 @@ class CMakeSysInfo:
 
     @staticmethod
     def _getstr(var_name, which_generator):
-        regex = r'^' + var_name + r' "(.*)"'
+        regex = r'^{} "(.*)"'.format(var_name)
         for l in __class__.info(which_generator):
+            #print(l.strip("\n"), l.startswith(var_name), var_name)
             if l.startswith(var_name):
                 l = l.strip("\n").lstrip(" ").rstrip(" ")
-                # print(var_name, "startswith :", l)
+                #print(var_name, "startswith :", l)
                 if re.match(regex, l):
                     s = re.sub(regex, r'\1', l)
-                    # print(var_name, "result: '" + s + "'")
+                    #print(var_name, "result: '" + s + "'")
                     return s
-        msg = "could not find variable {} in the output of `cmake --system-information` for generator '{}'"
+        #print("WTF_--------------------------------------\n", __class__.info(which_generator))
+        msg = "could not find variable {} in the output of `cmake --system-information -G '{}'`"
         raise err.Error(msg, var_name, which_generator)
 
     @staticmethod
     def system_info(gen):
-        """generator can be a string or a cmany.Generator object"""
+        """gen can be a string or a cmany.Generator object"""
         from .generator import Generator
-        # print("CMakeSystemInfo: asked info for", which_generator)
+        #print("CMakeSystemInfo: asked info for", gen)
         p = _genid(gen)
         d = os.path.join(USER_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
+        #print("CMakeSystemInfo: path=", p)
+        # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
         if os.path.exists(p) and util.time_since_modification(p).months < 1:
-            # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
-            # print("CMakeSystemInfo: asked info for", which_generator, "... found", p)
+            #print("CMakeSystemInfo: asked info for", gen, "... found", p)
             with open(p, "r") as f:
                 i = f.readlines()
-                return i
+                if i:
+                    return i
+                else:
+                    # print("CMakeSystemInfo: info for gen", gen, "is empty...")
+                    pass
         #
         if isinstance(gen, Generator):
             cmd = ['cmake'] + gen.configure_args() + ['--system-information']
@@ -297,17 +304,33 @@ class CMakeSysInfo:
                     from . import vsinfo
                     gen = vsinfo.to_gen(gen)
                 cmd = ['cmake', '-G', str(gen), '--system-information']
+        # remove export build commands as cmake reacts badly to it,
+        # generating an empty info string
+        _remove_export_compile_commands_from_sysinfo_cmd(cmd)
+        print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
         #
         if not os.path.exists(d):
             os.makedirs(d)
-        print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
         with setcwd(d):
             out = runsyscmd(cmd, echo_output=False, capture_output=True)
-        print("cmany: finished generating information for generator '{}'\n".format(gen))
+        # print("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
         with open(p, "w") as f:
             f.write(out)
         i = out.split("\n")
         return i
+
+
+def _remove_export_compile_commands_from_sysinfo_cmd(cmd):
+    gotit = None
+    for i, elm in enumerate(cmd):
+        if 'CMAKE_EXPORT_COMPILE_COMMANDS' in elm:
+            # can't strip out if compile commands is not given as one,
+            # because the command will become malformed when we remove
+            if elm not in ('-DCMAKE_EXPORT_COMPILE_COMMANDS=ON', '-DCMAKE_EXPORT_COMPILE_COMMANDS=OFF'):
+                raise Exception("malformed command")
+            gotit = i
+    if gotit is not None:
+        del cmd[gotit]
 
 
 # -----------------------------------------------------------------------------
