@@ -22,8 +22,7 @@ def supports_color():
     Taken from http://stackoverflow.com/questions/7445658/
     """
     plat = sys.platform
-    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                  'ANSICON' in os.environ)
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or 'ANSICON' in os.environ)
     # isatty is not always implemented, #6223.
     is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
     if not supported_platform or not is_a_tty:
@@ -35,6 +34,7 @@ def supports_color():
 _suppress_colors = False
 def suppress_colors():
     global _suppress_colors
+    assert False
     _suppress_colors = True
 
 
@@ -105,12 +105,12 @@ def human_readable_time(seconds):
         return '{:.3g}s'.format(seconds)
     elif seconds < 3600.:
         mins = int(seconds / 60.)
-        secs = int(seconds - 60.*mins)
+        secs = int(seconds - 60. * mins)
         return '{}m {}s'.format(mins, secs)
     else:
         hours = int(seconds / 3600.)
-        mins = int((seconds - hours*3600.)/60.)
-        secs = int(seconds - hours*3600. - mins*60.)
+        mins = int((seconds - hours * 3600.) / 60.)
+        secs = int(seconds - hours * 3600. - mins * 60.)
         return '{}:{} {}\''.format(hours, mins, secs)
 
 
@@ -253,7 +253,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
         # consume at once everything between quotes
         if c in quote_chars:
             _logf("{}: case 1: got a quote char: {}", i, c)
-            j = i+1  # start counting only on the next position
+            j = i + 1  # start counting only on the next position
             closes_quotes = False
             while j < l:
                 d = string[j]
@@ -275,13 +275,13 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                     s += string[j]
                     _logf("{}: case 1.2-0: append one char: __|{}|__", i, s)
                 if s:
-                    if (prev > 0 and string[prev-1] == split_char):
-                        prev = j+1
+                    if (prev > 0 and string[prev - 1] == split_char):
+                        prev = j + 1
                         i = prev
                         out.append(s)
                         _logf("{}: case 1.2-1.1: added __|{}|__ as last entry: {}", i, s, out)
                     else:
-                        prev = j+1
+                        prev = j + 1
                         i = prev
                         if out:
                             out[-1] += s
@@ -299,7 +299,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
                 if s:
                     out.append(s)
                     _logf("{}: case 2.1-0: appended, out={}", i, out)
-            prev = i+1
+            prev = i + 1
             i = prev
         # this is a regular character, so just go on scanning
         else:
@@ -310,7 +310,7 @@ def splitesc_quoted(string, split_char, escape_char='\\', quote_chars='\'"'):
         _logf("there are remaining characters: {}", s)
         if s:
             # if (prev >= 1 and prev < l and string[prev-1] != split_char) and out:
-            if (prev >= 1 and string[prev-1] != split_char) and out:  # note that prev<l here because of the test above
+            if (prev >= 1 and string[prev - 1] != split_char) and out:  # note that prev<l here because of the test above
                 out[-1] += s
                 _logf("appended to last entry: {}", out)
             else:
@@ -383,7 +383,7 @@ def which(cmd):
     exts = ("", ".exe", ".bat") if sys.platform == "win32" else [""]
     for path in os.environ["PATH"].split(os.pathsep):
         for e in exts:
-            j = os.path.join(path, cmd+e)
+            j = os.path.join(path, cmd + e)
             if exists_and_exec(j):
                 return j
     return None
