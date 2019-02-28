@@ -15,13 +15,30 @@ environment:
   matrix:
 
     # Pre-installed Python versions - see:
+    # https://www.appveyor.com/docs/windows-images-software/#python
     # http://www.appveyor.com/docs/installed-software#python
 
-    - PYTHON: "C:\\Python35"
-      PYTHON_VERSION: "3.5.x"
+    - PYTHON: "C:\\Python37"
+      PYTHON_VERSION: "3.7.x"
       PYTHON_ARCH: "32"
 
-    # appveyor tests run really slow; this one is generally timing out
+    - PYTHON: "C:\\Python37-x64"
+      PYTHON_VERSION: "3.7.x"
+      PYTHON_ARCH: "64"
+
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "32"
+
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6.x"
+      PYTHON_ARCH: "64"
+
+    # appveyor tests run really slow; python3.5 is generally timing out
+    #- PYTHON: "C:\\Python35"
+    # PYTHON_VERSION: "3.5.x"
+    # PYTHON_ARCH: "32"
+    #
     #- PYTHON: "C:\\Python35-x64"
     #  PYTHON_VERSION: "3.5.x"
     #  PYTHON_ARCH: "64"
@@ -34,6 +51,7 @@ environment:
       PYTHON_VERSION: "3.4.x"
       PYTHON_ARCH: "64"
 
+    # python 3.3 is no longer supported by pip
     #- PYTHON: "C:\\Python33"
     #  PYTHON_VERSION: "3.3.x"
     #  PYTHON_ARCH: "32"
