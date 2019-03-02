@@ -16,14 +16,10 @@ from .util import cslist
 from multiprocessing import cpu_count as cpu_count
 
 
-_dbg_on = False
-
-
 def _dbg_argparser(parser, arg, curr, recv, *args):
-    if _dbg_on:
-        msg = "{}::{}: curr={} receive='{}'{}"
-        msg = msg.format(type(parser).__name__, arg, curr, recv, ":" if args else "")
-        util.logwarn(msg, *args)
+    msg = "{}::{}: curr={} receive='{}'{}"
+    msg = msg.format(type(parser).__name__, arg, curr, recv, ":" if args else "")
+    util.logdbg(msg, *args)
 
 
 # -----------------------------------------------------------------------------
@@ -117,6 +113,7 @@ def find_subcommand(cmds, args):
 
 # -----------------------------------------------------------------------------
 def add_hidden(parser):
+    parser.add_argument('--debug-cmany', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--only-show-args', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--show-args-list', type=cslist, default=[], help=argparse.SUPPRESS)
@@ -124,11 +121,13 @@ def add_hidden(parser):
 
 
 def _handle_hidden_args__skip_rest(args):
-    if args.show_args or args.only_show_args:
+    if args.debug_cmany:
+        util._debug_mode = True
+    if util._debug_mode or args.show_args or args.only_show_args:
         pprint.pprint(vars(args), indent=4)
         if args.only_show_args:
             return True
-    if args.show_args_list or args.only_show_args_list:
+    if util._debug_mode or args.show_args_list or args.only_show_args_list:
         li = args.show_args_list + args.only_show_args_list
         for a in li:
             print("args[", a, "]: ", sep='', end='')
