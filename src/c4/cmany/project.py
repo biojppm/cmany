@@ -27,6 +27,7 @@ from .cmake import getcachevars
 from . import cmake
 from . import err
 from .util import path_exists as _pexists
+from .util import logdbg as dbg
 
 
 # -----------------------------------------------------------------------------
@@ -53,29 +54,45 @@ class Project:
         #
         cwd = util.abspath(os.getcwd())
         pdir = kwargs.get('proj_dir')
+        dbg("cwd:", cwd)
+        dbg("proj_dir:", pdir)
         if pdir is None:
             raise err.ProjDirNotFound(None)
         if pdir == ".":
             pdir = cwd
         pdir = util.abspath(pdir)
+        dbg("proj_dir, abs:", pdir)
         #
         if not _pexists(pdir):
             raise err.ProjDirNotFound(pdir)
+        #
         self.cmakelists = os.path.join(pdir, "CMakeLists.txt")
+        cmakecache = None
         if _pexists(self.cmakelists):
+            dbg("found CMakeLists.txt:", self.cmakelists)
             self.build_dir = _getdir('build_dir', 'build', kwargs, cwd)
             self.install_dir = _getdir('install_dir', 'install', kwargs, cwd)
             self.root_dir = pdir
         elif _pexists(pdir, "CMakeCache.txt"):
+            cmakecache = os.path.join(pdir, "CMakeCache.txt")
+            dbg("found CMakeCache.txt:", cmakecache)
             ch = cmake.CMakeCache(pdir)
             self.build_dir = os.path.dirname(pdir)
-            self.install_dir = ch['CMAKE_INSTALL_PREFIX'].val
+            self.install_dir = os.path.dirname(ch['CMAKE_INSTALL_PREFIX'].val)
             self.root_dir = ch['CMAKE_HOME_DIRECTORY'].val
             self.cmakelists = os.path.join(self.root_dir, "CMakeLists.txt")
-        else:
+        #
+        dbg("root_dir:", self.root_dir)
+        dbg("build_dir:", self.build_dir)
+        dbg("install_dir:", self.install_dir)
+        dbg("CMakeLists.txt:", self.cmakelists)
+        #
+        if not _pexists(self.cmakelists):
             raise err.CMakeListsNotFound(pdir)
         #
-        if cmake.hascache(self.root_dir):
+        if cmakecache is not None:
+            self._init_with_build_dir(os.path.dirname(cmakecache), **kwargs)
+        elif cmake.hascache(self.root_dir):
             self._init_with_build_dir(self.root_dir, **kwargs)
         elif kwargs.get('glob'):
             self._init_with_glob(**kwargs)
@@ -419,7 +436,7 @@ class Project:
                         util.logdone(b, times)
                 if failed:
                     msg = "{}/{} builds failed ({:.1f}%)!"
-                    util.logerr(msg.format(len(failed), num, float(len(failed))/num*100.0))
+                    util.logerr(msg.format(len(failed), num, float(len(failed)) / num * 100.0))
                 else:
                     util.logdone("all {} builds succeded!".format(num))
                 util.logdone("total time:", util.human_readable_time(tot))
