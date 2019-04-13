@@ -9,8 +9,9 @@ import sys
 from collections import OrderedDict as odict
 
 from . import util
-from .util import runsyscmd, cacheattr, nested_lookup
+from .util import runsyscmd, cacheattr, nested_lookup, logdbg
 from .cmake import CMakeSysInfo
+from .err import VSNotFound
 
 
 class VisualStudioInfo:
@@ -65,7 +66,7 @@ class VisualStudioInfo:
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # vs search order
-order = ('vs2017', 'vs2015', 'vs2013', 'vs2012', 'vs2010',
+order = ('vs2019', 'vs2017', 'vs2015', 'vs2013', 'vs2012', 'vs2010',
          #'vs2008', 'vs2005',
       )
 
@@ -81,7 +82,7 @@ def find_any():
 # -----------------------------------------------------------------------------
 # a reversible dictionary for the VS version numbers
 _versions = {
-    'vs2019':16, 16:'vs2019', 'vs2019_64':16, 'vs2019_32':16, 'vs2019_arm':16 ,  # nopep8
+    'vs2019':16, 16:'vs2019', 'vs2019_64':16, 'vs2019_32':16, 'vs2019_arm':16 , 'vs2019_arm32':16, 'vs2019_arm64':16, # nopep8
     'vs2017':15, 15:'vs2017', 'vs2017_64':15, 'vs2017_32':15, 'vs2017_arm':15 ,  # nopep8
     'vs2015':14, 14:'vs2015', 'vs2015_64':14, 'vs2015_32':14, 'vs2015_arm':14 ,  # nopep8
     'vs2013':12, 12:'vs2013', 'vs2013_64':12, 'vs2013_32':12, 'vs2013_arm':12 ,  # nopep8
@@ -95,68 +96,85 @@ _versions = {
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-_sfx = ' Win64' if util.in_64bit() else ''  # suffix
+if util.in_64bit():
+    _sfx = ' Win64'  # suffix
+    _arc = 'x64'  # suffix for vs2019
+    _arc2 = 'x86_64'
+else:
+    _sfx = ''  # suffix
+    _arc = 'Win32'  # suffix for vs2019
+    _arc2 = 'x86'
 
 # a reversible dictionary for the names
 _names = {
-    'vs2019'      : 'Visual Studio 16 2019' + _sfx , 'Visual Studio 16 2019' + _sfx : 'vs2019'      ,  # nopep8
-    'vs2019_32'   : 'Visual Studio 16 2019'        , 'Visual Studio 16 2019'        : 'vs2019_32'   ,  # nopep8
-    'vs2019_64'   : 'Visual Studio 16 2019 Win64'  , 'Visual Studio 16 2019 Win64'  : 'vs2019_64'   ,  # nopep8
-    'vs2019_arm'  : 'Visual Studio 16 2019 ARM'    , 'Visual Studio 16 2019 ARM'    : 'vs2019_arm'  ,  # nopep8
-    'vs2017'      : 'Visual Studio 15 2017' + _sfx , 'Visual Studio 15 2017' + _sfx : 'vs2017'      ,  # nopep8
-    'vs2017_32'   : 'Visual Studio 15 2017'        , 'Visual Studio 15 2017'        : 'vs2017_32'   ,  # nopep8
-    'vs2017_64'   : 'Visual Studio 15 2017 Win64'  , 'Visual Studio 15 2017 Win64'  : 'vs2017_64'   ,  # nopep8
-    'vs2017_arm'  : 'Visual Studio 15 2017 ARM'    , 'Visual Studio 15 2017 ARM'    : 'vs2017_arm'  ,  # nopep8
-    'vs2015'      : 'Visual Studio 14 2015' + _sfx , 'Visual Studio 14 2015' + _sfx : 'vs2015'      ,  # nopep8
-    'vs2015_32'   : 'Visual Studio 14 2015'        , 'Visual Studio 14 2015'        : 'vs2015_32'   ,  # nopep8
-    'vs2015_64'   : 'Visual Studio 14 2015 Win64'  , 'Visual Studio 14 2015 Win64'  : 'vs2015_64'   ,  # nopep8
-    'vs2015_arm'  : 'Visual Studio 14 2015 ARM'    , 'Visual Studio 14 2015 ARM'    : 'vs2015_arm'  ,  # nopep8
-    'vs2013'      : 'Visual Studio 12 2013' + _sfx , 'Visual Studio 12 2013' + _sfx : 'vs2013'      ,  # nopep8
-    'vs2013_32'   : 'Visual Studio 12 2013'        , 'Visual Studio 12 2013'        : 'vs2013_32'   ,  # nopep8
-    'vs2013_64'   : 'Visual Studio 12 2013 Win64'  , 'Visual Studio 12 2013 Win64'  : 'vs2013_64'   ,  # nopep8
-    'vs2013_arm'  : 'Visual Studio 12 2013 ARM'    , 'Visual Studio 12 2013 ARM'    : 'vs2013_arm'  ,  # nopep8
-    'vs2012'      : 'Visual Studio 11 2012' + _sfx , 'Visual Studio 11 2012' + _sfx : 'vs2012'      ,  # nopep8
-    'vs2012_32'   : 'Visual Studio 11 2012'        , 'Visual Studio 11 2012'        : 'vs2012_32'   ,  # nopep8
-    'vs2012_64'   : 'Visual Studio 11 2012 Win64'  , 'Visual Studio 11 2012 Win64'  : 'vs2012_64'   ,  # nopep8
-    'vs2012_arm'  : 'Visual Studio 11 2012 ARM'    , 'Visual Studio 11 2012 ARM'    : 'vs2012_arm'  ,  # nopep8
-    'vs2010'      : 'Visual Studio 10 2010' + _sfx , 'Visual Studio 10 2010' + _sfx : 'vs2010'      ,  # nopep8
-    'vs2010_32'   : 'Visual Studio 10 2010'        , 'Visual Studio 10 2010'        : 'vs2010_32'   ,  # nopep8
-    'vs2010_64'   : 'Visual Studio 10 2010 Win64'  , 'Visual Studio 10 2010 Win64'  : 'vs2010_64'   ,  # nopep8
-    'vs2010_ia64' : 'Visual Studio 10 2010 IA64'   , 'Visual Studio 10 2010 IA64'   : 'vs2010_ia64' ,  # nopep8
-    'vs2008'      : 'Visual Studio 9 2008' + _sfx  , 'Visual Studio 9 2008' + _sfx  : 'vs2008'      ,  # nopep8
-    'vs2008_32'   : 'Visual Studio 9 2008'         , 'Visual Studio 9 2008'         : 'vs2008_32'   ,  # nopep8
-    'vs2008_64'   : 'Visual Studio 9 2008 Win64'   , 'Visual Studio 9 2008 Win64'   : 'vs2008_64'   ,  # nopep8
-    'vs2008_ia64' : 'Visual Studio 9 2008 IA64'    , 'Visual Studio 9 2008 IA64'    : 'vs2008_ia64' ,  # nopep8
-    'vs2005'      : 'Visual Studio 8 2005' + _sfx  , 'Visual Studio 8 2005' + _sfx  : 'vs2005'      ,  # nopep8
-    'vs2005_32'   : 'Visual Studio 8 2005'         , 'Visual Studio 8 2005'         : 'vs2005_32'   ,  # nopep8
-    'vs2005_64'   : 'Visual Studio 8 2005 Win64'   , 'Visual Studio 8 2005 Win64'   : 'vs2005_64'   ,  # nopep8
+    'vs2019'      : ['Visual Studio 16 2019', '-A', _arc   ], 'Visual Studio 16 2019' + _arc : 'vs2019'      ,  # nopep8
+    'vs2019_32'   : ['Visual Studio 16 2019', '-A', 'Win32'], 'Visual Studio 16 2019'        : 'vs2019_32'   ,  # nopep8
+    'vs2019_64'   : ['Visual Studio 16 2019', '-A', 'x64'  ], 'Visual Studio 16 2019 Win64'  : 'vs2019_64'   ,  # nopep8
+    'vs2019_arm'  : ['Visual Studio 16 2019', '-A', 'ARM'  ], 'Visual Studio 16 2019 ARM'    : 'vs2019_arm'  ,  # nopep8
+    'vs2019_arm32': ['Visual Studio 16 2019', '-A', 'ARM'  ], 'Visual Studio 16 2019 ARM32'  : 'vs2019_arm32',  # nopep8
+    'vs2019_arm64': ['Visual Studio 16 2019', '-A', 'ARM64'], 'Visual Studio 16 2019 ARM64'  : 'vs2019_arm64',  # nopep8
+    'vs2017'      : 'Visual Studio 15 2017' + _sfx          , 'Visual Studio 15 2017' + _sfx : 'vs2017'      ,  # nopep8
+    'vs2017_32'   : 'Visual Studio 15 2017'                 , 'Visual Studio 15 2017'        : 'vs2017_32'   ,  # nopep8
+    'vs2017_64'   : 'Visual Studio 15 2017 Win64'           , 'Visual Studio 15 2017 Win64'  : 'vs2017_64'   ,  # nopep8
+    'vs2017_arm'  : 'Visual Studio 15 2017 ARM'             , 'Visual Studio 15 2017 ARM'    : 'vs2017_arm'  ,  # nopep8
+    'vs2015'      : 'Visual Studio 14 2015' + _sfx          , 'Visual Studio 14 2015' + _sfx : 'vs2015'      ,  # nopep8
+    'vs2015_32'   : 'Visual Studio 14 2015'                 , 'Visual Studio 14 2015'        : 'vs2015_32'   ,  # nopep8
+    'vs2015_64'   : 'Visual Studio 14 2015 Win64'           , 'Visual Studio 14 2015 Win64'  : 'vs2015_64'   ,  # nopep8
+    'vs2015_arm'  : 'Visual Studio 14 2015 ARM'             , 'Visual Studio 14 2015 ARM'    : 'vs2015_arm'  ,  # nopep8
+    'vs2013'      : 'Visual Studio 12 2013' + _sfx          , 'Visual Studio 12 2013' + _sfx : 'vs2013'      ,  # nopep8
+    'vs2013_32'   : 'Visual Studio 12 2013'                 , 'Visual Studio 12 2013'        : 'vs2013_32'   ,  # nopep8
+    'vs2013_64'   : 'Visual Studio 12 2013 Win64'           , 'Visual Studio 12 2013 Win64'  : 'vs2013_64'   ,  # nopep8
+    'vs2013_arm'  : 'Visual Studio 12 2013 ARM'             , 'Visual Studio 12 2013 ARM'    : 'vs2013_arm'  ,  # nopep8
+    'vs2012'      : 'Visual Studio 11 2012' + _sfx          , 'Visual Studio 11 2012' + _sfx : 'vs2012'      ,  # nopep8
+    'vs2012_32'   : 'Visual Studio 11 2012'                 , 'Visual Studio 11 2012'        : 'vs2012_32'   ,  # nopep8
+    'vs2012_64'   : 'Visual Studio 11 2012 Win64'           , 'Visual Studio 11 2012 Win64'  : 'vs2012_64'   ,  # nopep8
+    'vs2012_arm'  : 'Visual Studio 11 2012 ARM'             , 'Visual Studio 11 2012 ARM'    : 'vs2012_arm'  ,  # nopep8
+    'vs2010'      : 'Visual Studio 10 2010' + _sfx          , 'Visual Studio 10 2010' + _sfx : 'vs2010'      ,  # nopep8
+    'vs2010_32'   : 'Visual Studio 10 2010'                 , 'Visual Studio 10 2010'        : 'vs2010_32'   ,  # nopep8
+    'vs2010_64'   : 'Visual Studio 10 2010 Win64'           , 'Visual Studio 10 2010 Win64'  : 'vs2010_64'   ,  # nopep8
+    'vs2010_ia64' : 'Visual Studio 10 2010 IA64'            , 'Visual Studio 10 2010 IA64'   : 'vs2010_ia64' ,  # nopep8
+    'vs2008'      : 'Visual Studio 9 2008' + _sfx           , 'Visual Studio 9 2008' + _sfx  : 'vs2008'      ,  # nopep8
+    'vs2008_32'   : 'Visual Studio 9 2008'                  , 'Visual Studio 9 2008'         : 'vs2008_32'   ,  # nopep8
+    'vs2008_64'   : 'Visual Studio 9 2008 Win64'            , 'Visual Studio 9 2008 Win64'   : 'vs2008_64'   ,  # nopep8
+    'vs2008_ia64' : 'Visual Studio 9 2008 IA64'             , 'Visual Studio 9 2008 IA64'    : 'vs2008_ia64' ,  # nopep8
+    'vs2005'      : 'Visual Studio 8 2005' + _sfx           , 'Visual Studio 8 2005' + _sfx  : 'vs2005'      ,  # nopep8
+    'vs2005_32'   : 'Visual Studio 8 2005'                  , 'Visual Studio 8 2005'         : 'vs2005_32'   ,  # nopep8
+    'vs2005_64'   : 'Visual Studio 8 2005 Win64'            , 'Visual Studio 8 2005 Win64'   : 'vs2005_64'   ,  # nopep8
 }
 
 _architectures = {
-    'Visual Studio 16 2019'        : 'x86'    ,
-    'Visual Studio 16 2019 Win64'  : 'x86_64' ,
-    'Visual Studio 16 2019 ARM'    : 'arm'    ,
-    'Visual Studio 15 2017'        : 'x86'    ,
-    'Visual Studio 15 2017 Win64'  : 'x86_64' ,
-    'Visual Studio 15 2017 ARM'    : 'arm'    ,
-    'Visual Studio 14 2015'        : 'x86'    ,
-    'Visual Studio 14 2015 Win64'  : 'x86_64' ,
-    'Visual Studio 14 2015 ARM'    : 'arm'    ,
-    'Visual Studio 12 2013'        : 'x86'    ,
-    'Visual Studio 12 2013 Win64'  : '_64'    ,
-    'Visual Studio 12 2013 ARM'    : 'arm'    ,
-    'Visual Studio 11 2012'        : 'x86'    ,
-    'Visual Studio 11 2012 Win64'  : '_64'    ,
-    'Visual Studio 11 2012 ARM'    : 'arm'    ,
-    'Visual Studio 10 2010'        : 'x86'    ,
-    'Visual Studio 10 2010 Win64'  : 'x86_64' ,
-    'Visual Studio 10 2010 IA64'   : 'ia64'   ,
-    'Visual Studio 9 2008'         : 'x86'    ,
-    'Visual Studio 9 2008 Win64'   : 'x86_64' ,
-    'Visual Studio 9 2008 IA64'    : 'ia64'   ,
-    'Visual Studio 8 2005'         : 'x86'    ,
-    'Visual Studio 8 2005 Win64'   : 'x86_64' ,
+    'Visual Studio 16 2019'         : 'x86'    ,
+    'Visual Studio 16 2019 Win64'   : 'x86_64' ,
+    'Visual Studio 16 2019 ARM'     : 'arm'    ,
+    'Visual Studio 16 2019 ARM32'   : 'arm32'  ,
+    'Visual Studio 16 2019 ARM64'   : 'arm64'  ,
+    'Visual Studio 16 2019 -A '+_arc: _arc2    ,
+    'Visual Studio 16 2019 -A x64'  : 'x86_64' ,
+    'Visual Studio 16 2019 -A ARM'  : 'arm'    ,
+    'Visual Studio 16 2019 -A ARM32': 'arm'    ,
+    'Visual Studio 16 2019 -A ARM64': 'arm64'  ,
+    'Visual Studio 15 2017'         : 'x86'    ,
+    'Visual Studio 15 2017 Win64'   : 'x86_64' ,
+    'Visual Studio 15 2017 ARM'     : 'arm'    ,
+    'Visual Studio 14 2015'         : 'x86'    ,
+    'Visual Studio 14 2015 Win64'   : 'x86_64' ,
+    'Visual Studio 14 2015 ARM'     : 'arm'    ,
+    'Visual Studio 12 2013'         : 'x86'    ,
+    'Visual Studio 12 2013 Win64'   : '_64'    ,
+    'Visual Studio 12 2013 ARM'     : 'arm'    ,
+    'Visual Studio 11 2012'         : 'x86'    ,
+    'Visual Studio 11 2012 Win64'   : '_64'    ,
+    'Visual Studio 11 2012 ARM'     : 'arm'    ,
+    'Visual Studio 10 2010'         : 'x86'    ,
+    'Visual Studio 10 2010 Win64'   : 'x86_64' ,
+    'Visual Studio 10 2010 IA64'    : 'ia64'   ,
+    'Visual Studio 9 2008'          : 'x86'    ,
+    'Visual Studio 9 2008 Win64'    : 'x86_64' ,
+    'Visual Studio 9 2008 IA64'     : 'ia64'   ,
+    'Visual Studio 8 2005'          : 'x86'    ,
+    'Visual Studio 8 2005 Win64'    : 'x86_64' ,
 }
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -182,12 +200,16 @@ def to_ver(name_or_gen_or_ver):
 
 
 def to_gen(name_or_gen_or_ver):
-    if isinstance(name_or_gen_or_ver, int):
-        name_or_gen_or_ver = _versions[name_or_gen_or_ver]
-    if name_or_gen_or_ver.startswith('Visual Studio'):
-        return name_or_gen_or_ver
-    name_or_gen_or_ver = sep_name_toolset(name_or_gen_or_ver)[0]
-    return _names[name_or_gen_or_ver]
+    n = name_or_gen_or_ver
+    if isinstance(n, int):
+        n = _versions[n]
+    elif isinstance(n, str):
+        if n.startswith('Visual Studio'):
+            return name_or_gen_or_ver
+    elif isinstance(n, list):
+        return n
+    n = sep_name_toolset(n)[0]
+    return _names[n]
 
 
 # -----------------------------------------------------------------------------
@@ -220,12 +242,13 @@ _toolsets_for_re = sorted(_toolsets, key=lambda x: -len(x))
 def sep_name_toolset(name, canonize=True):
     """separate name and toolset"""
     toolset = None
-    for t in _toolsets_for_re:
-        rx = r'vs.....*_({})$'.format(t)
-        if re.search(rx, name):
-            toolset = re.sub(rx, r'\1', name)
-            name_without_toolset = re.sub(r'(vs.....*)_({})$'.format(t), r'\1', name)
-            break
+    if isinstance(name, str):
+        for t in _toolsets_for_re:
+            rx = r'vs.....*_({})$'.format(t)
+            if re.search(rx, name):
+                toolset = re.sub(rx, r'\1', name)
+                name_without_toolset = re.sub(r'(vs.....*)_({})$'.format(t), r'\1', name)
+                break
     if toolset is None:
         return name, None
     if toolset not in _toolsets:
@@ -269,6 +292,8 @@ def parse_toolset(name, canonize=True):
 
 def parse_architecture(name_or_gen_or_ver):
     gen = to_gen(name_or_gen_or_ver)
+    if isinstance(gen, list):
+        gen = " ".join(gen)
     a = _architectures[gen]
     return a
 
@@ -289,17 +314,22 @@ def vsdir(name_or_gen_or_ver):
                 d = os.path.abspath(os.path.join(v, '..', '..'))
             except Exception as e:
                 pass
-    elif ver == 15:
-        # VS 2017+ is no longer a singleton, and may be installed anywhere;
-        # also, the environment variable VS***COMNTOOLS no longer exists.
-        def fn():
-            try:
-                idata = _vs2017_get_instance_data()
-                path = nested_lookup(idata, 'installationPath')
-                return path
-            except Exception as e:
-                return ""
-        d = cacheattr(sys.modules[__name__], '_vs2017dir', fn)
+        return d
+    #
+    # VS 2017+ is no longer a singleton, and may be installed anywhere;
+    # also, the environment variable VS***COMNTOOLS no longer exists.
+    def fn_201x():
+        try:
+            idata = _vs201x_get_instance(ver)
+            path = idata.install_dir()
+            print("install dir", ver, path, idata.name, idata.version)
+            return path
+        except Exception as e:
+            return ""
+    if ver == 15:
+        d = cacheattr(sys.modules[__name__], '_vs2017dir', lambda: fn_201x())
+    elif ver == 16:
+        d = cacheattr(sys.modules[__name__], '_vs2019dir', lambda: fn_201x())
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
     return d
@@ -324,7 +354,7 @@ def vcvarsall(name_or_gen_or_ver):
     d = vsdir(ver)
     if ver < 15:
         s = os.path.join(d, 'VC', 'vcvarsall.bat')
-    elif ver == 15:
+    elif ver >= 15:
         s = os.path.join(d, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
@@ -353,10 +383,21 @@ def msbuild(name_or_gen_or_ver):
                 msbuild = val.format('64' if util.in_64bit() else '', v)#'3.5')
                 if os.path.exists(msbuild):
                     break
-    else:
-        root = os.environ['ProgramFiles(x86)'] if ver < 15 else vsdir(ver)
+    elif ver < 15:
+        root = os.environ['ProgramFiles(x86)']
         val = '{}\\MSBuild\\{}.0\\bin\\{}MSBuild.exe'
         msbuild = val.format(root, ver, 'amd64\\' if util.in_64bit() else '')
+    elif ver == 15:
+        root = vsdir(ver)
+        val = '{}\\MSBuild\\{}.0\\bin\\{}MSBuild.exe'
+        msbuild = val.format(root, ver, 'amd64\\' if util.in_64bit() else '')
+    elif ver == 16:
+        # https://developercommunity.visualstudio.com/content/problem/400763/incorrect-path-to-msbuild-160-vs-2019-preview-1.html
+        root = vsdir(ver)
+        val = '{}\\MSBuild\\Current\\bin\\{}MSBuild.exe'
+        msbuild = val.format(root, 'amd64\\' if util.in_64bit() else '')
+    else:
+        raise Exception("VS Version not implemented: " + str(ver))
     return msbuild
 
 
@@ -397,63 +438,91 @@ def _is_installed_impl(ver):
         #
         # ~~~~~~~~~~~~~~ this is fragile.... ~~~~~~~~~~~~~~
         #
-        # Unlike earlier versions, VS2017 is no longer a singleton installation.
-        # Each VS2017 installed instance keeps a store of its data under
+        # Unlike earlier versions, VS2017+ is no longer a singleton installation.
+        # Each VS2017+ installed instance keeps a store of its data under
         # %ProgramData%\Microsoft\VisualStudio\Packages\_Instances\<hash>\state.json
         #
         # this info was taken from:
         # http://stackoverflow.com/questions/40694598/how-do-i-call-visual-studio-2017-rcs-version-of-msbuild-from-a-bat-files
-        for i in iter(_vs2017_get_instances().keys()):
-            try:
-                d = _vs2017_get_instance_data(i)
-            except Exception as e:
-                continue
-            # check that the version matches
-            version_string = nested_lookup(d, 'catalogInfo', 'buildVersion')
-            version_number = int(re.sub(r'(\d\d).*', r'\1', version_string))
-            if version_number != ver:
-                continue
-            # check that the directory exists
-            install_dir = nested_lookup(d, 'installationPath')
-            if not os.path.exists(install_dir):
-                continue
-            # maybe further checks are necessary?
-            # For now we stop here, and accept that this installation exists.
-            return True
-        return False
+        d = None
+        try:
+            d = _vs201x_get_instance(ver)
+        except err.VSNotFound as e:
+            pass
+        if d is None:
+            return False
+        idir = d.install_dir()
+        if not os.path.exists(idir):
+            return False
+        # maybe further checks are necessary?
+        # For now we stop here, and accept that this installation exists.
+        return True
 
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-def _vs2017_get_instance_data(which_instance=None):
-    i = _vs2017_resolve_instance(which_instance)
-    if i is None and which_instance is not None:
-        err = "could not find a vs2017 instance named {}"
-        raise Exception(err.format(which_instance))
+
+
+class VSInstanceData:
+    __slots__ = ('path', 'name', 'data', 'version')
+    def __init__(self, path):
+        self.path = path
+        self.name = os.path.basename(os.path.dirname(path))
+        with open(path, encoding="utf8") as json_str:
+            self.data = json.load(json_str)
+        self.version = self.data['catalogInfo']['buildVersion']
+        #self.version_number = int(re.sub(r'(\d\d).*', r'\1', version_string))
+    def __str__(self):
+        return "{}({})".format(self.name, self.version)
+    def is_ver(self, ver):
+        return self.version.startswith(str(ver) + ".")
+    def lookup(self, *args):
+        return nested_lookup(self.data, *args)
+    def install_dir(self):
+        return nested_lookup(self.data, "installationPath")
+
+
+def _vs201x_get_instance_data(ver, which_instance=None):
+    id = _vs201x_get_instance(ver, which_instance)
+    return id.data
+
+
+def _vs201x_get_instance(ver, which_instance=None):
+    assert ver is not None
+    assert isinstance(ver, int)
     def fn():
-        instances = _vs2017_get_instances()
-        with open(instances[i], encoding="utf8") as json_str:
-            d = json.load(json_str)
-            return d
-    return cacheattr(sys.modules[__name__], "_vs2017_instance_data_" + i, fn)
+        id = _vs201x_resolve_instance(ver, which_instance)
+        if id is None:
+            if which_instance is not None:
+                err = "could not find a vs2017+ instance named '{}' matching version '{}'. valid: {}"
+                raise Exception(err.format(which_instance, ver, _vs201x_get_instances()))
+            else:
+                err = "could not find a vs2017+ instance matching version '{}'. valid: {}"
+                raise Exception(err.format(ver, _vs201x_get_instances()))
+        return id
+    return cacheattr(sys.modules[__name__], "_vs201x_{}_instance_data_".format(ver), fn)
 
 
-def _vs2017_resolve_instance(which_instance=None):
+def _vs201x_resolve_instance(ver, which_instance=None):
     progdata = os.environ['ProgramData']
     d = os.path.join(progdata, 'Microsoft', 'VisualStudio', 'Packages', '_Instances')
-    instances = _vs2017_get_instances()
+    instances = _vs201x_get_instances()
     if instances is None:
-        raise Exception("could not find a vs2017 instance in " + d)
+        raise Exception("could not find a vs201x instance in " + d)
     i = None
-    for j in iter(instances.keys()):
+    for j in instances.values():
+        if ver is not None:
+            if j.is_ver(ver):
+                return j
+            continue
         if (which_instance is None) or (which_instance == j):
             i = j
             break
     return i
 
 
-def _vs2017_get_instances():
+def _vs201x_get_instances():
     def fn():
         d = odict()
         progdata = os.environ['ProgramData']
@@ -462,9 +531,12 @@ def _vs2017_get_instances():
             return d
         pat = os.path.join(instances_dir, '*', 'state.json')
         instances = glob.glob(pat)
+        logdbg("vs: found instances:", instances)
         if not instances:
             return d
         for i in instances:
-            d[os.path.basename(os.path.dirname(i))] = i
+            id = VSInstanceData(i)
+            d[id.name] = id
+            logdbg("vs: instance:", id, i)
         return d
-    return cacheattr(sys.modules[__name__], "_vs2017_instances", fn)
+    return cacheattr(sys.modules[__name__], "_vs201x_instances", fn)

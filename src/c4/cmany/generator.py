@@ -21,6 +21,9 @@ class Generator(BuildItem):
         return s
 
     def __init__(self, name, build, num_jobs):
+        if isinstance(name, list):
+            more_args = name[1:]
+            name = name[0]
         if name.startswith('vs'):
             name = vsinfo.to_gen(name)
         self.alias = name
@@ -42,22 +45,20 @@ class Generator(BuildItem):
         # self.full_name += " ".join(self.build.flags.cmake_vars)
 
     def configure_args(self, for_json=False, export_compile_commands=True):
+        args = []
         if self.name != "":
-            if self.is_msvc and self.build.compiler.vs.toolset is not None:
-                if for_json:
-                    args = '-T ' + self.build.compiler.vs.toolset
-                else:
-                    args = ['-G', self.name, '-T', self.build.compiler.vs.toolset]
+            if self.is_msvc:
+                vs = self.build.compiler.vs
+                if not for_json:
+                    if isinstance(vs.gen, str):
+                        args += ['-G', vs.gen]
+                    elif isinstance(vs.gen, list):
+                        args += ['-G'] + vs.gen
+                if vs.toolset is not None:
+                    args += ['-T', vs.toolset]
             else:
-                if for_json:
-                    args = ''
-                else:
-                    args = ['-G', self.name]
-        else:
-            if for_json:
-                args = ''
-            else:
-                args = []
+                if not for_json:
+                    args += ['-G', self.name]
         # cmake vars are explicitly set in the preload file
         # args += self.build.flags.cmake_flags
         if self.is_makefile or self.is_ninja:
@@ -147,7 +148,7 @@ class Generator(BuildItem):
     Visual Studio 12 2013 [Win64|ARM]
     Visual Studio 14 2015 [Win64|ARM]
     Visual Studio 15 2017 [Win64|ARM]
-    Visual Studio 16 2019 [Win64|ARM]
+    Visual Studio 16 2019 -A [Win32|x64|ARM|ARM64]
 
     Green Hills MULTI
     Xcode

@@ -4,7 +4,7 @@ import os
 from collections import OrderedDict as odict
 
 from .conf import USER_DIR
-from .util import cacheattr, setcwd, runsyscmd
+from .util import cacheattr, setcwd, runsyscmd, logdbg
 from . import util
 from . import err
 
@@ -66,14 +66,14 @@ def loadvars(builddir):
     if os.path.exists(c):
         with open(c, 'r') as f:
             for line in f:
-                # print("loadvars0", line.strip())
+                # logdbg("loadvars0", line.strip())
                 if not re.match(_cache_entry, line):
                     continue
                 ls = line.strip()
                 name = re.sub(_cache_entry, r'\1', ls)
                 vartype = re.sub(_cache_entry, r'\2', ls)[1:]
                 value = re.sub(_cache_entry, r'\3', ls)
-                # print("loadvars1", name, vartype, value)
+                # logdbg("loadvars1", name, vartype, value)
                 v[name] = CMakeCacheVar(name, value, vartype)
     return v
 
@@ -222,7 +222,7 @@ class CMakeCacheVar:
 # -----------------------------------------------------------------------------
 class CMakeSysInfo:
     """encapsulates the results returned from
-    `cmake [-G <which_generator>][-T <toolset>] --system-information`.
+    `cmake [-G <which_generator>][-T <toolset>][-A <architecture>] --system-information`.
     This is used for selecting default values for system, compiler,
     generator, etc."""
 
@@ -262,15 +262,15 @@ class CMakeSysInfo:
     def _getstr(var_name, which_generator):
         regex = r'^{} "(.*)"'.format(var_name)
         for l in __class__.info(which_generator):
-            #print(l.strip("\n"), l.startswith(var_name), var_name)
+            #logdbg(l.strip("\n"), l.startswith(var_name), var_name)
             if l.startswith(var_name):
                 l = l.strip("\n").lstrip(" ").rstrip(" ")
-                #print(var_name, "startswith :", l)
+                #logdbg(var_name, "startswith :", l)
                 if re.match(regex, l):
                     s = re.sub(regex, r'\1', l)
-                    #print(var_name, "result: '" + s + "'")
+                    #logdbg(var_name, "result: '" + s + "'")
                     return s
-        #print("WTF_--------------------------------------\n", __class__.info(which_generator))
+        #logdbg("--------------------------------------\n", __class__.info(which_generator))
         msg = "could not find variable {} in the output of `cmake --system-information -G '{}'`"
         raise err.Error(msg, var_name, which_generator)
 
@@ -278,50 +278,62 @@ class CMakeSysInfo:
     def system_info(gen):
         """gen can be a string or a cmany.Generator object"""
         from .generator import Generator
-        #print("CMakeSystemInfo: asked info for", gen)
+        logdbg("CMakeSystemInfo: asked info for", gen)
         p = _genid(gen)
         d = os.path.join(USER_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
-        #print("CMakeSystemInfo: path=", p)
+        logdbg("CMakeSystemInfo: path=", p)
         # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
         if os.path.exists(p) and util.time_since_modification(p).months < 1:
-            #print("CMakeSystemInfo: asked info for", gen, "... found", p)
+            logdbg("CMakeSystemInfo: asked info for", gen, "... found", p)
             with open(p, "r") as f:
                 i = f.readlines()
                 if i:
                     return i
                 else:
-                    # print("CMakeSystemInfo: info for gen", gen, "is empty...")
+                    logdbg("CMakeSystemInfo: info for gen", gen, "is empty...")
                     pass
         #
         if isinstance(gen, Generator):
             cmd = ['cmake'] + gen.configure_args() + ['--system-information']
+            logdbg("CMakeSystemInfo: from generator! '{}' ---> cmd={}".format(gen, cmd))
         else:
             if gen == "default" or gen == "":
+                logdbg("CMakeSystemInfo: default! '{}'".format(gen))
                 cmd = ['cmake', '--system-information']
             else:
-                if gen.startswith('vs') or gen.startswith('Visual Studio'):
-                    from . import vsinfo
-                    gen = vsinfo.to_gen(gen)
-                cmd = ['cmake', '-G', str(gen), '--system-information']
+                logdbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
+                from . import vsinfo
+                gen = vsinfo.to_gen(gen)
+                if isinstance(gen, list):
+                    cmd = ['cmake', '-G'] + gen + ['--system-information']
+                else:
+                    if not (gen.startswith('vs') or gen.startswith('Visual Studio')):
+                        raise Exception("unknown generator: {}".format(gen))
+                    cmd = ['cmake', '-G', gen, '--system-information']
         # remove export build commands as cmake reacts badly to it,
         # generating an empty info string
-        _remove_export_compile_commands_from_sysinfo_cmd(cmd)
-        print("\ncmany: CMake information for generator '{}' was not found. Creating and storing...".format(gen))
+        _remove_invalid_args_from_sysinfo_cmd(cmd)
+        print("\ncmany: CMake information for generator '{}' was not found. Creating and storing... cmd={}".format(gen, cmd))
         #
         if not os.path.exists(d):
             os.makedirs(d)
         with setcwd(d):
             out = runsyscmd(cmd, echo_output=False, capture_output=True)
-        # print("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
+        logdbg("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
+        out = out.strip()
+        if not out:
+            from err import InvalidGenerator
+            raise InvalidGenerator(gen, "for --system-information. cmd='{}'".format(cmd))
         with open(p, "w") as f:
             f.write(out)
         i = out.split("\n")
         return i
 
 
-def _remove_export_compile_commands_from_sysinfo_cmd(cmd):
+def _remove_invalid_args_from_sysinfo_cmd(cmd):
     gotit = None
+    # remove compile commands args
     for i, elm in enumerate(cmd):
         if 'CMAKE_EXPORT_COMPILE_COMMANDS' in elm:
             # can't strip out if compile commands is not given as one,
@@ -331,6 +343,11 @@ def _remove_export_compile_commands_from_sysinfo_cmd(cmd):
             gotit = i
     if gotit is not None:
         del cmd[gotit]
+    # remove architecture args
+    if '-A' in cmd:
+        i = cmd.index('-A')
+        del cmd[i+1]
+        del cmd[i]
 
 
 # -----------------------------------------------------------------------------
@@ -339,6 +356,7 @@ def _remove_export_compile_commands_from_sysinfo_cmd(cmd):
 def _genid(gen):
     from .generator import Generator
     p = gen.sysinfo_name if isinstance(gen, Generator) else gen
+    if isinstance(gen, list): p = " ".join(p)
     p = re.sub(r'[() ]', '_', p)
     return p
 
@@ -348,10 +366,10 @@ def _genid(gen):
 # -----------------------------------------------------------------------------
 # def get_toolchain_cache(toolchain):
 #     d = os.path.join(USER_DIR, 'toolchains', re.sub(os.sep, '+', toolchain))
-#     print("toolchain cache: USER_DIR=", USER_DIR)
-#     print("toolchain cache: d=", d)
+#     logdbg("toolchain cache: USER_DIR=", USER_DIR)
+#     logdbg("toolchain cache: d=", d)
 #     bd = os.path.join(d, 'build')
-#     print("toolchain cache: bd=", bd)
+#     logdbg("toolchain cache: bd=", bd)
 #     if not os.path.exists(d):
 #         os.makedirs(d)
 #         with setcwd(d):
