@@ -377,31 +377,41 @@ class Project:
                 print("no builds selected")
         if num == 0:
             return
-        if not silent:
-            if num > 1:
-                util.lognotice("")
-                util.lognotice("===============================================")
-                util.lognotice(msg + ": start", num, "builds:")
-                for b in builds:
-                    util.lognotice(b)
-                util.lognotice("===============================================")
+        def nt(*args, **kwargs):
+            if silent: return
+            util.lognotice(*args, **kwargs)
+        def dn(*args, **kwargs):
+            if silent: return
+            util.logdone(*args, **kwargs)
+        def er(*args, **kwargs):
+            if silent: return
+            util.logerr(*args, **kwargs)
+        #
+        if num > 1:
+            nt("")
+            nt("===============================================")
+            nt(msg + ": start", num, "builds:")
+            for b in builds:
+                nt(b)
+            nt("===============================================")
+        #
         for i, b in enumerate(builds):
-            if not silent:
-                if i > 0:
-                    util.lognotice("\n")
-                util.lognotice("-----------------------------------------------")
-                if num > 1:
-                    util.lognotice(msg + ": build #{} of {}:".format(i + 1, num), b)
-                else:
-                    util.lognotice(msg, b)
-                util.lognotice("-----------------------------------------------")
+            if i > 0:
+                nt("\n")
+            nt("-----------------------------------------------")
+            if num > 1:
+                nt(msg + ": build #{} of {}:".format(i + 1, num), b)
+            else:
+                nt(msg, b)
+            nt("-----------------------------------------------")
+            #
             t = timeit.default_timer()
             try:
                 # this is where it happens
                 fn(b)  # <-- here
-                word, logger = "finished", util.logdone
+                word, logger = "finished", dn
             except err.BuildError as e:
-                word, logger = "failed", util.logerr
+                word, logger = "failed", er
                 util.logerr("{} failed! {}".format(b, e))
                 failed[b] = e
                 if not self.continue_on_fail:
@@ -414,30 +424,30 @@ class Project:
             else:
                 info = "{} building ({})".format(word, hrt)
             logger(msg + ": " + info + ":",  b)
-        if not silent:
-            util.lognotice("-----------------------------------------------")
-            if num > 1:
-                if failed:
-                    util.logdone(msg + ": processed", num, "builds: (with failures)")
+        #
+        nt("-----------------------------------------------")
+        if num > 1:
+            if failed:
+                dn(msg + ": processed", num, "builds: (with failures)")
+            else:
+                dn(msg + ": finished", num, "builds:")
+            tot = 0.
+            for _, (d, _) in durations.items():
+                tot += d
+            for b in builds:
+                dur, hrt = durations[b]
+                times = "({}, {:.3f}%, {:.3f}x avg)".format(
+                    hrt, dur / tot * 100., dur / (tot / float(num))
+                )
+                fail = failed.get(b)
+                if fail:
+                    er(b, times, "[FAIL]!!!", fail)
                 else:
-                    util.logdone(msg + ": finished", num, "builds:")
-                tot = 0.
-                for _, (d, _) in durations.items():
-                    tot += d
-                for b in builds:
-                    dur, hrt = durations[b]
-                    times = "({}, {:.3f}%, {:.3f}x avg)".format(
-                        hrt, dur / tot * 100., dur / (tot / float(num))
-                    )
-                    fail = failed.get(b)
-                    if fail:
-                        util.logerr(b, times, "[FAIL]!!!", fail)
-                    else:
-                        util.logdone(b, times)
-                if failed:
-                    msg = "{}/{} builds failed ({:.1f}%)!"
-                    util.logerr(msg.format(len(failed), num, float(len(failed)) / num * 100.0))
-                else:
-                    util.logdone("all {} builds succeded!".format(num))
-                util.logdone("total time:", util.human_readable_time(tot))
-                util.lognotice("===============================================")
+                    dn(b, times)
+            if failed:
+                msg = "{}/{} builds failed ({:.1f}%)!"
+                er(msg.format(len(failed), num, float(len(failed)) / num * 100.0))
+            else:
+                dn("all {} builds succeeded!".format(num))
+            dn("total time:", util.human_readable_time(tot))
+            nt("===============================================")
