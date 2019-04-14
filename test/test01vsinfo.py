@@ -36,13 +36,14 @@ class Test01VisualStudioInfo(ut.TestCase):
             else:
                 print("not installed:", k, vs.name)
 
-    # def test01_find_any(self):
-    #     if not util.in_windows():
-    #         return
-    #     any = VisualStudioInfo.find_any()
-    #     if any is None:
-    #         self.fail("could not find any VS installation")
-    #     self.assertIsNotNone(any)
+    def test01_find_any(self):
+        if not util.in_windows():
+            return
+        any = vsinfo.find_any()
+        if any is None:
+            self.fail("could not find any VS installation")
+        self.assertIsNotNone(any)
+
 
 
 class Test00VisualStudioAliases(ut.TestCase):

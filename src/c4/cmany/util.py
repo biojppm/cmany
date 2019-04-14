@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
 
-_debug_mode = False
+_debug_mode = True
 
 
 def supports_color():

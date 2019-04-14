@@ -72,7 +72,9 @@ order = ('vs2019', 'vs2017', 'vs2015', 'vs2013', 'vs2012', 'vs2010',
 
 def find_any():
     for vs in order:
+        logdbg("looking for", vs)
         if is_installed(vs):
+            logdbg("looking for", vs, "--- it's installed")
             return VisualStudioInfo(vs)
     return None
 
@@ -322,7 +324,7 @@ def vsdir(name_or_gen_or_ver):
         try:
             idata = _vs201x_get_instance(ver)
             path = idata.install_dir()
-            print("install dir", ver, path, idata.name, idata.version)
+            logdbg("install dir:", ver, "---", idata, path)
             return path
         except Exception as e:
             return ""
@@ -414,23 +416,30 @@ def c_compiler(name_or_gen_or_ver):
 
 
 def is_installed(name_or_gen_or_ver):
+    logdbg("is installed?", name_or_gen_or_ver)
     ver = to_ver(name_or_gen_or_ver)
+    logdbg("is installed? ver=", name_or_gen_or_ver)
     return cacheattr(sys.modules[__name__], '_is_installed_'+str(ver), lambda: _is_installed_impl(ver))
 
 
 def _is_installed_impl(ver):
+    logdbg("_is_installed_impl:", ver)
     assert isinstance(ver, int)
     if ver < 15:
-        import winreg as wr
-        key = "SOFTWARE\\Microsoft\\VisualStudio\\{}.0"
+        #import winreg as wr
+        #key = "SOFTWARE\\Microsoft\\VisualStudio\\{}.0"
         try:
-            wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
+            #wr.OpenKey(wr.HKEY_LOCAL_MACHINE, key.format(ver), 0, wr.KEY_READ)
+            logdbg("_is_installed_impl:", ver, "--- old stile")
             # fail if we can't find the dir
             if not os.path.exists(vsdir(ver)):
+                logdbg("_is_installed_impl:", ver, "--- vsdir does not exist")
                 return False
             # apparently the dir is not enough, so check also vcvarsall
             if not os.path.exists(vcvarsall(ver)):
+                logdbg("_is_installed_impl:", ver, "--- vcvarsall not found")
                 return False
+            logdbg("_is_installed_impl:", ver, "--- vcvarsall not found")
             return True
         except Exception as e:
             return False
@@ -444,16 +453,19 @@ def _is_installed_impl(ver):
         #
         # this info was taken from:
         # http://stackoverflow.com/questions/40694598/how-do-i-call-visual-studio-2017-rcs-version-of-msbuild-from-a-bat-files
-        d = None
         try:
+            logdbg("_is_installed_impl:", ver, "--- new stile")
             d = _vs201x_get_instance(ver)
+            logdbg("_is_installed_impl:", ver, "--- d=", d)
         except VSNotFound as e:
-            pass
-        if d is None:
+            logdbg("_is_installed_impl:", ver, "--- instance not found!", e)
             return False
         idir = d.install_dir()
+        logdbg("_is_installed_impl:", ver, "--- install dir=", idir)
         if not os.path.exists(idir):
+            logdbg("_is_installed_impl:", ver, "--- install dir does not exist!")
             return False
+        logdbg("_is_installed_impl:", ver, "--- got it!", d)
         # maybe further checks are necessary?
         # For now we stop here, and accept that this installation exists.
         return True
@@ -491,15 +503,16 @@ def _vs201x_get_instance_data(ver, which_instance=None):
 def _vs201x_get_instance(ver, which_instance=None):
     assert ver is not None
     assert isinstance(ver, int)
+    logdbg("looking for instance:", ver)
     def fn():
         id = _vs201x_resolve_instance(ver, which_instance)
         if id is None:
             if which_instance is not None:
                 err = "could not find a vs2017+ instance named '{}' matching version '{}'. valid: {}"
-                raise Exception(err.format(which_instance, ver, _vs201x_get_instances()))
+                raise VSNotFound(err.format(which_instance, ver, _vs201x_get_instances()))
             else:
                 err = "could not find a vs2017+ instance matching version '{}'. valid: {}"
-                raise Exception(err.format(ver, _vs201x_get_instances()))
+                raise VSNotFound(err.format(ver, _vs201x_get_instances()))
         return id
     return cacheattr(sys.modules[__name__], "_vs201x_{}_instance_data_".format(ver), fn)
 
@@ -509,7 +522,7 @@ def _vs201x_resolve_instance(ver, which_instance=None):
     d = os.path.join(progdata, 'Microsoft', 'VisualStudio', 'Packages', '_Instances')
     instances = _vs201x_get_instances()
     if instances is None:
-        raise Exception("could not find a vs201x instance in " + d)
+        raise VSNotFound("could not find a vs201x instance in " + d)
     i = None
     for j in instances.values():
         if ver is not None:
