@@ -292,7 +292,6 @@ class CMakeSysInfo:
                     return i
                 else:
                     logdbg("CMakeSystemInfo: info for gen", gen, "is empty...")
-                    pass
         #
         if isinstance(gen, Generator):
             cmd = ['cmake'] + gen.configure_args() + ['--system-information']

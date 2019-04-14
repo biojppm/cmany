@@ -22,7 +22,7 @@ class Generator(BuildItem):
 
     def __init__(self, name, build, num_jobs):
         if isinstance(name, list):
-            more_args = name[1:]
+            #more_args = name[1:]
             name = name[0]
         if name.startswith('vs'):
             name = vsinfo.to_gen(name)

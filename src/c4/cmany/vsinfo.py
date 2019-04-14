@@ -354,7 +354,7 @@ def vcvarsall(name_or_gen_or_ver):
     d = vsdir(ver)
     if ver < 15:
         s = os.path.join(d, 'VC', 'vcvarsall.bat')
-    elif ver >= 15:
+    elif ver == 15 or ver == 16:
         s = os.path.join(d, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
