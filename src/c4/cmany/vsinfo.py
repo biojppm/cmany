@@ -447,7 +447,7 @@ def _is_installed_impl(ver):
         d = None
         try:
             d = _vs201x_get_instance(ver)
-        except err.VSNotFound as e:
+        except VSNotFound as e:
             pass
         if d is None:
             return False
