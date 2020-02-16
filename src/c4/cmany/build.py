@@ -115,7 +115,7 @@ class Build(NamedItem):
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
             if k not in ('architecture', 'compiler'):
-                raise err.NoSupport("build adjustment for {}".format(k))
+                raise err.NoSupport(f"build adjustment for {k}")
         a = kwargs.get('architecture')
         if a and a != self.architecture:
             self.adjusted = True

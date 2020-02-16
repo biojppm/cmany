@@ -51,7 +51,7 @@ class Test00VisualStudioAliases(ut.TestCase):
         def c(a, s):
             sc = vsinfo.to_gen(a)
             if sc != s:
-                self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
+                self.fail(f"{a} should be '{s}' but is '{sc}'")
         c('vs2019'      , ['Visual Studio 16 2019', '-A', _arc])
         c('vs2019_32'   , ['Visual Studio 16 2019', '-A', 'Win32'])
         c('vs2019_64'   , ['Visual Studio 16 2019', '-A', 'x64'])

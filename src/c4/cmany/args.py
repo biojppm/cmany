@@ -214,7 +214,7 @@ def _item_printer(dft):
     s = "["
     for i, item in enumerate(dft):
         if i > 1: s += ","
-        s += str(item).replace(' ', '\ ')
+        s += str(item).replace(' ', '\\ ')
     s += "]"
     return s
 

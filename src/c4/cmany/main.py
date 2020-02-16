@@ -90,12 +90,11 @@ class help(cmdbase):
                     if subtopic is not None:
                         print(subtopic.txt)
                     else:
-                        msg = ("{} is not a subcommand or topic.\n" +
-                               "Available subcommands are: {}\n" +
-                               "Available help topics are: {}\n")
-                        print(msg.format(args.subcommand_or_topic,
-                                         ', '.join(cmds.keys()),
-                                         ', '.join(c4help.topics.keys())))
+                        _cmds = ', '.join(cmds.keys())
+                        _topics = ', '.join(c4help.topics.keys())
+                        msg = (f"{args.subcommand_or_topic} is not a subcommand or topic.\n" +
+                               f"Available subcommands are: {_cmds}\n" +
+                               f"Available help topics are: {_topics}\n")
                         exit(1)
     def _show(self, subcommand):
         import textwrap
