@@ -412,7 +412,7 @@ class Project:
                 word, logger = "finished", dn
             except err.BuildError as e:
                 word, logger = "failed", er
-                util.logerr("{} failed! {}".format(b, e))
+                util.logerr(f"{b} failed! {e}")
                 failed[b] = e
                 if not self.continue_on_fail:
                     raise
@@ -420,9 +420,10 @@ class Project:
             hrt = util.human_readable_time(t)
             durations[b] = (t, hrt)
             if num > 1:
-                info = "{} build #{} of {} ({})".format(word, i + 1, num, hrt)
+                ip1 = i + 1
+                info = f"{word} build #{ip1} of {num} ({hrt})"
             else:
-                info = "{} building ({})".format(word, hrt)
+                info = f"{word} building ({hrt})"
             logger(msg + ": " + info + ":",  b)
         #
         nt("-----------------------------------------------")
@@ -448,6 +449,8 @@ class Project:
                 msg = "{}/{} builds failed ({:.1f}%)!"
                 er(msg.format(len(failed), num, float(len(failed)) / num * 100.0))
             else:
-                dn("all {} builds succeeded!".format(num))
+                dn(f"all {num} builds succeeded!")
             dn("total time:", util.human_readable_time(tot))
             nt("===============================================")
+        if failed:
+            raise Exception(failed)
