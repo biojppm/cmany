@@ -307,6 +307,11 @@ class Project:
             build.build(self.targets)
         self._execute(do_build, "Build", silent=False, **restrict_to)
 
+    def build_files(self, target, files):
+        def do_build_files(build):
+            build.build_files(target, files)
+        self._execute(do_build_files, "BuildFiles", silent=False)
+
     def rebuild(self, **restrict_to):
         def do_rebuild(build):
             build.rebuild(self.targets)

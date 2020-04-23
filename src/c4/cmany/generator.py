@@ -1,5 +1,6 @@
 from . import cmake
 from . import vsinfo
+from . import err
 
 from .build_item import BuildItem
 from .err import TooManyTargets
@@ -67,7 +68,12 @@ class Generator(BuildItem):
             pass
         return args
 
-    def cmd(self, targets, override_build_type=None, override_num_jobs=None):
+    @property
+    def target_all(self):
+        "return the name of the ALL target"
+        return "ALL_BUILD" if self.is_msvc else "all"
+
+    def cmd(self, targets):
         if self.is_makefile:
             return ['make', '-j', str(self.num_jobs)] + targets
         elif self.is_ninja:
@@ -76,35 +82,30 @@ class Generator(BuildItem):
             bt = str(self.build.build_type)
             if len(targets) > 1:
                 raise TooManyTargets(self)
-            if not self.is_msvc:
-                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
-            else:
-                # # if a target has a . in the name, it must be substituted for _
-                # targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
-                # if len(targets_safe) != 1:
-                #     raise Exception("msbuild can only build one target at a time: was " + str(targets_safe))
-                # t = targets_safe[0]
-                # pat = os.path.join(self.build.builddir, t + '*.vcxproj')
-                # projs = glob.glob(pat)
-                # if len(projs) == 0:
-                #     msg = "could not find vcx project for this target: {} (glob={}, got={})".format(t, pat, projs)
-                #     raise Exception(msg)
-                # elif len(projs) > 1:
-                #     msg = "multiple vcx projects for this target: {} (glob={}, got={})".format(t, pat, projs)
-                #     raise Exception(msg)
-                # proj = projs[0]
-                # cmd = [self.build.compiler.vs.msbuild, proj,
-                #        '/property:Configuration='+bt,
-                #        '/maxcpucount:' + str(self.num_jobs)]
-                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt,
-                       '--',
-                       #'/property:Configuration='+bt,
-                       '/maxcpucount:' + str(self.num_jobs)]
+            cmd = ['cmake', '--build', '.', '--config', bt, '--target', targets[0],
+                   '--parallel', str(self.num_jobs)]
+            return cmd
+
+    def cmd_source_file(self, target, source_file):
+        """get a command to build a source file
+        https://stackoverflow.com/questions/38271387/compile-a-single-file-under-cmake-project
+        """
+        relpath = os.path.relpath(source_file, os.path.abspath(self.build.builddir))
+        if self.is_makefile:
+            return ['make', relpath]
+        elif self.is_ninja:
+            raise err.NotImplemented()
+            # https://ninja-build.org/manual.html#_running_ninja
+            return ['ninja', f'{relpath}^']
+        else:
+            bt = str(self.build.build_type)
+            cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
             return cmd
 
     def install(self):
         bt = str(self.build.build_type)
-        return ['cmake', '--build', '.', '--config', bt, '--target', 'install']
+        return ['cmake', '--build', '.', '--config', bt, '--target', 'install',
+                '--parallel', str(self.num_jobs)]
 
     """
     generators: https://cmake.org/cmake/help/v3.7/manual/cmake-generators.7.html

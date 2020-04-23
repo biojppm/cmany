@@ -284,10 +284,7 @@ class Build(NamedItem):
                 self.configure()
             self.handle_deps()
             if len(targets) == 0:
-                if self.compiler.is_msvc:
-                    targets = ["ALL_BUILD"]
-                else:
-                    targets = ["all"]
+                targets = [self.generator.target_all]
             # cmake --build and visual studio won't handle
             # multiple targets at once, so loop over them.
             for t in targets:
@@ -299,6 +296,16 @@ class Build(NamedItem):
             # this was written before using the loop above.
             # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
+
+    def build_files(self, target, files):
+        self.create_dir()
+        with util.setcwd(self.builddir, silent=False):
+            self.handle_deps()
+            try:
+                cmd = self.generator.cmd([t])
+                util.runsyscmd(cmd)
+            except Exception as e:
+                raise err.CompileFailed(self, cmd, e)
 
     def rebuild(self, targets=[]):
         self._check_successful_configure('rebuild')
