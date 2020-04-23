@@ -42,6 +42,25 @@ def _getdir(attr_name, default, kwargs, cwd):
     return d
 
 
+def _is_cmake_folder(folder):
+    if folder is None:
+        return False
+    dbg("exists?", folder)
+    if not _pexists(folder):
+        dbg("does not exist:", folder)
+        return None
+    dbg("exists:", folder)
+    if _pexists(folder, "CMakeLists.txt"):
+        dbg("found CMakeLists.txt in", folder)
+        return folder
+    dbg("CMakeLists.txt not found in", folder)
+    if _pexists(folder, "CMakeCache.txt"):
+        dbg("found CMakeCache.txt in", folder)
+        return folder
+    dbg("CMakeCache.txt not found in", folder)
+    return None
+
+
 # -----------------------------------------------------------------------------
 class Project:
 
@@ -56,10 +75,18 @@ class Project:
         pdir = kwargs.get('proj_dir')
         dbg("cwd:", cwd)
         dbg("proj_dir:", pdir)
-        if pdir is None:
-            raise err.ProjDirNotFound(None)
         if pdir == ".":
             pdir = cwd
+        elif pdir is None:
+            dbg("proj_dir not given")
+            if pdir is None and self.targets:
+                dbg("is the first target a cmake directory?", self.targets[0])
+                pdir = _is_cmake_folder(self.targets[0])
+                if pdir is not None:
+                    self.targets = self.targets[1:]
+            if pdir is None:
+                dbg("picking current directory", cwd)
+                pdir = cwd
         pdir = util.abspath(pdir)
         dbg("proj_dir, abs:", pdir)
         #
@@ -81,6 +108,10 @@ class Project:
             self.install_dir = os.path.dirname(ch['CMAKE_INSTALL_PREFIX'].val)
             self.root_dir = ch['CMAKE_HOME_DIRECTORY'].val
             self.cmakelists = os.path.join(self.root_dir, "CMakeLists.txt")
+        else:
+            self.build_dir = None
+            self.install_dir = None
+            self.root_dir = pdir
         #
         self.root_dir = os.path.realpath(self.root_dir)
         self.build_dir = os.path.realpath(self.build_dir)

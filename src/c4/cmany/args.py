@@ -155,14 +155,18 @@ def _handle_hidden_args__skip_rest(args):
 
 # -----------------------------------------------------------------------------
 def add_basic(parser):
-    parser.add_argument("proj_dir", nargs="?", default=".",
-                        help="""the directory where the project's CMakeLists.txt
-                        is located. An empty argument will default to the
-                        current directory ie, \".\". Passing a directory which
-                        does not contain a CMakeLists.txt will cause an error.""")
-    parser.add_argument("--build-dir", default="./build",
-                        help="set the build root (defaults to ./build)")
-    parser.add_argument("--install-dir", default="./install",
+    parser.add_argument("-P", "--proj-dir", default=None,
+                        help="""the directory where the project's
+                        CMakeLists.txt is located. An empty argument will
+                        default to the current directory ie, "." or, if
+                        the current directory is a build directory containing
+                        CMakeCache.txt, the source directory for that
+                        build directory. Passing a directory which
+                        does not contain a CMakeLists.txt or CMakeCache.txt
+                        will cause an error.""")
+    parser.add_argument("-B", "--build-root", default="./build",
+                        help="set the build root (defaults to ./build). ")
+    parser.add_argument("-I", "--install-root", default="./install",
                         help="set the install root (defaults to ./install)")
     parser.add_argument("-j", "--jobs", default=cpu_count(),
                         help="""use the given number of parallel jobs
