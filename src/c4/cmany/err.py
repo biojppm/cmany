@@ -6,54 +6,56 @@ class Error(Exception):
         msg = msg.format(*args, **kwargs)
         if not msg:
             msg = "unknown error"
-        super().__init__("ERROR: {}".format(msg))
+        super().__init__(f"ERROR: {msg}")
+
+
+class NotImplemented(Error):
+    def __init__(self, msg):
+        super().__init__(f"not implemented: {msg}")
 
 
 class VSNotFound(Error):
     def __init__(self, vs_spec, msg=None):
-        msg = "" if msg is None else ". {}.".format(msg)
-        super().__init__("Visual Studio not found: {}{}", vs_spec, msg)
+        msg = "" if msg is None else f". {msg}."
+        super().__init__(f"Visual Studio not found: {vs_spec}{msg}")
 
 
 class CompilerNotFound(Error):
     def __init__(self, compiler_spec, msg=None):
-        msg = "" if msg is None else ". {}.".format(msg)
-        super().__init__("compiler not found: {}{}", compiler_spec, msg)
+        msg = "" if msg is None else f". {msg}."
+        super().__init__(f"compiler not found: {compiler_spec}{msg}")
 
 
 class InvalidGenerator(Error):
     def __init__(self, gen_spec, msg=None):
-        msg = "" if msg is None else ". {}.".format(msg)
-        super().__init__("invalid generator: {}{}", gen_spec, msg)
+        msg = "" if msg is None else f". {msg}."
+        super().__init__(f"invalid generator: {gen_spec}{msg}")
 
 
 class NoSupport(Error):
     def __init__(self, feature):
-        super().__init__("feature not supported: {}", feature)
+        super().__init__(f"feature not supported: {feature}")
 
 
 class SubcommandNotFound(Error):
     def __init__(self, cmds, args):
-        super().__init__("could not find subcommand {} in args {}", cmds, args)
+        super().__init__(f"could not find subcommand {cmds} in args {args}")
 
 
 class UnknownCombinationArg(Error):
     def __init__(self, a):
-        super().__init__("unknown combination argument:", a)
+        super().__init__(f"unknown combination argument: {a}")
 
 
 class ProjDirNotFound(Error):
     def __init__(self, proj_dir):
-        if proj_dir is None:
-            super().__init__("project dir was not given")
-        else:
-            msg = "project dir was not found: '{}' (curr dir is '{}')"
-            super().__init__(msg, proj_dir, os.getcwd())
+        cwd = os.getcwd()
+        super().__init__(f"project dir was not found: '{proj_dir}' (curr dir is '{cwd}')")
 
 
 class CMakeListsNotFound(Error):
     def __init__(self, proj_dir):
-        super().__init__("CMakeLists.txt not found at dir: {}", proj_dir)
+        super().__init__(f"CMakeLists.txt or CMakeCache.txt not found at dir: {proj_dir}")
 
 
 class BuildDirNotFound(Error):

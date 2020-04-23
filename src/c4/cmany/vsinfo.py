@@ -196,7 +196,7 @@ def to_name(name_or_gen_or_ver):
         n = _names.get(name_or_gen_or_ver)
         if n is not None:
             return n
-    raise Exception("could not find '{}'".format(name_or_gen_or_ver))
+    raise Exception(f"could not find '{name_or_gen_or_ver}'")
 
 
 def to_ver(name_or_gen_or_ver):
