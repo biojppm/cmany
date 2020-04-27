@@ -19,15 +19,12 @@ where:
   the native architecture when omitted.
 
 * as for "<vs_toolset>":
+     * when omitted, uses the default toolset of the chosen VS version
 
-     * when omitted, uses the default toolset of the chosen VS
-       version
-
-     * when either "clang" or "xp" is given, uses the default
-       toolset of the chosen VS version for either clang or xp
+     * when either "clang" or "xp" is given, uses the default toolset
+       of the chosen VS version for either clang or xp
 
      * otherwise, one of:
-
           * from "vs2019": "v142", "v142_clang", "v142_clang_c2",
             "v142_xp"
 
@@ -56,7 +53,9 @@ Note that not every combination is valid:
 
    * "clang" is not available in versions older than VS2015.
 
-Note: cmany defaults to using the native architecture when no target
+Note:
+
+  cmany defaults to using the native architecture when no target
   architecture is specified. For example, the command "cmany b -c
   vs2015" will produce a 64 bit build when it is run in a 64 bit
   system; but when it is run in a 32 bit system it will produce a 32
@@ -81,8 +80,8 @@ VS alias examples
 * "vs2015_64_clang": same as "cmake -G "Visual Studio 14 2015 Win64"
   -T v140_clang_c2"
 
-* "vs2017_64_v140": same as "cmake -G "Visual Studio 15 2017 Win64"
-  -T v140". This will generate a VS2017 solution for x86_64 which is
+* "vs2017_64_v140": same as "cmake -G "Visual Studio 15 2017 Win64" -T
+  v140". This will generate a VS2017 solution for x86_64 which is
   compiled with the "v140" toolset which is from VS2015.
 
 ======================================================================
@@ -163,8 +162,8 @@ sensible default will be used:
    * if the platform is omitted, then the current platform will be
      used
 
-   * if the toolset is omitted, then the toolset of the given
-     project version will be used.
+   * if the toolset is omitted, then the toolset of the given project
+     version will be used.
 
 Note also that the order must be exactly as given: first the VS
 version, then the platform, then the toolset. For example, when the
@@ -195,7 +194,7 @@ target architecture.
 
 +-------------------+-----------------------------------+------------------------------+
 | cmany             | cmake                             | target architecture          |
-+===================+===================================+==============================+
+|===================|===================================|==============================|
 | "vs2019"          | "Visual Studio 16 2019 ???"       | native, ie 32 or 64 bits     |
 +-------------------+-----------------------------------+------------------------------+
 | "vs2019_32"       | "Visual Studio 16 2019"           | x86                          |
@@ -299,15 +298,14 @@ Here's the list of valid Visual Studio toolsets:
 cmany allows several shorter forms for specifying some of these
 toolsets:
 
-* the default toolset can be omitted. For example, "vs2017" is
-  exactly the same as "vs2017_v141", and "vs2013" is exactly the same
-  as "vs2013_v120"
+* the default toolset can be omitted. For example, "vs2017" is exactly
+  the same as "vs2017_v141", and "vs2013" is exactly the same as
+  "vs2013_v120"
 
-* the clang toolset can be shortened to "clang" instead of
-  "clang_c2". Also, omitting the version from a clang toolset will
-  default to the current VS version's toolset. So for example,
-  "vs2015_clang" or "vs2015_clang_c2" are the same as
-  "vs2015_v140_clang_c2".
+* the clang toolset can be shortened to "clang" instead of "clang_c2".
+  Also, omitting the version from a clang toolset will default to the
+  current VS version's toolset. So for example, "vs2015_clang" or
+  "vs2015_clang_c2" are the same as "vs2015_v140_clang_c2".
 
 * the xp toolset has the same ommission behaviour as clang. For
   example, "vs2015_xp" is the same as "vs2015_v140_xp".
@@ -327,7 +325,7 @@ VS2017
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2019"                       | "16 2019"                     | "(native)"           | "v142"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2019_clang"                 | "16 2019"                     | "(native)"           | "v142_clang_c2"       |
@@ -483,7 +481,7 @@ VS2017
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2017"                       | "15 2017"                     | "(native)"           | "v141"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2017_clang"                 | "15 2017"                     | "(native)"           | "v141_clang_c2"       |
@@ -617,7 +615,7 @@ VS2015
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2015"                       | "14 2015"                     | "(native)"           | "v140"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2015_clang"                 | "14 2015"                     | "(native)"           | "v140_clang_c2"       |
@@ -719,7 +717,7 @@ VS2013
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2013"                       | "12 2013"                     | "(native)"           | "v120"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2013_xp"                    | "12 2013"                     | "(native)"           | "v120_xp"             |
@@ -781,7 +779,7 @@ VS2012
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2012"                       | "11 2012"                     | "(native)"           | "v110"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2012_xp"                    | "11 2012"                     | "(native)"           | "v110_xp"             |
@@ -861,7 +859,7 @@ VS2010
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2010"                       | "10 2010"                     | "(native)"           | "v100"                |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2010_xp"                    | "10 2010"                     | "(native)"           | "v100_xp"             |
@@ -923,7 +921,7 @@ VS2008
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2008"                       | "9 2008"                      | "(native)"           | "v90"                 |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2008_xp"                    | "9 2008"                      | "(native)"           | "v90_xp"              |
@@ -971,7 +969,7 @@ VS2005
 
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | cmany compiler alias           | project VS version            | Target arch.         | VS Toolset            |
-+================================+===============================+======================+=======================+
+|================================|===============================|======================|=======================|
 | "vs2005"                       | "8 2005"                      | "(native)"           | "v80"                 |
 +--------------------------------+-------------------------------+----------------------+-----------------------+
 | "vs2005_32"                    | "8 2005"                      | "x86"                | "v80"                 |

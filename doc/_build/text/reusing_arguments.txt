@@ -40,10 +40,11 @@ environment variable instead of "CMANY_ARGS". cmany will see commands
 given to it as "cmany $CMANY_PFX_ARGS <subcommand> $CMANY_ARGS
 <command line arguments>".
 
-Note: The values of the "CMANY_ARGS" and "CMANY_PFX_ARGS"
-  environment variables are always used in every "cmany" invokation.
-  To prevent cmany from using these values, you will have to unset the
-  variables:
+Note:
+
+  The values of the "CMANY_ARGS" and "CMANY_PFX_ARGS" environment
+  variables are always used in every "cmany" invokation. To prevent
+  cmany from using these values, you will have to unset the variables:
 
      $ unset CMANY_ARGS CMANY_PFX_ARGS
      $ cmany b   # uses defaults now

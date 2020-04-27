@@ -6,7 +6,9 @@ builds. These flags can be compiler flags, preprocessor defines or
 CMake cache variables. Specifying flags is an important cmany usage
 pattern, which is used also when specifying Per-item flags.
 
-Note: The examples below apply the flags across the board to all the
+Note:
+
+  The examples below apply the flags across the board to all the
   individual builds produced with the cmany command. For example, this
   will add "-Wall" to all of the 9 resulting builds:
 

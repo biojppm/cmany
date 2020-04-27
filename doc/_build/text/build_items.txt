@@ -118,8 +118,10 @@ For example, note the "@foo" spec in the bar variant:
 With this command, bar will be now consist of "-D
 SOME_DEFINE=32,SOME_DEFINE=16 -X "-Os","-O2"'".
 
-Note: Order matters here: the place where the inheritance directive
-  occurs is relevant. For example:
+Note:
+
+  Order matters here: the place where the inheritance directive occurs
+  is relevant. For example:
 
      $ cmany b -v none \
               -v 'foo: --defines SOME_DEFINE=32 --cxxflags "-Os"' \
@@ -207,8 +209,8 @@ a sensible default will be used:
    * if the platform is omitted, then the current platform will be
      used
 
-   * if the toolset is omitted, then the toolset of the given
-     project version will be used.
+   * if the toolset is omitted, then the toolset of the given project
+     version will be used.
 
 Given the many VS versions, target architectures and toolsets, this
 creates hundreds of possible aliases, so read the complete
