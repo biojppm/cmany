@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from distutils.command.install import INSTALL_SCHEMES
 from setuptools import setup, find_packages
 import os.path
 import sys
-import site
 import glob
 
 
@@ -12,6 +12,12 @@ if sys.version_info < (3, 4):
     # python 3.3 is no longer supported by pip
     msg = 'cmany requires at least Python 3.4. Current version is {}. Sorry.'
     sys.exit(msg.format(sys.version_info))
+
+
+# allows installing the data files side-by-side with the .py files
+# https://stackoverflow.com/a/3042436
+for scheme in INSTALL_SCHEMES.values():
+    scheme['data'] = scheme['purelib']
 
 
 def read(*rnames):
@@ -41,43 +47,9 @@ def readreqs(*rnames):
     return l
 
 
-def get_binaries_directory():
-    """Return the installation directory, or None
-    http://stackoverflow.com/questions/36187264"""
-    if '--user' in sys.argv:
-        paths = (site.getusersitepackages(),)
-    else:
-        if hasattr(site, 'getsitepackages'):
-            print("cmany setup: site-packages", site.getsitepackages())
-            print("cmany setup: site-user-packages", site.getusersitepackages())
-            print("cmany setup: site-prefix", os.path.dirname(sys.executable))
-            paths = site.getsitepackages()
-        else:
-            print("cmany setup: no site.getsitepackages()...")
-            py_prefix = os.path.dirname(sys.executable)
-            paths = [
-                py_prefix + '/lib/site-packages',
-                py_prefix + '/lib/site-packages',
-                py_prefix + '/lib',
-            ]
-        py_version = '{}.{}'.format(sys.version_info[0], sys.version_info[1])
-        paths += (s.format(py_version) for s in (
-            sys.prefix + '/lib/python{}/site-packages/',
-            sys.prefix + '/lib/python{}/dist-packages/',
-            sys.prefix + '/local/lib/python{}/site-packages/',
-            sys.prefix + '/local/lib/python{}/dist-packages/',
-            '/Library/Python/{}/site-packages/',
-        ))
-    for path in paths:
-        if os.path.exists(path):
-            print('cmany setup: installation path:', path)
-            return path
-    raise Exception('cmany setup: no installation path found', file=sys.stderr)
-
-
 def get_data_files():
     # dest = get_binaries_directory()
-    d = lambda d: "share/" + d # os.path.join(dest, d)
+    d = lambda d: d # os.path.join(dest, d)
     df = [
           (d("c4/cmany"), [
               "LICENSE.txt",
@@ -86,10 +58,10 @@ def get_data_files():
               "requirements_test.txt"
           ]),
           (d("c4/cmany/conf"), [
-              "conf/cmany.yml"
+              "src/c4/cmany/conf/cmany.yml"
           ]),
           (d("c4/cmany/doc"),
-              glob.glob("doc/_build/text/*.txt")
+              glob.glob("src/c4/cmany/doc/*.txt")
           ),
       ]
     return df

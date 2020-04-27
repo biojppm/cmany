@@ -3,3 +3,4 @@ nose
 twine
 coverage
 codecov
+sphinx

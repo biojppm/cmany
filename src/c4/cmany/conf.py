@@ -10,28 +10,14 @@ if yaml.version_info < (0, 15):
     raise Exception("cmany requires ruamel.yaml>=0.15.0")
 
 
-# -----------------------------------------------------------------------------
-if util.in_windows():
-    SHARE_DIR = osp.abspath(
-        osp.join(osp.dirname(sys.executable), 'share', 'c4', 'cmany')
-    )
-else:
-    SHARE_DIR = osp.abspath(
-        osp.join(osp.dirname(osp.dirname(sys.executable)), 'share', 'c4', 'cmany')
-    )
+SHARE_DIR = osp.abspath(osp.dirname(__file__))
 CONF_DIR = osp.join(SHARE_DIR, 'conf')
 DOC_DIR = osp.join(SHARE_DIR, 'doc')
 USER_DIR = osp.expanduser("~/.cmany/")
 
-# maybe cmany is not installed. Then it must be a source distribution.
-if not osp.exists(SHARE_DIR):
-    SHARE_DIR = osp.abspath(osp.join(osp.dirname(__file__), "../../.."))
-    CONF_DIR = osp.join(SHARE_DIR, 'conf')
-    DOC_DIR = osp.join(SHARE_DIR, 'doc/_build/text')
-
-assert osp.exists(SHARE_DIR), "cmany: share dir not found: {}".format(SHARE_DIR)
-assert osp.exists(CONF_DIR), "cmany: conf dir not found: {}".format(CONF_DIR)
-assert osp.exists(DOC_DIR), "cmany: doc dir not found: {}".format(DOC_DIR)
+assert osp.exists(SHARE_DIR), f"cmany: share dir not found: {SHARE_DIR}"
+assert osp.exists(CONF_DIR), f"cmany: conf dir not found: {CONF_DIR}"
+assert osp.exists(DOC_DIR), f"cmany: doc dir not found: {DOC_DIR}"
 # assert osp.exists(USER_DIR), "cmany: user dir not found: {}".format(USER_DIR)
 
 

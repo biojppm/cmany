@@ -1,0 +1,59 @@
+Reusing arguments
+*****************
+
+In certain scenarios, the arguments to a "cmany" command can get a bit
+complicated. To aid in such scenarios, "cmany" offers two ways of
+storing these arguments, so that they are implicitly used in simple
+commands such as "cmany build".
+
+
+Session arguments
+=================
+
+You can store arguments in the environment variable "CMANY_ARGS". Then
+the resulting cmany command is taken as if it were given "cmany
+<subcommand> $CMANY_ARGS <command line arguments>". In the example
+below, the configure, build and install commands will all use the five
+given compilers and two build types, resulting in 10 build trees:
+
+   $ export CMANY_ARGS="-c clang++-3.9,clang++-3.8,g++-6,g++-7,icpc \
+                        -t Debug,Release"
+   $ cmany c   # 10 builds
+   $ cmany b   # same
+   $ cmany i   # same
+
+The arguments stored in "CMANY_ARGS" can be combined with any other
+argument. For example, if you now want to build only the "Debug" types
+of the current value of "CMANY_ARGS", just use the "--include-
+types/--it" inclusion flag:
+
+   $ cmany b -it Debug
+
+or as another example, you can process only a single build tree via
+the "--include-builds/-ib", say, "icpc" with "Release":
+
+   $ cmany b -ib 'icpc.*Release'
+
+Some arguments to cmany are meant to be used before the cmany
+subcommand. For those arguments, you should use the "CMANY_PFX_ARGS"
+environment variable instead of "CMANY_ARGS". cmany will see commands
+given to it as "cmany $CMANY_PFX_ARGS <subcommand> $CMANY_ARGS
+<command line arguments>".
+
+Note:
+
+  The values of the "CMANY_ARGS" and "CMANY_PFX_ARGS" environment
+  variables are always used in every "cmany" invokation. To prevent
+  cmany from using these values, you will have to unset the variables:
+
+     $ unset CMANY_ARGS CMANY_PFX_ARGS
+     $ cmany b   # uses defaults now
+
+
+Project file
+============
+
+"cmany" also allows you to permanently store its arguments in a
+"cmany.yml" file which should be placed alongside the project
+"CMakeLists.txt". This feature is under current development and is not
+ready.
