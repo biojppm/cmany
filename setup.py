@@ -7,11 +7,12 @@ import os.path
 import sys
 import glob
 
+minversion = (3, 6)
 
-if sys.version_info < (3, 4):
-    # python 3.3 is no longer supported by pip
-    msg = 'cmany requires at least Python 3.4. Current version is {}. Sorry.'
-    sys.exit(msg.format(sys.version_info))
+
+if sys.version_info < minversion:
+    # require at least 3.6 because of f-strings
+    sys.exit(f'cmany requires at least Python {minversion}. Current version is {sys.version_info}. Sorry.')
 
 
 # allows installing the data files side-by-side with the .py files
@@ -78,8 +79,6 @@ setup(name="cmany",
           "License :: OSI Approved :: MIT License",
           "Intended Audience :: Developers",
           "Development Status :: 3 - Alpha",
-          "Programming Language :: Python :: 3.4",
-          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",

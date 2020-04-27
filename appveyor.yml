@@ -34,6 +34,8 @@ environment:
       PYTHON_VERSION: "3.6.x"
       PYTHON_ARCH: "64"
 
+    # require at least 3.6
+
     # appveyor tests run really slow; python3.5 is generally timing out
     #- PYTHON: "C:\\Python35"
     # PYTHON_VERSION: "3.5.x"
@@ -43,13 +45,13 @@ environment:
     #  PYTHON_VERSION: "3.5.x"
     #  PYTHON_ARCH: "64"
 
-    - PYTHON: "C:\\Python34"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "32"
+    #- PYTHON: "C:\\Python34"
+    #  PYTHON_VERSION: "3.4.x"
+    #  PYTHON_ARCH: "32"
 
-    - PYTHON: "C:\\Python34-x64"
-      PYTHON_VERSION: "3.4.x"
-      PYTHON_ARCH: "64"
+    #- PYTHON: "C:\\Python34-x64"
+    #  PYTHON_VERSION: "3.4.x"
+    #  PYTHON_ARCH: "64"
 
     # python 3.3 is no longer supported by pip
     #- PYTHON: "C:\\Python33"
@@ -83,8 +85,8 @@ install:
 
   # Upgrade to the latest version of pip to avoid it displaying warnings
   # about it being out of date.
-  - "%PYTHON%\\Scripts\\pip install --disable-pip-version-check --user --upgrade pip"
-  - "%PYTHON%\\Scripts\\pip install --disable-pip-version-check --user --upgrade setuptools"
+  - "%PYTHON%\\python.exe -m pip install --disable-pip-version-check --user --upgrade pip"
+  - "%PYTHON%\\python.exe -m pip install --disable-pip-version-check --user --upgrade setuptools"
 
   # Install the build dependencies of the project. If some dependencies contain
   # compiled extensions and are not provided as pre-built wheel packages,

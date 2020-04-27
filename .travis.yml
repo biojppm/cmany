@@ -29,17 +29,18 @@ matrix:
       python: 3.6
       env: PY=3.6
 
-    - os: linux
-      dist: trusty
-      sudo: required
-      python: 3.5
-      env: PY=3.5
+    # drop support for 3.5 and less. we use f-strings, introduced in 3.6
+    #- os: linux
+    #  dist: trusty
+    #  sudo: required
+    #  python: 3.5
+    #  env: PY=3.5
 
-    - os: linux
-      dist: trusty
-      sudo: required
-      python: 3.4
-      env: PY=3.4
+    #- os: linux
+    #  dist: trusty
+    #  sudo: required
+    #  python: 3.4
+    #  env: PY=3.4
 
     # disable tests for 3.3:
     #   * pip is no longer supporting python 3.3: https://pip.pypa.io/en/stable/installing/
@@ -61,7 +62,7 @@ matrix:
 
     - os: osx
       language: generic
-      env: PY=3.5 PYENV=3.5.1
+      env: PY=3.6 PYENV=3.6.1
 
     #- os: osx
     #  language: generic
