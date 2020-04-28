@@ -8,7 +8,6 @@ from collections import OrderedDict as odict
 from c4.cmany.project import Project as Project
 from c4.cmany import args as c4args
 from c4.cmany import help as c4help
-
 from c4.cmany import err
 
 
@@ -30,6 +29,14 @@ cmds = odict([
     ('export_compile_commands', ['xc']),
     ('export_vs', []),
 ])
+
+
+def cmd_abbrevs():
+    for k, v in cmds.items():
+        if v:
+            yield (f"{k}, " + ', '.join(cmds[k]))
+        else:
+            yield k
 
 
 def cmany_main(in_args=None):
@@ -90,12 +97,14 @@ class help(cmdbase):
                     if subtopic is not None:
                         print(subtopic.txt)
                     else:
-                        _cmds = ', '.join(cmds.keys())
-                        _topics = ', '.join(c4help.topics.keys())
-                        msg = (f"{args.subcommand_or_topic} is not a subcommand or topic.\n" +
-                               f"Available subcommands are: {_cmds}\n" +
-                               f"Available help topics are: {_topics}\n")
-                        exit(1)
+                        _ind = '    '
+                        _indnl = '\n' + _ind
+                        _cmds = _ind + _indnl.join(cmd_abbrevs())
+                        _topics = _ind + _indnl.join(c4help.topics.keys())
+                        msg = (f"Error: {args.subcommand_or_topic} is not a subcommand or topic.\n" +
+                               f"\nAvailable subcommands are:\n{_cmds}\n" +
+                               f"\nAvailable help topics are:\n{_topics}\n")
+                        exit(msg)
     def _show(self, subcommand):
         import textwrap
         import re
@@ -104,9 +113,10 @@ class help(cmdbase):
             cls = getattr(mymod, subcommand)
             sctxt = "/".join([subcommand] + cmds[subcommand])
             block = re.sub("\n", " ", cls.__doc__)
-            block = re.sub("\ +", " ", block)
+            block = re.sub(r"\ +", " ", block)
             block = textwrap.fill(block, 60)
-            print("{0}cmany {1}\n{0}\n{2}\n".format("--" * 20 + "\n", sctxt, block))
+            sep = "--" * 20 + "\n"
+            print(f"{sep}cmany {sctxt}\n{sep}\n{block}\n")
         cmany_main([subcommand, '-h'])
 
 
