@@ -268,7 +268,7 @@ shows what each of them mean. (If you find any errors, please submit a bug or
 PR).
 
 
-VS2017
+VS2019
 ^^^^^^
 
 +------------------------------+-----------------------------+--------------------+---------------------+
