@@ -1,5 +1,7 @@
 
-.PHONY: all test doc deploy
+.PHONY: all test doc deploy package requirements
+
+VERSION = $(shell grep version= setup.py | sed 's:.*version="\(.*\)",:\1:')
 
 all:
 
@@ -11,8 +13,14 @@ doc:
 	if [ ! -d src/c4/cmany/doc ] ; then mkdir src/c4/cmany/doc ; fi
 	cp -favr doc/_build/text/*.txt src/c4/cmany/doc/.
 
-deploy:
-	_version=$$(grep version= setup.py | sed 's:.*version="\(.*\)",:\1:') \
-	&& rm -vf dist/cmany-$$_version* \
-	&& python setup.py sdist bdist_wheel \
-	&& twine upload dist/cmany-$$_version*
+package: doc
+	@echo "packaging cmany $(VERSION)"
+	rm -vf dist/cmany-$(VERSION)*
+	python setup.py sdist bdist_wheel  # needs wheel installed, use make requirements for that
+
+deploy: package
+	twine upload dist/cmany-$(VERSION)*
+
+requirements:
+	pip install -r requirements.txt
+	pip install -r requirements_test.txt
