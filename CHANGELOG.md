@@ -1,7 +1,13 @@
 # Changelog
 
 
-## v0.1.3 June 2020
+## v0.1.4 -- June 06 2020
+
+* hide experimental `create_proj` command from the help list
+* gitter community: https://gitter.im/cmany_/community
+
+
+## v0.1.3 -- June 04 2020
 
 * require at least python 3.6
 * add support for Visual Studio 2019
@@ -13,6 +19,6 @@
 * other bug fixes
 
 
-## 0.1.2
+## 0.1.2 -- June 2017
 
 (first release)

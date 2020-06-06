@@ -7,12 +7,14 @@ import os.path
 import sys
 import glob
 
-minversion = (3, 6)
+
+cmanyversion_str = "0.1.4"
 
 
-if sys.version_info < minversion:
+minpyversion = (3, 6)
+if sys.version_info < minpyversion:
     # require at least 3.6 because of f-strings
-    sys.exit(f'cmany requires at least Python {minversion}. Current version is {sys.version_info}. Sorry.')
+    sys.exit(f'cmany requires at least Python {minpyversion}. Current version is {sys.version_info}. Sorry.')
 
 
 # allows installing the data files side-by-side with the .py files
@@ -53,6 +55,7 @@ def get_data_files():
     d = lambda d: d # os.path.join(dest, d)
     df = [
           (d("c4/cmany"), [
+              "CHANGELOG.md",
               "LICENSE.txt",
               "README.rst",
               "requirements.txt",
@@ -69,7 +72,7 @@ def get_data_files():
 
 
 setup(name="cmany",
-      version="0.1.3",
+      version=cmanyversion_str,
       description="CMake build tree batching tool",
       long_description=get_readme() + "\n" + read('LICENSE.txt'),
       url="https://github.com/biojppm/cmany",
