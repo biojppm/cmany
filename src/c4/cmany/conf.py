@@ -1,4 +1,3 @@
-import sys
 import os.path as osp
 from collections import OrderedDict as odict
 from . import util
@@ -95,7 +94,7 @@ flag_aliases: {}
                     self._dump[k] = other._dump[k]
             elif src is not None:
                 self._dump[k] = other._dump[k]
-        self.flag_aliases = self.flag_aliases.merge_from(other.flag_aliases)
+        self.flag_aliases.merge_from(other.flag_aliases)
 
     def get_val(self, name_sub, where=None):
         if where is None:
