@@ -3,15 +3,15 @@ Installing
 
 Requirements
 ------------
-* CMake
-* Python 3.3+
+* Python 3.6+
+* CMake 3.13+
 * pip
 
 
 Installing from PyPI
 --------------------
 
-cmany is `available at the PyPI repository
+cmany is `available through the PyPI repository
 <https://pypi.python.org/pypi/cmany/>`_. Installing couldn't be easier::
 
   $ pip install cmany

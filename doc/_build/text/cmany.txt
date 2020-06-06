@@ -1,8 +1,8 @@
-+-------------+-----------------+--------------------------+------------------------+
-| [image:     | [image:         | Linux + OS X: [image:    | Windows: [image:       |
-| License:    | Documentation   | Linux+OSX build          | Windows build          |
-| MIT][image] | status][image]  | status][image]           | status][image]         |
-+-------------+-----------------+--------------------------+------------------------+
++-------------+-----------------+-----------------+--------------------------+------------------------+
+| [image:     | [image:         | [image: Chat on | Linux + OS X: [image:    | Windows: [image:       |
+| License:    | Documentation   | Gitter][image]  | Linux+OSX build          | Windows build          |
+| MIT][image] | status][image]  |                 | status][image]           | status][image]         |
++-------------+-----------------+-----------------+--------------------------+------------------------+
 
 
 cmany
@@ -73,8 +73,6 @@ Features
 
 * Run arbitrary commands in every build tree or install tree.
 
-* Emacs integration! https://github.com/biojppm/cmany.el
-
 
 More info
 =========
@@ -88,6 +86,8 @@ More info
 
 Support
 =======
+
+* Gitter room: https://gitter.im/cmany_/community.
 
 * send bug reports to https://github.com/biojppm/cmany/issues.
 

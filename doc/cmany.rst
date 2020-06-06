@@ -1,7 +1,7 @@
 
-===========  ===============  ========================  ======================
- |license|    |readthedocs|    Linux + OS X: |travis|    Windows: |appveyor|
-===========  ===============  ========================  ======================
+===========  ===============   ===============  ========================  ======================
+ |license|    |readthedocs|     |gitter|         Linux + OS X: |travis|    Windows: |appveyor|
+===========  ===============   ===============  ========================  ======================
 
 cmany
 =====
@@ -59,7 +59,6 @@ Features
   Studio, it is missing from mono-configuration generators like Unix
   Makefiles.
 * Run arbitrary commands in every build tree or install tree.
-* Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 More info
 ---------
@@ -69,6 +68,7 @@ More info
 
 Support
 -------
+* Gitter room: `<https://gitter.im/cmany_/community>`_.
 * send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
 * send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 
@@ -101,11 +101,14 @@ cmany is permissively licensed under the `MIT license`_.
    :alt: License: MIT
    :target: https://opensource.org/licenses/MIT
 .. |travis| image:: https://travis-ci.org/biojppm/cmany.svg?branch=master
-    :alt: Linux+OSX build status
-    :target: https://travis-ci.org/biojppm/cmany
+   :alt: Linux+OSX build status
+   :target: https://travis-ci.org/biojppm/cmany
 .. |appveyor| image:: https://ci.appveyor.com/api/projects/status/github/biojppm/cmany?branch=master&svg=true
-    :alt: Windows build status
-    :target: https://ci.appveyor.com/project/biojppm/cmany
+   :alt: Windows build status
+   :target: https://ci.appveyor.com/project/biojppm/cmany
 .. |readthedocs| image:: https://readthedocs.org/projects/docs/badge/?version=latest
-    :alt: Documentation status
-    :target: https://cmany.readthedocs.io/
+   :alt: Documentation status
+   :target: https://cmany.readthedocs.io/
+.. |gitter| image:: https://badges.gitter.im/cmany_/community.svg
+   :alt: Chat on Gitter
+   :target: https://gitter.im/cmany_/community

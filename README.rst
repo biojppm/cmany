@@ -1,5 +1,5 @@
 
-|license|    |pypi|       |pyver|
+|gitter|   |license|    |pypi|       |pyver|
 
 |readthedocs|   |travis|     |appveyor|   |lgtm_grade|    |lgtm_alerts|
 
@@ -65,7 +65,6 @@ Features
   it is missing from mono-configuration generators like Unix Makefiles.
 * Runs arbitrary commands in every build tree or install tree.
 * Full control over how the build items are combined.
-* Emacs integration! `<https://github.com/biojppm/cmany.el>`_
 
 More info
 ---------
@@ -75,12 +74,13 @@ More info
 
 Support
 -------
+* Gitter room: `<https://gitter.im/cmany_/community>`_.
 * send bug reports to `<https://github.com/biojppm/cmany/issues>`_.
 * send pull requests to `<https://github.com/biojppm/cmany/pulls>`_.
 
 Current status
 --------------
-cmany is in beta state, under current development.
+cmany is in alpha state, under current development.
 
 Limitations & Known issues
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -103,6 +103,10 @@ cmany is permissively licensed under the `MIT license`_.
 
 
 .. _MIT license: LICENSE.txt
+
+.. |gitter| image:: https://badges.gitter.im/cmany_/community.svg
+   :alt: Chat on Gitter
+   :target: https://gitter.im/cmany_/community
 
 .. |license| image:: https://img.shields.io/badge/License-MIT-green.svg?style=plastic
    :alt: License: MIT
