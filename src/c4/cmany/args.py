@@ -30,16 +30,24 @@ def setup(subcommands, module):
         description='''Easily process several build trees of a CMake project''',
         usage='%(prog)s',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=help.epilog
+        epilog=help.epilog,
     )
-    sp = p.add_subparsers(help='')
-    add_hidden(p)
+    # gather the list of visible subcommands
+    # https://stackoverflow.com/questions/21692395/hiding-selected-subcommands-using-argparse
+    visible_metavar = ",".join(["{},{}".format(cmd, ",".join(aliases))
+                                for cmd, aliases in subcommands.items() if is_visible_command(getattr(module, cmd))])
+    sp = p.add_subparsers(help='', metavar=visible_metavar)
+    add_hidden_args(p)
+
     # for each subcommand...
     for cmd, aliases in subcommands.items():
         # get the class for this subcommand from the module
         cl = getattr(module, cmd)
         # create and setup a parser object for this subcommand
-        h = sp.add_parser(name=cmd, aliases=aliases, help=cl.__doc__)
+        cmd_settings = {}
+        if is_visible_command(cl):  # set help only if the command is visible
+            cmd_settings['help'] = cl.__doc__
+        h = sp.add_parser(name=cmd, aliases=aliases, **cmd_settings)
         cl().add_args(h)
         # this function will be the entry point for executing this subcommand
         def exec_cmd(args, cmd_class=cl):
@@ -49,6 +57,10 @@ def setup(subcommands, module):
         # that's it.
         h.set_defaults(func=exec_cmd)
     return p
+
+
+def is_visible_command(cls):
+    return not (hasattr(cls, "hidden") and cls.hidden is True)
 
 
 def parse(parser, in_args):
@@ -112,7 +124,7 @@ def find_subcommand(cmds, args):
 
 
 # -----------------------------------------------------------------------------
-def add_hidden(parser):
+def add_hidden_args(parser):
     parser.add_argument('--debug-cmany', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--show-args', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--only-show-args', action='store_true', help=argparse.SUPPRESS)
