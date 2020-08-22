@@ -119,11 +119,13 @@ class Project:
         #
         cr = CombinationRules(kwargs.get('combination_rules', []))
         combs = cr.valid_combinations(s, a, c, t, v)
+        dbg("combinations:", combs)
         self.combination_rules = cr
         #
         self.builds = []
-        for s_, a_, c_, t_, v_ in combs:
-            self.add_build(s_, a_, c_, t_, v_)
+        for comb in combs:
+            dbg("adding build from combination:", comb)
+            self.add_build(*comb) #s_, a_, c_, t_, v_)
         #
         self.systems = s
         self.architectures = a
@@ -234,6 +236,7 @@ class Project:
         f.resolve_flag_aliases(compiler, aliases=self.configs.flag_aliases)
         #
         # create the build
+        dbg("adding build:", s, a, t, c, v, f)
         b = Build(self.root_dir, self.build_dir, self.install_dir,
                   s, a, t, c, v, f,
                   self.num_jobs, dict(self.kwargs))

@@ -13,6 +13,7 @@ from .build_flags import BuildFlags
 from .compiler import Compiler
 from .architecture import Architecture
 from . import err
+from .util import logdbg as dbg
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -47,9 +48,11 @@ class Build(NamedItem):
         #
         if util.in_64bit and self.architecture.is32:
             if self.compiler.gcclike:
+                dbg("making 32 bit")
                 self.compiler.make_32bit()
         elif util.in_32bit and self.architecture.is64:
             if self.compiler.gcclike:
+                dbg("making 64 bit")
                 self.compiler.make_64bit()
         #
         tag = self._set_name_and_paths()
@@ -91,6 +94,8 @@ class Build(NamedItem):
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
+        for prop in "projdir buildroot installroot buildtag installtag builddir installdir preload_file cachefile".split(" "):
+            dbg("    {}: {}={}".format(self.tag, prop, getattr(self, prop)))
         return self.tag
 
     def create_generator(self, num_jobs, fallback_generator="Unix Makefiles"):
@@ -114,14 +119,17 @@ class Build(NamedItem):
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
-            if k not in ('architecture', 'compiler'):
-                raise err.NoSupport(f"build adjustment for {k}")
+            supported = ('architecture', 'compiler')
+            if k not in supported:
+                raise err.NoSupport(f"build adjustment for {k}. Must be one of {supported}")
         a = kwargs.get('architecture')
         if a and a != self.architecture:
+            dbg(self, "adjusting architecture:", self.architecture, "---->", a)
             self.adjusted = True
             self.architecture = a
         c = kwargs.get('compiler')
         if c and c != self.compiler:
+            dbg(self, "adjusting compiler:", self.compiler, "---->", a)
             self.adjusted = True
             self.compiler = c
         self._set_name_and_paths()

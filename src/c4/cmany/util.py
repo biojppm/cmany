@@ -40,18 +40,22 @@ def suppress_colors():
 cmany_colored_output = (not _suppress_colors) and supports_color()
 
 
+def log(*args, **kwargs):
+    print(*args, **kwargs, flush=True)
+
+
 def color_log(style, *args, **kwargs):
     if cmany_colored_output:
         print(style, sep='', end='')
         print(*args, **kwargs)
-        print(colorama.Style.RESET_ALL, sep='', end='')
+        print(colorama.Style.RESET_ALL, sep='', end='', flush=True)
     else:
-        print(*args, **kwargs)
+        log(*args, **kwargs)
 
 
 def logdbg(*args, **kwargs):
     if _debug_mode:
-        print(*args, **kwargs)
+        log(*args, **kwargs)
 
 
 def loginfo(*args, **kwargs):
