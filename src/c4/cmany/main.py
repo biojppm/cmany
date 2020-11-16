@@ -247,7 +247,7 @@ class show_targets(selectcmd):
 
 # -----------------------------------------------------------------------------
 class create_proj(selectcmd):
-    """create cmany.yml alongside CMakeLists.txt to hold project-settings"""
+    """[EXPERIMENTAL] create cmany.yml alongside CMakeLists.txt to hold project-settings"""
     hidden = True
     def add_args(self, parser):
         super().add_args(parser)
@@ -260,7 +260,7 @@ class create_proj(selectcmd):
 
 
 class export_compile_commands(selectcmd):
-    """create a compile_commands.json in each build dir, for cases (such as VS)
+    """[EXPERIMENTAL] create a compile_commands.json in each build dir, for cases (such as VS)
     _even if_ the build's generator is unable to export one. This requires
     creating a dummy build dir using the Ninja generator, from where
     compile_commands.json is copied to the build's dir."""
@@ -269,7 +269,7 @@ class export_compile_commands(selectcmd):
 
 
 class export_vs(selectcmd):
-    """create CMakeSettings.json, a VisualStudio 2015+ compatible file
+    """[EXPERIMENTAL] create CMakeSettings.json, a VisualStudio 2015+ compatible file
     outlining the project builds
     """
     def _exec(self, proj, args):
