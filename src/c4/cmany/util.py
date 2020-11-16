@@ -572,7 +572,7 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
                     else:
                         a = re.sub(r' ', r'\\ ', a)
                 scmd += " " + a
-        logcmd('$' + scmd)
+        logcmd(f'$ cd {os.path.realpath(os.getcwd())} &&{scmd}')
     if as_bytes_string:
         if capture_output:
             result = sprun(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDERR)
@@ -611,7 +611,6 @@ def runcmd_nocheck(cmd, *cmd_args, **run_args):
         logdbg(f"               : split cmd={cmd}")
     elif isinstance(cmd, tuple):
         cmd = list(cmd)
-    logdbg("crl............", cmd[0], cmd)
     cmd += list(cmd_args)
     scmd = shlex.join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
