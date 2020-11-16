@@ -45,6 +45,9 @@ def cmany_main(in_args=None):
     in_args = c4args.merge_envargs(cmds, in_args)
     mymod = sys.modules[__name__]
     parser = c4args.setup(cmds, mymod)
+    # to enable autocomplete:
+    # eval "$(register-python-argcomplete cmany)"
+    # see https://stackoverflow.com/questions/14597466/custom-tab-completion-in-python-argparse
     argcomplete.autocomplete(parser)
     try:
         args = c4args.parse(parser, in_args)
@@ -195,10 +198,18 @@ class run(selectcmd):
     """run a command in each build directory"""
     def add_args(self, parser):
         super().add_args(parser)
-        parser.add_argument('command', default="",
+        parser.add_argument('command', nargs='+',
                             help="""command to be run in each build directory""")
+        parser.add_argument('-np', '--not-posix', action="store_true",
+                            help="""do not use posix mode if splitting the initial string""")
+        parser.add_argument('-nc', '--no-check', action="store_true",
+                            help="""do not use check the error status of the command""")
+        parser.add_argument('-tg', '--target', nargs="+",
+                            help="""build these targets before running the command""")
     def _exec(self, proj, args):
-        proj.run_cmd(args.command)
+        if len(args.target) > 0:
+            proj.build()  # targets are set
+        proj.run_cmd(args.command, posix_mode=not args.not_posix, check=not args.no_check)
 
 
 class show_vars(selectcmd):

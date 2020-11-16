@@ -316,12 +316,10 @@ class Project:
     def reinstall(self, **restrict_to):
         self._execute(Build.reinstall, "Reinstall", silent=False, **restrict_to)
 
-    def run_cmd(self, cmd, **restrict_to):
-        cmds = util.splitesc_quoted(cmd, ' ')
-        def _run_cmd(b):
-            with util.setcwd(b.builddir):
-                util.runsyscmd(cmds)
-        self._execute(_run_cmd, "Run cmd", silent=False, **restrict_to)
+    def run_cmd(self, cmd, **subprocess_args):
+        def run_it(build):
+            build.run_custom_cmd(cmd, **subprocess_args)
+        self._execute(run_it, "Run cmd", silent=False)
 
     def export_vs(self):
         confs = []
@@ -380,13 +378,13 @@ class Project:
                 print("no builds selected")
         if num == 0:
             return
-        def nt(*args, **kwargs):
+        def nt(*args, **kwargs):  # notice
             if silent: return
             util.lognotice(*args, **kwargs)
-        def dn(*args, **kwargs):
+        def dn(*args, **kwargs):  # done
             if silent: return
             util.logdone(*args, **kwargs)
-        def er(*args, **kwargs):
+        def er(*args, **kwargs):  # error
             if silent: return
             util.logerr(*args, **kwargs)
         #
@@ -413,6 +411,7 @@ class Project:
                 # this is where it happens
                 fn(b)  # <-- here
                 word, logger = "finished", dn
+            # exceptions thrown from builds inherit this type
             except err.BuildError as e:
                 word, logger = "failed", er
                 util.logerr(f"{b} failed! {e}")

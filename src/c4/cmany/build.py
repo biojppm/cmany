@@ -2,6 +2,7 @@ import os
 import copy
 import re
 import dill
+import subprocess
 from datetime import datetime
 from collections import OrderedDict as odict
 
@@ -229,6 +230,12 @@ class Build(NamedItem):
                 os.remove(dst)
             copyfile(src, dst)
             util.loginfo("exported compile_commands.json:", dst)
+
+    def run_custom_cmd(self, cmd, **subprocess_args):
+        try:
+            util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
+        except subprocess.CalledProcessError as exc:
+            raise err.RunCmdFailed(self, cmd, exc)
 
     def reconfigure(self):
         """reconfigure a build directory, without touching any cache entry"""

@@ -128,3 +128,8 @@ class CompileFailed(BuildError):
 class InstallFailed(BuildError):
     def __init__(self, build, cmd, e):
         super().__init__("failed install for build", build, cmd, e)
+
+
+class RunCmdFailed(BuildError):
+    def __init__(self, build, cmd, e):
+        super().__init__("failed command for build", build, cmd, e)

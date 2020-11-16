@@ -8,6 +8,7 @@ import platform
 import copy
 import datetime
 from dateutil.relativedelta import relativedelta
+import shlex
 
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
@@ -557,11 +558,10 @@ else:
 
 
 def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_bytes_string=False):
-    """run a system command. Note that stderr is interspersed with stdout"""
-
+    """DEPRECATED: use runcmd() instead.
+    run a system command. Note that stderr is interspersed with stdout"""
     if not isinstance(cmd, list):
         raise Exception("the command must be a list with each argument a different element in the list")
-
     if echo_cmd:
         scmd = cmd
         if not isinstance(cmd, str):
@@ -574,7 +574,6 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
                         a = re.sub(r' ', r'\\ ', a)
                 scmd += " " + a
         logcmd('$' + scmd)
-
     if as_bytes_string:
         if capture_output:
             result = sprun(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDERR)
@@ -599,6 +598,34 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
             else:
                 result = sprun(cmd, universal_newlines=True)
                 result.check_returncode()
+
+
+def runcmd_nocheck(cmd, *cmd_args, **run_args):
+    # TODO: https://stackoverflow.com/questions/17742789/running-multiple-bash-commands-with-subprocess
+    logdbg(f"running command: {cmd} '{cmd_args}'")
+    logdbg(f"               : run_args={run_args}")
+    if run_args.get('posix_mode'):
+        posix_mode = run_args.get('posix_mode')
+        del run_args['posix_mode']
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd, posix_mode=posix_mode)
+        logdbg(f"               : split cmd={cmd}")
+    elif isinstance(cmd, tuple):
+        cmd = list(cmd)
+    logdbg("crl............", cmd[0], cmd)
+    cmd += list(cmd_args)
+    scmd = shlex.join(cmd)
+    cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
+    logcmd(f'$ cd {cwd} && {scmd}')
+    sp = subprocess.run(cmd, **run_args)
+    logdbg("finished running command")
+    return sp
+
+
+def runcmd(cmd, *cmd_args, **run_args):
+    if run_args.get('check') is None:
+        run_args['check'] = True
+    return runcmd_nocheck(cmd, *cmd_args, **run_args)
 
 
 # -----------------------------------------------------------------------------
