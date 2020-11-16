@@ -82,6 +82,11 @@ class Project:
             self.root_dir = ch['CMAKE_HOME_DIRECTORY'].val
             self.cmakelists = os.path.join(self.root_dir, "CMakeLists.txt")
         #
+        self.root_dir = os.path.realpath(self.root_dir)
+        self.build_dir = os.path.realpath(self.build_dir)
+        self.install_dir = os.path.realpath(self.install_dir)
+        self.cmakelists = os.path.realpath(self.cmakelists)
+        #
         dbg("root_dir:", self.root_dir)
         dbg("build_dir:", self.build_dir)
         dbg("install_dir:", self.install_dir)
