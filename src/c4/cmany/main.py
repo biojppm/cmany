@@ -173,24 +173,6 @@ class build(selectcmd):
         proj.build()
 
 
-class install(selectcmd):
-    """install the selected builds, building before if necessary"""
-    def _exec(self, proj, args):
-        proj.install()
-
-
-class build_file(globcmd):
-    """compile the given source files"""
-    def add_args(self, parser):
-        super().add_args(parser)
-        parser.add_argument('target', nargs=1,
-                            help="""the target to which the source files belong""")
-        parser.add_argument('files', default=[], nargs='*',
-                            help="""the files to compile, relative to the CMakeLists.txt root dir""")
-    def _exec(self, proj, args):
-        proj.build_files(args.target, args.files)
-
-
 class rebuild(globcmd):
     """rebuild the selected builds, selecting by name using a python glob pattern"""
     def add_args(self, parser):
@@ -199,6 +181,24 @@ class rebuild(globcmd):
                             help="""specify a subset of targets to build""")
     def _exec(self, proj, args):
         proj.rebuild()
+
+
+class build_file(selectcmd):
+    """[EXPERIMENTAL] compile the given source files"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', type=str,
+                            help="""the target to which the source files belong""")
+        parser.add_argument('files', default=[], nargs='*',
+                            help="""the files to compile, relative to the CMakeLists.txt root dir""")
+    def _exec(self, proj, args):
+        proj.build_files(args.files, args.target)
+
+
+class install(selectcmd):
+    """install the selected builds, building before if necessary"""
+    def _exec(self, proj, args):
+        proj.install()
 
 
 class reinstall(globcmd):

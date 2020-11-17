@@ -297,15 +297,19 @@ class Build(NamedItem):
             # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
 
-    def build_files(self, target, files):
+    def build_files(self, files, target):
         self.create_dir()
         with util.setcwd(self.builddir, silent=False):
             self.handle_deps()
-            try:
-                cmd = self.generator.cmd([t])
-                util.runsyscmd(cmd)
-            except Exception as e:
-                raise err.CompileFailed(self, cmd, e)
+            for f in files:
+                try:
+                    cmd = self.generator.cmd_source_file(f, target)
+                    dbg(f"building file {f}, target {target}. cmd={cmd}")
+                    util.runsyscmd(cmd)
+                    dbg(f"building file {f}, target {target}. success!")
+                except Exception as e:
+                    dbg(f"building file {f}, target {target}. exception: {e}!")
+                    raise err.CompileFailed(self, cmd, e)
 
     def rebuild(self, targets=[]):
         self._check_successful_configure('rebuild')

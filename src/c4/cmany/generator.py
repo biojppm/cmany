@@ -4,6 +4,9 @@ from . import err
 
 from .build_item import BuildItem
 from .err import TooManyTargets
+from .util import logdbg
+
+import os.path
 
 """
 generators: https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
@@ -165,21 +168,25 @@ class Generator(BuildItem):
                 #        '/maxcpucount:' + str(self.num_jobs)]
             return cmd
 
-    def cmd_source_file(self, target, source_file):
-        """get a command to build a source file
-        https://stackoverflow.com/questions/38271387/compile-a-single-file-under-cmake-project
-        """
+    def cmd_source_file(self, source_file, target):
+        """get a command to build a source file"""
+        logdbg("building source file:", source_file, "from target", target)
         relpath = os.path.relpath(source_file, os.path.abspath(self.build.builddir))
+        logdbg("building source file:", source_file, "from target", target)
+        basecmd = ['cmake', '--build', '.', '--target', target, '--verbose']
         if self.is_makefile:
-            return ['make', relpath]
+            # https://stackoverflow.com/questions/38271387/compile-a-single-file-under-cmake-project
+            return basecmd + ['--', relpath]
         elif self.is_ninja:
-            raise err.NotImplemented()
             # https://ninja-build.org/manual.html#_running_ninja
-            return ['ninja', f'{relpath}^']
+            #return ['ninja', f'{relpath}^']
+            return basecmd + ['--', f'{relpath}^']
         else:
-            bt = str(self.build.build_type)
-            cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
-            return cmd
+            if not self.is_msvc:
+                raise err.NotImplemented("don't know how to build source files in this generator")
+            # https://stackoverflow.com/questions/4172438/using-msbuild-to-compile-a-single-cpp-file
+            return basecmd + ['--config', str(self.build.build_type), '--',
+                              '-t:ClCompile', f'-p:SelectedFiles={relpath}']
 
     def install(self):
         bt = str(self.build.build_type)
