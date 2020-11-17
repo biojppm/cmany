@@ -3,3 +3,5 @@ colorama
 argcomplete
 dill
 python-dateutil
+cmake
+ninja
