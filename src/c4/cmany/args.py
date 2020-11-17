@@ -180,7 +180,7 @@ def add_glob(parser):
     #
     add_basic(parser)
     #
-    parser.add_argument("glob", nargs="*", default="*",
+    parser.add_argument("--glob", nargs="*", default="*",
                         help="""glob pattern(s) matching build names (NOTE:
                         not paths to the build dirs)""")
 
