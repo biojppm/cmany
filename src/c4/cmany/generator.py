@@ -126,11 +126,43 @@ class Generator(BuildItem):
         elif self.is_ninja:
             return ['ninja', '-j', str(self.num_jobs)] + targets
         else:
-            bt = str(self.build.build_type)
             if len(targets) > 1:
                 raise TooManyTargets(self)
-            cmd = ['cmake', '--build', '.', '--config', bt, '--target', targets[0],
-                   '--parallel', str(self.num_jobs)]
+            target = targets[0]
+            bt = str(self.build.build_type)
+            # NOTE:
+            # the `--parallel` flag to `cmake --build` is broken in VS and XCode:
+            # https://discourse.cmake.org/t/parallel-does-not-really-enable-parallel-compiles-with-msbuild/964/10
+            # https://gitlab.kitware.com/cmake/cmake/-/issues/20564
+            if not self.is_msvc:
+                cmd = ['cmake', '--build', '.', '--target', target, '--config', bt,
+                       '--parallel', str(self.num_jobs)]
+                # TODO XCode is also broken; the flag is this:
+                # -IDEBuildOperationMaxNumberOfConcurrentCompileTasks=$NUM_JOBS_BUILD
+                # see:
+                # https://stackoverflow.com/questions/5417835/how-to-modify-the-number-of-parallel-compilation-with-xcode
+                # https://gist.github.com/nlutsenko/ee245fbd239087d22137
+            else:
+                cmd = ['cmake', '--build', '.', '--target', target, '--config', bt,
+                       '--', '/maxcpucount:' + str(self.num_jobs)]
+                # old code for building through msbuild:
+                # # if a target has a . in the name, it must be substituted for _
+                # targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
+                # if len(targets_safe) != 1:
+                #     raise TooManyTargets("msbuild can only build one target at a time: was " + str(targets_safe))
+                # t = targets_safe[0]
+                # pat = os.path.join(self.build.builddir, t + '*.vcxproj')
+                # projs = glob.glob(pat)
+                # if len(projs) == 0:
+                #     msg = "could not find vcx project for this target: {} (glob={}, got={})".format(t, pat, projs)
+                #     raise Exception(msg)
+                # elif len(projs) > 1:
+                #     msg = "multiple vcx projects for this target: {} (glob={}, got={})".format(t, pat, projs)
+                #     raise Exception(msg)
+                # proj = projs[0]
+                # cmd = [self.build.compiler.vs.msbuild, proj,
+                #        '/property:Configuration='+bt,
+                #        '/maxcpucount:' + str(self.num_jobs)]
             return cmd
 
     def cmd_source_file(self, target, source_file):
@@ -152,9 +184,3 @@ class Generator(BuildItem):
     def install(self):
         bt = str(self.build.build_type)
         return ['cmake', '--build', '.', '--config', bt, '--target', 'install']
-
-    def clean_msbuild_target_name(self, target_name):
-        # if a target has a . in the name, it must be substituted for _
-        target_safe = re.sub(r'\.', r'_', target_name)
-
-
