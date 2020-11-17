@@ -5,6 +5,53 @@ from . import err
 from .build_item import BuildItem
 from .err import TooManyTargets
 
+"""
+generators: https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
+
+Unix Makefiles
+MSYS Makefiles
+MinGW Makefiles
+NMake Makefiles
+Ninja
+Watcom WMake
+CodeBlocks - Ninja
+CodeBlocks - Unix Makefiles
+CodeBlocks - MinGW Makefiles
+CodeBlocks - NMake Makefiles
+CodeLite - Ninja
+CodeLite - Unix Makefiles
+CodeLite - MinGW Makefiles
+CodeLite - NMake Makefiles
+Eclipse CDT4 - Ninja
+Eclipse CDT4 - Unix Makefiles
+Eclipse CDT4 - MinGW Makefiles
+Eclipse CDT4 - NMake Makefiles
+KDevelop3
+KDevelop3 - Unix Makefiles
+Kate - Ninja
+Kate - Unix Makefiles
+Kate - MinGW Makefiles
+Kate - NMake Makefiles
+Sublime Text 2 - Ninja
+Sublime Text 2 - Unix Makefiles
+Sublime Text 2 - MinGW Makefiles
+Sublime Text 2 - NMake Makefiles
+
+Visual Studio 6
+Visual Studio 7
+Visual Studio 7 .NET 2003
+Visual Studio 8 2005 [Win64|IA64]
+Visual Studio 9 2008 [Win64|IA64]
+Visual Studio 10 2010 [Win64|IA64]
+Visual Studio 11 2012 [Win64|ARM]
+Visual Studio 12 2013 [Win64|ARM]
+Visual Studio 14 2015 [Win64|ARM]
+Visual Studio 15 2017 [Win64|ARM]
+Visual Studio 16 2019 -A [Win32|x64|ARM|ARM64]
+
+Green Hills MULTI
+Xcode
+"""
 
 # -----------------------------------------------------------------------------
 class Generator(BuildItem):
@@ -104,53 +151,10 @@ class Generator(BuildItem):
 
     def install(self):
         bt = str(self.build.build_type)
-        return ['cmake', '--build', '.', '--config', bt, '--target', 'install',
-                '--parallel', str(self.num_jobs)]
+        return ['cmake', '--build', '.', '--config', bt, '--target', 'install']
 
-    """
-    generators: https://cmake.org/cmake/help/v3.7/manual/cmake-generators.7.html
+    def clean_msbuild_target_name(self, target_name):
+        # if a target has a . in the name, it must be substituted for _
+        target_safe = re.sub(r'\.', r'_', target_name)
 
-    Unix Makefiles
-    MSYS Makefiles
-    MinGW Makefiles
-    NMake Makefiles
-    Ninja
-    Watcom WMake
-    CodeBlocks - Ninja
-    CodeBlocks - Unix Makefiles
-    CodeBlocks - MinGW Makefiles
-    CodeBlocks - NMake Makefiles
-    CodeLite - Ninja
-    CodeLite - Unix Makefiles
-    CodeLite - MinGW Makefiles
-    CodeLite - NMake Makefiles
-    Eclipse CDT4 - Ninja
-    Eclipse CDT4 - Unix Makefiles
-    Eclipse CDT4 - MinGW Makefiles
-    Eclipse CDT4 - NMake Makefiles
-    KDevelop3
-    KDevelop3 - Unix Makefiles
-    Kate - Ninja
-    Kate - Unix Makefiles
-    Kate - MinGW Makefiles
-    Kate - NMake Makefiles
-    Sublime Text 2 - Ninja
-    Sublime Text 2 - Unix Makefiles
-    Sublime Text 2 - MinGW Makefiles
-    Sublime Text 2 - NMake Makefiles
 
-    Visual Studio 6
-    Visual Studio 7
-    Visual Studio 7 .NET 2003
-    Visual Studio 8 2005 [Win64|IA64]
-    Visual Studio 9 2008 [Win64|IA64]
-    Visual Studio 10 2010 [Win64|IA64]
-    Visual Studio 11 2012 [Win64|ARM]
-    Visual Studio 12 2013 [Win64|ARM]
-    Visual Studio 14 2015 [Win64|ARM]
-    Visual Studio 15 2017 [Win64|ARM]
-    Visual Studio 16 2019 -A [Win32|x64|ARM|ARM64]
-
-    Green Hills MULTI
-    Xcode
-    """
