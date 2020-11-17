@@ -113,10 +113,11 @@ class Project:
             self.install_dir = None
             self.root_dir = pdir
         #
-        self.root_dir = os.path.realpath(self.root_dir)
-        self.build_dir = os.path.realpath(self.build_dir)
-        self.install_dir = os.path.realpath(self.install_dir)
-        self.cmakelists = os.path.realpath(self.cmakelists)
+        _saferealpath = lambda p: p if p is None else os.path.realpath(p)
+        self.root_dir = _saferealpath(self.root_dir)
+        self.build_dir = _saferealpath(self.build_dir)
+        self.install_dir = _saferealpath(self.install_dir)
+        self.cmakelists = _saferealpath(self.cmakelists)
         #
         dbg("root_dir:", self.root_dir)
         dbg("build_dir:", self.build_dir)
