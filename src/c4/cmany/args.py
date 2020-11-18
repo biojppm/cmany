@@ -207,31 +207,31 @@ def add_proj(parser):
     #
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",
-                   help="""Specify a file containing configurations. Relative
+                   help="""[EXPERIMENTAL] Specify a file containing configurations. Relative
                    paths are taken from the project's CMakeLists.txt directory.
                    Run `cmany help flags` to get help about flag aliases.
                    Multiple invokations are possible, in which case flags
                    given in latter files will prevail over those of earlier
                    files.""")
     g.add_argument("--no-default-config", default=False, action="store_true",
-                   help="""Do not read the default config file. Run
+                   help="""[EXPERIMENTAL] Do not read the default config file. Run
                    `cmany help flags` to get help about this.""")
     #
     d = parser.add_argument_group('Dependencies')
     d.add_argument('--deps', default='', type=str,
                    metavar='path/to/extern/CMakeLists.txt',
-                   help="""Before configuring, process (ie, configure, build
+                   help="""[EXPERIMENTAL] Before configuring, process (ie, configure, build
                    and install) the given CMakeLists.txt project containing
                    needed external project dependencies. This will be done
                    separately for each build, using the same parameters. The
                    main project will be configured such that the built
                    dependencies are found by cmake.""")
     d.add_argument('--deps-prefix', default="", type=str,
-                   metavar='path/to/install/directory',
+                   metavar='[EXPERIMENTAL] path/to/install/directory',
                    help="""When using --deps set the install directory for
                    external dependencies to the given dir.""")
     d.add_argument('--with-conan', action='store_true', default=False,
-                   help="""(WIP)""")
+                   help=argparse.SUPPRESS)
 
 
 # -----------------------------------------------------------------------------
