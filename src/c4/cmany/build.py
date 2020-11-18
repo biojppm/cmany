@@ -105,18 +105,19 @@ class Build(NamedItem):
         #    toolchain_cache = cmake.get_toolchain_cache(self.toolchain_file)
         #    print(toolchain_cache)
         #    self.adjust(compiler=toolchain_cache['CMAKE_CXX_COMPILER'])
+        verbose = self.kwargs['verbose']
         if self.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(self.compiler.name)
-            g = Generator(vsi.gen, self, num_jobs)
+            g = Generator(vsi.gen, self, num_jobs, verbose)
             arch = Architecture(vsi.architecture)
             self.adjust(architecture=arch)
             self.vsinfo = vsi
             return g
         else:
             if self.system.name == "windows":
-                return Generator(fallback_generator, self, num_jobs)
+                return Generator(fallback_generator, self, num_jobs, verbose)
             else:
-                return Generator(Generator.default_str(), self, num_jobs)
+                return Generator(Generator.default_str(), self, num_jobs, verbose)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():

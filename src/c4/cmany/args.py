@@ -32,6 +32,7 @@ def setup(subcommands, module):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=help.epilog,
     )
+    add_verbose(p)
     # gather the list of visible subcommands
     # https://stackoverflow.com/questions/21692395/hiding-selected-subcommands-using-argparse
     visible_metavar = ",".join(["{},{}".format(cmd, ",".join(aliases))
@@ -154,6 +155,13 @@ def _handle_hidden_args__skip_rest(args):
 
 
 # -----------------------------------------------------------------------------
+def add_verbose(parser):
+    parser.add_argument("-vb", "--verbose", default=False, action="store_true",
+                        help="""use verbose commands in the build tools. does not apply to configure step;
+                        build_file is always verbose""")
+
+
+# -----------------------------------------------------------------------------
 def add_basic(parser):
     parser.add_argument("-P", "--proj-dir", default=None,
                         help="""the directory where the project's
@@ -173,6 +181,7 @@ def add_basic(parser):
                         (defaults to %(default)s on this machine).""")
     parser.add_argument("--continue", default=False, action="store_true",
                         help="attempt to continue when a build fails")
+    add_verbose(parser)
 
 
 # -----------------------------------------------------------------------------

@@ -184,7 +184,7 @@ class rebuild(globcmd):
 
 
 class build_file(selectcmd):
-    """[EXPERIMENTAL] compile the given source files"""
+    """[EXPERIMENTAL] compile the given source files."""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('target', type=str,
