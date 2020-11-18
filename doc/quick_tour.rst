@@ -152,7 +152,7 @@ the install trees are nested under the ``install`` directory. However, you
 don't have to use these defaults. The following command will use ``foo`` for
 building and ``bar`` for installing::
 
-    $ cmany i -c clang++,g++ --build-dir foo --install-dir bar
+    $ cmany i -c clang++,g++ --build-root foo --install-root bar
 
     $ ls -1 foo/ bar/
     bar/linux-x86_64-clang++3.9-Release/

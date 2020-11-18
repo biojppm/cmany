@@ -164,7 +164,7 @@ def run_projs(testobj, args, check_fn=None):
     id = '.test/0--default--install'
     for p in projs:
         with testobj.subTest(msg="default parameters", proj=p.proj):
-            p.run(args + ['--build-dir', bd, '--install-dir', id])
+            p.run(args + ['--build-root', bd, '--install-root', id])
             if check_fn:
                 tb = TestBuild(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
@@ -194,8 +194,8 @@ def run_projs(testobj, args, check_fn=None):
     id = '.test/2.1--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
     for p in projs:
         with testobj.subTest(msg="run all combinations at once", proj=p.proj):
-            p.run(args + ['--build-dir', bd,
-                          '--install-dir', id,
+            p.run(args + ['--build-root', bd,
+                          '--install-root', id,
                           '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
                           '-t', ','.join([str(b) for b in build_types]),
                           '-v', ','.join([v.full_specs for v in variant_set])
@@ -220,8 +220,8 @@ def run_projs(testobj, args, check_fn=None):
                 ','.join([v.full_specs for v in variant_set])
             )
             #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
-            p.run(args + ['--build-dir', bd,
-                          '--install-dir', id,
+            p.run(args + ['--build-root', bd,
+                          '--install-root', id,
             ])
             os.environ['CMANY_ARGS'] = ''
             if check_fn:
@@ -242,8 +242,8 @@ def run_projs(testobj, args, check_fn=None):
                                          proj=p.proj, compiler=c, build_type=t, variant=v):
                         bd = '.test/3.1--{}--{}--{}--build'.format(c, t, v.name)
                         id = '.test/3.1--{}--{}--{}--install'.format(c, t, v.name)
-                        p.run(args + ['--build-dir', bd,
-                                      '--install-dir', id,
+                        p.run(args + ['--build-root', bd,
+                                      '--install-root', id,
                                       '-c', c.name if c.is_msvc else c.path,
                                       '-t', str(t),
                                       '-v', v.full_specs,
@@ -268,7 +268,7 @@ def run_projs(testobj, args, check_fn=None):
                             str(t),
                             v.full_specs)
                         #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
-                        p.run(args + ['--build-dir', bd, '--install-dir', id])
+                        p.run(args + ['--build-root', bd, '--install-root', id])
                         os.environ['CMANY_ARGS'] = ''
                         if check_fn:
                             tb = TestBuild(proj=p, buildroot=bd, installroot=id,

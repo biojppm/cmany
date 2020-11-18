@@ -37,7 +37,7 @@ def run_with_args(testdir, args_in):
             shutil.rmtree(idir)
         #
         args = ['--show-args', 'build']
-        args += ['--build-dir', bdir, '--install-dir', idir]
+        args += ['--build-root', bdir, '--install-root', idir]
         args += args_in
         cmany_main(args)
         #
