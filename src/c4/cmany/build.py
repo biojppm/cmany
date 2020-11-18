@@ -220,7 +220,9 @@ class Build(NamedItem):
                 if not self.compiler.is_msvc:
                     util.runsyscmd(cmd)
                 else:
-                    self.vsinfo.runsyscmd(cmd)
+                    dev_cmd = " ".join(self.vs_dev_cmd("ALL_BUILD"))
+                    cmd = " ".join(cmd)
+                    util.runsyscmd(f"{dev_cmd} {cmd}")
             except Exception as e:
                 raise err.ConfigureFailed(self, cmd, e)
         src = os.path.join(trickdir, "compile_commands.json")
@@ -233,10 +235,27 @@ class Build(NamedItem):
             util.loginfo("exported compile_commands.json:", dst)
 
     def run_custom_cmd(self, cmd, **subprocess_args):
+        if self.needs_configure():
+            self.configure()
         try:
             util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
         except subprocess.CalledProcessError as exc:
             raise err.RunCmdFailed(self, cmd, exc)
+
+    @property
+    def cxx_compiler(self):
+        return util.cacheattr(self, "_cxx_compiler", lambda: cmake.get_cxx_compiler(self.builddir))
+
+    def vs_dev_cmd(self, target):
+        cl_exe = self.cxx_compiler
+        dbg("cl.exe:", cl_exe)
+        cl_exe_version = re.sub(".*/MSVC/(.*?)/.*", r"\1", cl_exe)
+        dbg("cl.exe version:", cl_exe_version)
+        return vsinfo.dev_env(
+            vcvarsall=f'"{self.vsinfo.vcvarsall}"',
+            arch=str(self.architecture.vs_dev_env_name),
+            winsdk=str(self.generator.vs_get_vcxproj(target).winsdk),
+            vc_version=cl_exe_version)
 
     def reconfigure(self):
         """reconfigure a build directory, without touching any cache entry"""
@@ -299,14 +318,17 @@ class Build(NamedItem):
             self.mark_build_done(cmd)
 
     def build_files(self, files, target):
-        self.create_dir()
+        if self.needs_configure():
+            self.configure()
+            self.build([target])
+            return
         with util.setcwd(self.builddir, silent=False):
             self.handle_deps()
             for f in files:
                 try:
                     cmd = self.generator.cmd_source_file(f, target)
                     dbg(f"building file {f}, target {target}. cmd={cmd}")
-                    util.runsyscmd(cmd)
+                    util.runsyscmd_str(cmd, cwd=self.builddir)
                     dbg(f"building file {f}, target {target}. success!")
                 except Exception as e:
                     dbg(f"building file {f}, target {target}. exception: {e}!")

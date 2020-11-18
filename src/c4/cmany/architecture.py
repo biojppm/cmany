@@ -26,10 +26,8 @@ class Architecture(BuildItem):
 
     @property
     def is64(self):
-        def fn():
-            s = re.search('64', self.name)
-            return s is not None
-        return util.cacheattr(self, "_is64", fn)
+        return util.cacheattr(self, "_is64",
+                              lambda: re.search('64', self.name) is not None)
 
     @property
     def is32(self):
@@ -38,3 +36,13 @@ class Architecture(BuildItem):
     @property
     def is_arm(self):
         return "arm" in self.name.lower()
+
+    @property
+    def vs_dev_env_name(self):
+        # [arch]: x86 | amd64 | x86_amd64 | x86_arm | x86_arm64 | amd64_x86 | amd64_arm | amd64_arm64
+        if self.is_arm:
+            raise Exception("not implemented")
+        if self.is64:
+            return "x64"
+        else:
+            return "x86"

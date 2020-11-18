@@ -1,10 +1,11 @@
 import re
 import os
 
+from glob import glob
 from collections import OrderedDict as odict
 
 from .conf import USER_DIR
-from .util import cacheattr, setcwd, runsyscmd, logdbg
+from .util import cacheattr, setcwd, runsyscmd, logdbg, chkf
 from . import util
 from . import err
 
@@ -76,6 +77,24 @@ def loadvars(builddir):
                 # logdbg("loadvars1", name, vartype, value)
                 v[name] = CMakeCacheVar(name, value, vartype)
     return v
+
+
+def get_cxx_compiler(builddir):
+    cmkf = chkf(builddir, "CMakeFiles")
+    expr = f"{cmkf}/*/CMakeCXXCompiler.cmake"
+    files = glob(expr)
+    if len(files) != 1:
+        raise Exception(f"could not find compiler settings: {expr}")
+    cxxfile = files[0]
+    logdbg("")
+    with open(cxxfile) as f:
+        lines = f.readlines()
+        lookup = "set(CMAKE_CXX_COMPILER "
+        for line in [l.strip() for l in lines]:
+            if not line.startswith(lookup):
+                continue
+            return line[(len(lookup)+1):-2]
+    raise Exception("could not find compiler spec")
 
 
 # -----------------------------------------------------------------------------

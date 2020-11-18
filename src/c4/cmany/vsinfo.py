@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
 import os
 import re
 import glob
 import json
 import sys
+from lxml import etree
 
 from collections import OrderedDict as odict
 
@@ -39,27 +39,143 @@ class VisualStudioInfo:
             self.is_clang = re.search(r'clang', self.toolset) is not None
         else:
             self.is_clang = False
-    def runsyscmd(self, cmd, **kwargs):
-        """
-        vcvarsall.bat usage:
-        Syntax:
-            vcvarsall.bat [arch] [platform_type] [winsdk_version] [-vcvars_ver=vc_version] [-vcvars_spectre_libs=spectre_mode]
-        where :
-            [arch]: x86 | amd64 | x86_amd64 | x86_arm | x86_arm64 | amd64_x86 | amd64_arm | amd64_arm64
-            [platform_type]: {empty} | store | uwp
-            [winsdk_version] : full Windows 10 SDK number (e.g. 10.0.10240.0) or "8.1" to use the Windows 8.1 SDK.
-            [vc_version] : {none} for default VS 2017 VC++ compiler toolset |
-                           "14.0" for VC++ 2015 Compiler Toolset |
-                           "14.1x" for the latest 14.1x.yyyyy toolset installed (e.g. "14.11") |
-                           "14.1x.yyyyy" for a specific full version number (e.g. 14.11.25503)
-            [spectre_mode] : {none} for default VS 2017 libraries without spectre mitigations |
-                             "spectre" for VS 2017 libraries with spectre mitigations
-        """
-        a = str(self.architecture)
-        if "64" in a:
-            a = "x64"
-        cmd = ["cmd", "/C", "call", self.vcvarsall, a, "8.1", "&"] + cmd
-        runsyscmd(cmd, **kwargs)
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+def dev_env(vcvarsall, arch, winsdk, vc_version):
+    """
+    vcvarsall.bat usage:
+    Syntax:
+        vcvarsall.bat [arch] [platform_type] [winsdk_version] [-vcvars_ver=vc_version] [-vcvars_spectre_libs=spectre_mode]
+    where :
+        [arch]: x86 | amd64 | x86_amd64 | x86_arm | x86_arm64 | amd64_x86 | amd64_arm | amd64_arm64
+        [platform_type]: {empty} | store | uwp
+        [winsdk_version] : full Windows 10 SDK number (e.g. 10.0.10240.0) or "8.1" to use the Windows 8.1 SDK.
+        [vc_version] : {none} for latest installed VC++ compiler toolset |
+                       "14.0" for VC++ 2015 Compiler Toolset |
+                       "14.xx" for the latest 14.xx.yyyyy toolset installed (e.g. "14.11") |
+                       "14.xx.yyyyy" for a specific full version number (e.g. "14.11.25503")
+        [spectre_mode] : {none} for libraries without spectre mitigations |
+                         "spectre" for libraries with spectre mitigations
+    The store parameter sets environment variables to support Universal Windows Platform application
+    development and is an alias for 'uwp'.
+    For example:
+        vcvarsall.bat x86_amd64
+        vcvarsall.bat x86_amd64 10.0.10240.0
+        vcvarsall.bat x86_arm uwp 10.0.10240.0
+        vcvarsall.bat x86_arm onecore 10.0.10240.0 -vcvars_ver=14.0
+        vcvarsall.bat x64 8.1
+        vcvarsall.bat x64 store 8.1
+    """
+    return ["cmd", "/C", "call", vcvarsall, arch, winsdk, f"-vcvars_ver={vc_version}", "&"]
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+class VcxProj:
+
+    def __init__(self, vcxproj):
+        self._vcxproj = vcxproj
+        with open(self._vcxproj, "rb") as f:  # the rb is needed on windows
+            logdbg("parsing", self._vcxproj)
+            self._tree = etree.parse(f)
+        xp = lambda *args: xp__(self._tree, *args)
+        # https://stackoverflow.com/questions/14248063/xpath-to-select-element-by-attribute-value
+        self.winsdk = xp("PropertyGroup[@Label='Globals']", "WindowsTargetPlatformVersion")[0].text
+        self.platform = xp("PropertyGroup[@Label='Globals']", "Platform")[0].text
+        #
+        self._variants = {}
+        for node in xp("ItemGroup[@Label='ProjectConfigurations']")[0]:
+            bv = VcxProj.BuildVariant(self._tree, node)
+            self._variants[bv.name.lower()] = bv
+
+    def get_variant(self, build_type, platform):
+        if str(platform) == "x86_64":
+            platform = "x64"
+        else:
+            raise Exception("crl" + platform)
+        logdbg(self._variants.keys())
+        name = f"{build_type}|{platform}".lower()
+        return self._variants[name]
+
+    class BuildVariant:
+        def __init__(self, tree, node):
+            def xp(*args): return xp__(tree, *args)
+            self.name = node.get("Include")
+            self.configuration = child__(node, 'Configuration').text
+            self.platform = child__(node, 'Platform').text
+            #
+            condition = f"contains(@Condition, '{self.name}')"
+            pgnode = xp(f"PropertyGroup[{condition} and @Label='Configuration']")[0]
+            assert self.name in pgnode.attrib["Condition"]
+            self.configuration_type = child__(pgnode, "ConfigurationType").text
+            self.character_set = child__(pgnode, "CharacterSet").text
+            self.platform_toolset = child__(pgnode, "PlatformToolset").text
+            #
+            self.intdir = xp("PropertyGroup", f"IntDir[{condition}]")[0].text
+            self.outdir = xp("PropertyGroup", f"OutDir[{condition}]")[0].text
+            self.target_name = xp("PropertyGroup", f"TargetName[{condition}]")[0].text
+            self.target_ext = xp("PropertyGroup", f"TargetExt[{condition}]")[0].text
+
+
+wtfns__ = 'http://schemas.microsoft.com/developer/msbuild/2003'
+
+def child__(node, childname):
+    # WTF??
+    # is there not a node[childname] equivalent?
+    for child in node:
+        cleantag = child.tag.replace(f"{{{wtfns__}}}", "")
+        logdbg("asdaldskjlaskdj", childname, child.tag, cleantag, cleantag == childname)
+        if cleantag == childname:
+            return child
+    return None
+
+
+def xp__(tree, *args):  # having to do this sucks.
+    # https://stackoverflow.com/questions/37327774/parsing-vcxproj-with-python-and-lxml
+    p = f"/wtf:Project" + ("/wtf:" if len(args) > 0 else "") + "/wtf:".join(args)
+    logdbg("search:", p)
+    return tree.xpath(p, namespaces={'wtf': wtfns__})
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+class ClCommandTlog:
+
+    def __init__(self, filename):
+        def pairwise(iterable):
+            "s -> (s0, s1), (s2, s3), (s4, s5), ..."
+            a = iter(iterable)
+            return zip(a, a)
+        filename = os.path.abspath(filename)
+        logdbg("tlog: opening file:", filename)
+        with open(filename, encoding="utf_16_le") as f:  # the encoding is needed
+            # example
+            # ^D:\PROJ\C4CORE\SRC\C4\BASE64.CPP
+            # /c /ID:\PROJ\C4CORE\SRC /Zi /nologo /W4 /WX /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D C4_SUBSTR_NO_OSTREAM_LSHIFT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++17 /Fo"C4CORE.DIR\DEBUG\\" /Fd"C4CORE.DIR\DEBUG\C4CORE.PDB" /Gd /TP /we4289  /w14242 /w14254 /w14263 /w14265 /w14287 /w14296 /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928 D:\PROJ\C4CORE\SRC\C4\BASE64.CPP
+            # ^D:\PROJ\C4CORE\SRC\C4\CHAR_TRAITS.CPP
+            # /c /ID:\PROJ\C4CORE\SRC /Zi /nologo /W4 /WX /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D C4_SUBSTR_NO_OSTREAM_LSHIFT /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /std:c++17 /Fo"C4CORE.DIR\DEBUG\\" /Fd"C4CORE.DIR\DEBUG\C4CORE.PDB" /Gd /TP /we4289  /w14242 /w14254 /w14263 /w14265 /w14287 /w14296 /w14311 /w14545 /w14546 /w14547 /w14549 /w14555 /w14619 /w14640 /w14826 /w14905 /w14906 /w14928 D:\PROJ\C4CORE\SRC\C4\CHAR_TRAITS.CPP
+            lines = [line.strip() for line in f.readlines()]
+            self._cmds = {}
+            for key, v in pairwise(lines):
+                k = re.sub(r".*?\^(.*)", r"\1", key)
+                k = self.safe_key(k)
+                self._cmds[k] = v
+                logdbg(f"tlog: '{key}' ->  '{k}'")
+            assert len(lines) % 2 == 0, f"len={len(lines)}" + str(lines)
+
+    def safe_key(self, filename):
+        return os.path.abspath(filename).upper().replace("\\", "/")
+
+    def get_cmd_line(self, filename):
+        return self._cmds[self.safe_key(filename)]
 
 
 # -----------------------------------------------------------------------------
@@ -386,7 +502,7 @@ def msbuild(name_or_gen_or_ver):
                 pass
         # default to some probable value if no registry key was found
         if msbuild is None:
-            val = 'C:\\Windows\Microsoft.NET\Framework{}\\v{}\\MSBuild.exe'
+            val = 'C:\\Windows\\Microsoft.NET\\Framework{}\\v{}\\MSBuild.exe'
             for v in msbvers:
                 msbuild = val.format('64' if util.in_64bit() else '', v)#'3.5')
                 if os.path.exists(msbuild):

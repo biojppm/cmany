@@ -599,6 +599,17 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
                 result.check_returncode()
 
 
+# batch commands using vcvarsall have to be passed as a full string
+def runsyscmd_str(cmd_str, echo_cmd=True, **run_args):
+    if echo_cmd:
+        cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
+        logcmd(f'$ cd {os.path.realpath(cwd)} && {cmd_str}')
+    sp = subprocess.Popen(cmd_str, **run_args)
+    sp.wait()
+    if sp.returncode != 0:
+        raise Exception("failed")
+
+
 def runcmd_nocheck(cmd, *cmd_args, **run_args):
     # TODO: https://stackoverflow.com/questions/17742789/running-multiple-bash-commands-with-subprocess
     logdbg(f"running command: {cmd} '{cmd_args}'")
