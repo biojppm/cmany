@@ -214,10 +214,10 @@ class run(selectcmd):
         parser.add_argument('command', nargs='+',
                             help="""command to be run in each build directory""")
         parser.add_argument('-np', '--not-posix', action="store_true",
-                            help="""do not use posix mode if splitting the initial string""")
+                            help="""do not use posix mode if splitting the initial command string""")
         parser.add_argument('-nc', '--no-check', action="store_true",
                             help="""do not use check the error status of the command""")
-        parser.add_argument('-tg', '--target', nargs="+",
+        parser.add_argument('-tg', '--target', nargs="+", default=[],
                             help="""build these targets before running the command""")
     def _exec(self, proj, args):
         if len(args.target) > 0:
