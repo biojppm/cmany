@@ -40,6 +40,13 @@ class VisualStudioInfo:
         else:
             self.is_clang = False
 
+    @property
+    def cl_version(self):
+        if self.ver == 15 or self.ver == 16:
+            return re.sub(".*/MSVC/(.*?)/.*", r"\1", self.cxx_compiler)
+        else:
+            return None
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -47,7 +54,7 @@ class VisualStudioInfo:
 
 def dev_env(vcvarsall, arch, winsdk, vc_version):
     """
-    vcvarsall.bat usage:
+    vcvarsall.bat usage:   ##### VS2019, VS2017
     Syntax:
         vcvarsall.bat [arch] [platform_type] [winsdk_version] [-vcvars_ver=vc_version] [-vcvars_spectre_libs=spectre_mode]
     where :
@@ -69,8 +76,31 @@ def dev_env(vcvarsall, arch, winsdk, vc_version):
         vcvarsall.bat x86_arm onecore 10.0.10240.0 -vcvars_ver=14.0
         vcvarsall.bat x64 8.1
         vcvarsall.bat x64 store 8.1
+    ------------------------------------------------------------
+    Syntax                             ## VS2015 and earlier
+        vcvarsall.bat [option]
+      or
+        vcvarsall.bat [option] store
+      or
+        vcvarsall.bat [option] [version number]
+      or
+        vcvarsall.bat [option] store [version number]
+    where [option] is: x86 | amd64 | arm | x86_amd64 | x86_arm | amd64_x86 | amd64_arm
+    where [version number] is either the full Windows 10 SDK version number or "8.1" to use the windows 8.1 SDK
+    The store parameter sets environment variables to support store (rather than desktop) development.
+    For example:
+        vcvarsall.bat x86_amd64
+        vcvarsall.bat x86_arm store
+        vcvarsall.bat x86_amd64 10.0.10240.0
+        vcvarsall.bat x86_arm store 10.0.10240.0
+        vcvarsall.bat x64 8.1
+        vcvarsall.bat x64 store 8.1
     """
-    return ["cmd", "/C", "call", vcvarsall, arch, winsdk, f"-vcvars_ver={vc_version}", "&"]
+    cmd = ["cmd", "/C", "call", vcvarsall, arch, winsdk]
+    if vc_version is not None:
+        cmd.append(f"-vcvars_ver={vc_version}")
+    cmd.append("&")
+    return cmd
 
 
 # -----------------------------------------------------------------------------

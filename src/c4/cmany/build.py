@@ -244,18 +244,19 @@ class Build(NamedItem):
 
     @property
     def cxx_compiler(self):
-        return util.cacheattr(self, "_cxx_compiler", lambda: cmake.get_cxx_compiler(self.builddir))
+        return util.cacheattr(self, "_cxx_compiler",
+                              lambda: cmake.get_cxx_compiler(self.builddir))
 
     def vs_dev_cmd(self, target):
-        cl_exe = self.cxx_compiler
+        cl_exe = self.vsinfo.cxx_compiler
+        cl_version = self.vsinfo.cl_version
         dbg("cl.exe:", cl_exe)
-        cl_exe_version = re.sub(".*/MSVC/(.*?)/.*", r"\1", cl_exe)
-        dbg("cl.exe version:", cl_exe_version)
+        dbg("cl.exe version:", cl_version)
         return vsinfo.dev_env(
             vcvarsall=f'"{self.vsinfo.vcvarsall}"',
             arch=str(self.architecture.vs_dev_env_name),
             winsdk=str(self.generator.vs_get_vcxproj(target).winsdk),
-            vc_version=cl_exe_version)
+            vc_version=cl_version)
 
     def reconfigure(self):
         """reconfigure a build directory, without touching any cache entry"""
