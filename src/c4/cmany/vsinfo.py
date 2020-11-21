@@ -114,7 +114,7 @@ class VcxProj:
         with open(self._vcxproj, "rb") as f:  # the rb is needed on windows
             logdbg("parsing", self._vcxproj)
             self._tree = etree.parse(f)
-        xp = lambda *args: xp__(self._tree, *args)
+        xp = lambda *args: xpath__(self._tree, *args)
         # https://stackoverflow.com/questions/14248063/xpath-to-select-element-by-attribute-value
         self.winsdk = xp("PropertyGroup[@Label='Globals']", "WindowsTargetPlatformVersion")[0].text
         self.platform = xp("PropertyGroup[@Label='Globals']", "Platform")[0].text
@@ -135,7 +135,7 @@ class VcxProj:
 
     class BuildVariant:
         def __init__(self, tree, node):
-            def xp(*args): return xp__(tree, *args)
+            def xp(*args): return xpath__(tree, *args)
             self.name = node.get("Include")
             self.configuration = child__(node, 'Configuration').text
             self.platform = child__(node, 'Platform').text
@@ -166,7 +166,7 @@ def child__(node, childname):
     return None
 
 
-def xp__(tree, *args):  # having to do this sucks.
+def xpath__(tree, *args):  # having to do this sucks.
     # https://stackoverflow.com/questions/37327774/parsing-vcxproj-with-python-and-lxml
     p = f"/wtf:Project" + ("/wtf:" if len(args) > 0 else "") + "/wtf:".join(args)
     logdbg("search:", p)

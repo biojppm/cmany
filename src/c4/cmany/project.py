@@ -363,6 +363,11 @@ class Project:
             build.run_custom_cmd(cmd, **subprocess_args)
         self._execute(run_it, "Run cmd", silent=False)
 
+    def run_targets(self, targets, target_args, workdir=None):
+        def run_it(build):
+            build.run_targets(targets, target_args, workdir)
+        self._execute(run_it, "Run target", silent=False)
+
     def export_vs(self):
         confs = []
         for b in self.builds:
@@ -408,7 +413,7 @@ class Project:
 
     def show_targets(self):
         for t in self.builds[0].get_targets():
-            print(t)
+            print(t.desc)
 
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)

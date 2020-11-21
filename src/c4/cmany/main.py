@@ -20,7 +20,8 @@ cmds = odict([
     ('rebuild', ['rb']),
     ('install', ['i']),
     ('reinstall', ['ri']),
-    ('run', ['r']),
+    ('run_cmd', ['rcm']),
+    ('run_target', ['rtg']),
     ('show_vars', ['sv']),
     ('show_builds', ['sb']),
     ('show_build_names', ['sn']),
@@ -207,22 +208,44 @@ class reinstall(globcmd):
         proj.reinstall()
 
 
-class run(selectcmd):
+class run_cmd(selectcmd):
     """run a command in each build directory"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('command', nargs='+',
                             help="""command to be run in each build directory""")
-        parser.add_argument('-np', '--not-posix', action="store_true",
+        parser.add_argument('-np', '--no-posix', action="store_true",
                             help="""do not use posix mode if splitting the initial command string""")
         parser.add_argument('-nc', '--no-check', action="store_true",
-                            help="""do not use check the error status of the command""")
+                            help="""do not check the error status of the command""")
         parser.add_argument('-tg', '--target', nargs="+", default=[],
                             help="""build these targets before running the command""")
     def _exec(self, proj, args):
         if len(args.target) > 0:
             proj.build()  # targets are set
         proj.run_cmd(args.command, posix_mode=not args.not_posix, check=not args.no_check)
+
+
+class run_target(selectcmd):
+    """run targets in each build directory"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', default=[], nargs='*',
+                            help="""specify a subset of targets to run""")
+        parser.add_argument('-nb', '--no-build', action="store_true",
+                            help="""do not build the target even if it is out of date""")
+        parser.add_argument('-ta', '--target-args', type=str, default="",
+                            help="""command line arguments to pass to the target invokation""")
+        parser.add_argument('-np', '--no-posix', action="store_true",
+                            help="""do not use posix mode when splitting the target arguments""")
+        parser.add_argument('-wd', '--work-dir', type=str, default=None,
+                            help="""the working directory. Defaults to each target file's directory""")
+    def _exec(self, proj, args):
+        import shlex
+        if not args.no_build:
+            proj.build()
+        target_args = shlex.split(args.target_args, posix=not args.no_posix)
+        proj.run_targets(args.target, target_args, args.work_dir)
 
 
 class show_vars(selectcmd):

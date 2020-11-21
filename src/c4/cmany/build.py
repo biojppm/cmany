@@ -16,6 +16,7 @@ from .compiler import Compiler
 from .architecture import Architecture
 from . import err
 from .util import logdbg as dbg
+from .target import Target
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -240,6 +241,18 @@ class Build(NamedItem):
             self.configure()
         try:
             util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
+        except subprocess.CalledProcessError as exc:
+            raise err.RunCmdFailed(self, cmd, exc)
+
+    def run_targets(self, targets, target_args, workdir=None):
+        if self.needs_configure():
+            self.configure()
+        try:
+            for tgt_name in targets:
+                t = self.get_target(tgt_name)
+                cmd = [t.output_file] + target_args
+                cwd = workdir if workdir is not None else t.subdir_abs
+                util.runcmd(cmd, cwd=cwd)
         except subprocess.CalledProcessError as exc:
             raise err.RunCmdFailed(self, cmd, exc)
 
@@ -578,37 +591,47 @@ class Build(NamedItem):
             # ('variables', []),  # this is not needed since the vars are set in the preload file
         ])
 
+    def get_target(self, tgt_name):
+        tgts = util.cacheattr(self, "_targets", self.get_targets)
+        for t in tgts:
+            if t.name == tgt_name:
+                return t
+        raise Exception(f"target not found: {tgt_name}")
+
     def get_targets(self):
         ret = []
         with util.setcwd(self.builddir):
-            for sd in util.rglob(self.builddir, "CMakeFiles"):
+            for sd in sorted(util.rglob(self.builddir, "CMakeFiles")):
                 util.logdbg(f"found {sd}...")
                 sd = os.path.dirname(sd)
-                rel = os.path.relpath(sd, self.builddir)
-                util.logdbg(f"descending into {sd}...")
-                ret += [f"[{rel}]  {tg}" for tg in self._get_targets(sd)]
+                util.logdbg(f"descending into {sd}/ ...")
+                ret += self._dir_targets(sd)
         return ret
 
-    def _get_targets(self, subdirectory):
+    def _dir_targets(self, subdirectory):
+        rel = os.path.relpath(subdirectory, self.builddir)
         with util.setcwd(subdirectory):
+            targets = []
             if self.generator.is_msvc:
                 # each target in MSVC has a corresponding vcxproj file
-                files = list(glob.glob("*.vcxproj"))
-                files = [os.path.basename(f) for f in files]
-                files = [os.path.splitext(f)[0] for f in files]
-                return files
+                vcxproj = list(glob.glob("*.vcxproj"))
+                for p in vcxproj:
+                    tg = os.path.splitext(os.path.basename(p))[0]
+                    targets.append(Target(tg, self, rel, p))
             elif self.generator.is_makefile:
-                output = util.get_output(["make", "help"])
-                output = output.split("\n")
-                output = output[1:]  # The following are some of the valid targets....
-                output = [o[4:] for o in output]  # take off the initial "... "
-                output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
-                output = sorted(output)
-                result = [o for o in output if o]
-                return result
+                #output = util.get_output(["make", "help"])
+                #output = output.split("\n")
+                #output = output[1:]  # The following are some of the valid targets....
+                #output = [o[4:] for o in output]  # take off the initial "... "
+                #output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
+                with util.setcwd("CMakeFiles"):
+                    output = [o[:-4] for o in list(glob.glob("*.dir"))]
+                mkf = os.path.join(subdirectory, "Makefile")
+                for tg in sorted(output):
+                    targets.append(Target(tg, self, rel, mkf))
             else:
-                util.logerr("sorry, target extraction not implemented for this generator: " +
-                            str(self.generator))
+                raise Exception(f"{self.generator}: sorry, target extraction not implemented for this generator")
+            return targets
 
     def show_properties(self):
         util.logcmd(self.name)
