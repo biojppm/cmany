@@ -5,9 +5,10 @@ import sys
 import subprocess
 import platform
 import copy
+import shlex
 import datetime
 from dateutil.relativedelta import relativedelta
-import shlex
+from pathlib import Path
 
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
@@ -430,6 +431,11 @@ def find_files_with_ext(folder, ext):
                 yield os.path.join(root, file)
 
 
+def rglob(directory, glob_pattern):
+    # Path('src').rglob('*.c'):
+    return Path(directory).rglob(glob_pattern)
+
+
 # -----------------------------------------------------------------------------
 def nested_lookup(dictionary, *entry):
     """get a nested entry from a dictionary"""
@@ -608,6 +614,13 @@ def runsyscmd_str(cmd_str, echo_cmd=True, **run_args):
     sp.wait()
     if sp.returncode != 0:
         raise Exception("failed")
+
+
+def get_output(cmd):
+    # a function to silently run a system command
+    out = runsyscmd(cmd, echo_cmd=False, echo_output=False, capture_output=True)
+    out = out.strip("\n")
+    return out
 
 
 def runcmd_nocheck(cmd, *cmd_args, **run_args):

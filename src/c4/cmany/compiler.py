@@ -113,11 +113,7 @@ class Compiler(BuildItem):
 
     def get_version(self, path):
         # a function to silently run a system command
-        def slntout(cmd):
-            out = util.runsyscmd(cmd, echo_cmd=False,
-                                 echo_output=False, capture_output=True)
-            out = out.strip("\n")
-            return out
+        slntout = util.get_output
         # is this visual studio?
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name

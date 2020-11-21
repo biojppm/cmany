@@ -3,6 +3,7 @@ import copy
 import re
 import dill
 import subprocess
+import glob
 from datetime import datetime
 from collections import OrderedDict as odict
 
@@ -578,28 +579,35 @@ class Build(NamedItem):
         ])
 
     def get_targets(self):
+        ret = []
         with util.setcwd(self.builddir):
+            for sd in util.rglob(self.builddir, "CMakeFiles"):
+                util.logdbg(f"found {sd}...")
+                sd = os.path.dirname(sd)
+                rel = os.path.relpath(sd, self.builddir)
+                util.logdbg(f"descending into {sd}...")
+                ret += [f"[{rel}]  {tg}" for tg in self._get_targets(sd)]
+        return ret
+
+    def _get_targets(self, subdirectory):
+        with util.setcwd(subdirectory):
             if self.generator.is_msvc:
                 # each target in MSVC has a corresponding vcxproj file
-                files = list(util.find_files_with_ext(self.builddir, ".vcxproj"))
+                files = list(glob.glob("*.vcxproj"))
                 files = [os.path.basename(f) for f in files]
                 files = [os.path.splitext(f)[0] for f in files]
                 return files
             elif self.generator.is_makefile:
-                output = util.runsyscmd(["make", "help"], echo_cmd=False,
-                                        echo_output=False, capture_output=True)
+                output = util.get_output(["make", "help"])
                 output = output.split("\n")
                 output = output[1:]  # The following are some of the valid targets....
                 output = [o[4:] for o in output]  # take off the initial "... "
                 output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
                 output = sorted(output)
-                result = []
-                for o in output:
-                    if o:
-                        result.append(o)
+                result = [o for o in output if o]
                 return result
             else:
-                util.logerr("sorry, feature not implemented for this generator: " +
+                util.logerr("sorry, target extraction not implemented for this generator: " +
                             str(self.generator))
 
     def show_properties(self):
