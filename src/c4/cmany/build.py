@@ -256,6 +256,18 @@ class Build(NamedItem):
         except subprocess.CalledProcessError as exc:
             raise err.RunCmdFailed(self, cmd, exc)
 
+    def run_tests(self, test_selection, ctest_args, workdir, check):
+        if self.needs_configure():
+            self.configure()
+        try:
+            for t in test_selection:
+                cwd = workdir if workdir is not None else "."
+                cwd = os.path.abspath(os.path.join(self.builddir, cwd))
+                args = ctest_args + ["-R", t]
+                util.runcmd("ctest", *args, cwd=cwd, check=check)
+        except subprocess.CalledProcessError as exc:
+            raise err.RunCmdFailed(self, cmd, exc)
+
     @property
     def cxx_compiler(self):
         return util.cacheattr(self, "_cxx_compiler",

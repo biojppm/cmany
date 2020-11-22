@@ -22,6 +22,7 @@ cmds = odict([
     ('reinstall', ['ri']),
     ('run_cmd', ['rcm']),
     ('run_target', ['rtg']),
+    ('run_test', ['rte']),
     ('show_vars', ['sv']),
     ('show_builds', ['sb']),
     ('show_build_names', ['sn']),
@@ -235,7 +236,7 @@ class run_target(selectcmd):
         parser.add_argument('-nb', '--no-build', action="store_true",
                             help="""do not build the target even if it is out of date""")
         parser.add_argument('-ta', '--target-args', type=str, default="",
-                            help="""command line arguments to pass to the target invokation""")
+                            help="""arguments to pass to the target invokation""")
         parser.add_argument('-np', '--no-posix', action="store_true",
                             help="""do not use posix mode when splitting the target arguments""")
         parser.add_argument('-wd', '--work-dir', type=str, default=None,
@@ -246,6 +247,31 @@ class run_target(selectcmd):
             proj.build()
         target_args = shlex.split(args.target_args, posix=not args.no_posix)
         proj.run_targets(args.target, target_args, args.work_dir)
+
+
+class run_test(selectcmd):
+    """run tests in each build directory"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('tests', default=[".*"], nargs='*',
+                            help="""command to be run in each build directory""")
+        parser.add_argument('-ca', '--ctest-args', type=str, default=r"\-VV",
+                            help="""arguments to pass to ctest""")
+        parser.add_argument('-np', '--no-posix', action="store_true",
+                            help="""do not use posix mode if splitting the initial command string""")
+        parser.add_argument('-nc', '--no-check', action="store_true",
+                            help="""do not check the error status of the command""")
+        parser.add_argument('-tg', '--target', nargs="+", default=[],
+                            help="""build these targets before running the command""")
+        parser.add_argument('-wd', '--work-dir', type=str, default=".",
+                            help="""the working directory. A relative path starting inside the build
+                            directory. Defaults to ".", the build directory""")
+    def _exec(self, proj, args):
+        import shlex
+        if len(args.target) > 0:
+            proj.build()  # targets are set
+        ctest_args = shlex.split(args.ctest_args, posix=not args.no_posix)
+        proj.run_tests(args.tests, ctest_args, args.work_dir, check=not args.no_check)
 
 
 class show_vars(selectcmd):

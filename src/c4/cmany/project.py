@@ -363,10 +363,15 @@ class Project:
             build.run_custom_cmd(cmd, **subprocess_args)
         self._execute(run_it, "Run cmd", silent=False)
 
-    def run_targets(self, targets, target_args, workdir=None):
+    def run_targets(self, targets, target_args, workdir):
         def run_it(build):
             build.run_targets(targets, target_args, workdir)
-        self._execute(run_it, "Run target", silent=False)
+        self._execute(run_it, "Run targets", silent=False)
+
+    def run_tests(self, tests, ctest_args, workdir, check):
+        def run_it(build):
+            build.run_tests(tests, ctest_args, workdir, check)
+        self._execute(run_it, "Run tests", silent=False)
 
     def export_vs(self):
         confs = []

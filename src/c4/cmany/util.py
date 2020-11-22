@@ -627,15 +627,21 @@ def runcmd_nocheck(cmd, *cmd_args, **run_args):
     # TODO: https://stackoverflow.com/questions/17742789/running-multiple-bash-commands-with-subprocess
     logdbg(f"running command: {cmd} '{cmd_args}'")
     logdbg(f"               : run_args={run_args}")
+    posix_mode = in_unix()
     if run_args.get('posix_mode'):
         posix_mode = run_args.get('posix_mode')
         del run_args['posix_mode']
     if isinstance(cmd, str):
-        cmd = shlex.split(cmd, posix_mode=posix_mode)
+        cmd = shlex.split(cmd, posix=posix_mode)
         logdbg(f"               : split cmd={cmd}")
     elif isinstance(cmd, tuple):
         cmd = list(cmd)
+    elif isinstance(cmd, list):
+        pass
+    else:
+        raise Exception("could not understand command")
     cmd += list(cmd_args)
+    logdbg(f"               : cmd={cmd}")
     scmd = shlex.join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
     logcmd(f'$ cd {cwd} && {scmd}')
