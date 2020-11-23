@@ -87,6 +87,17 @@ class Build(NamedItem):
         if not self.deps_prefix:
             self.deps_prefix = self.builddir
 
+    def reset_kwargs(self, kwargs):
+        "the serialization/deserialization approach creates cache coherency problems"
+        util.logdbg(f"{self}: ressetting kwargs: {kwargs}")
+        self.kwargs = kwargs
+        #
+        # TODO complete this
+
+    @property
+    def verbose(self):
+        return self.kwargs.get('verbose', False)
+
     def _set_name_and_paths(self):
         self.tag = __class__.get_tag(
             self.system, self.architecture,
@@ -107,19 +118,18 @@ class Build(NamedItem):
         #    toolchain_cache = cmake.get_toolchain_cache(self.toolchain_file)
         #    print(toolchain_cache)
         #    self.adjust(compiler=toolchain_cache['CMAKE_CXX_COMPILER'])
-        verbose = self.kwargs['verbose']
         if self.compiler.is_msvc:
             vsi = vsinfo.VisualStudioInfo(self.compiler.name)
-            g = Generator(vsi.gen, self, num_jobs, verbose)
+            g = Generator(vsi.gen, self, num_jobs)
             arch = Architecture(vsi.architecture)
             self.adjust(architecture=arch)
             self.vsinfo = vsi
             return g
         else:
             if self.system.name == "windows":
-                return Generator(fallback_generator, self, num_jobs, verbose)
+                return Generator(fallback_generator, self, num_jobs)
             else:
-                return Generator(Generator.default_str(), self, num_jobs, verbose)
+                return Generator(Generator.default_str(), self, num_jobs)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():

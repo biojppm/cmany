@@ -139,6 +139,7 @@ class Project:
 
     def _init_with_build_dir(self, pdir, **kwargs):
         build = Build.deserialize(pdir)
+        build.reset_kwargs(kwargs)
         self.builds = [build]
 
     def _init_with_glob(self, **kwargs):

@@ -75,7 +75,7 @@ class Generator(BuildItem):
         s = cmake.CMakeSysInfo.generator()
         return s
 
-    def __init__(self, name, build, num_jobs, verbose):
+    def __init__(self, name, build, num_jobs):
         if isinstance(name, list):
             #more_args = name[1:]
             name = name[0]
@@ -88,7 +88,6 @@ class Generator(BuildItem):
         self.is_ninja = name.endswith("Ninja")
         self.is_msvc = name.startswith("Visual Studio")
         self.build = build
-        self.verbose = verbose
         #
         self.sysinfo_name = self.name
         if self.is_msvc:
@@ -99,6 +98,10 @@ class Generator(BuildItem):
         self.exports_compile_commands = (self.is_makefile or self.is_ninja)
         # these vars would not change cmake --system-information
         # self.full_name += " ".join(self.build.flags.cmake_vars)
+
+    @property
+    def verbose(self):
+        return self.build.verbose
 
     def configure_args(self, for_json=False, export_compile_commands=True):
         args = []
