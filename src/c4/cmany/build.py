@@ -95,6 +95,10 @@ class Build(NamedItem):
         # TODO complete this
 
     @property
+    def targets(self):
+        return self.kwargs.get('target')
+
+    @property
     def verbose(self):
         return self.kwargs.get('verbose', False)
 
@@ -246,17 +250,11 @@ class Build(NamedItem):
             copyfile(src, dst)
             util.loginfo("exported compile_commands.json:", dst)
 
-    def run_custom_cmd(self, cmd, **subprocess_args):
-        if self.needs_configure():
-            self.configure()
-        try:
-            util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
-        except subprocess.CalledProcessError as exc:
-            raise err.RunCmdFailed(self, cmd, exc)
-
     def run_targets(self, targets, target_args, workdir=None):
         if self.needs_configure():
             self.configure()
+        if not (self.kwargs.get('no_build') == True):
+            self.build(targets)
         try:
             for tgt_name in targets:
                 t = self.get_target(tgt_name)
@@ -269,12 +267,24 @@ class Build(NamedItem):
     def run_tests(self, test_selection, ctest_args, workdir, check):
         if self.needs_configure():
             self.configure()
+        if self.targets:
+            self.build(self.targets)
         try:
             for t in test_selection:
                 cwd = workdir if workdir is not None else "."
                 cwd = os.path.abspath(os.path.join(self.builddir, cwd))
                 args = ctest_args + ["-R", t]
                 util.runcmd("ctest", *args, cwd=cwd, check=check)
+        except subprocess.CalledProcessError as exc:
+            raise err.RunCmdFailed(self, cmd, exc)
+
+    def run_custom_cmd(self, cmd, **subprocess_args):
+        if self.needs_configure():
+            self.configure()
+        if self.targets:
+            self.build(self.targets)
+        try:
+            util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
         except subprocess.CalledProcessError as exc:
             raise err.RunCmdFailed(self, cmd, exc)
 

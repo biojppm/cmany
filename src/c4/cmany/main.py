@@ -72,7 +72,7 @@ class cmdbase:
         """create a project given the configuration."""
         return None
     def _exec(self, proj, args):
-        assert False, 'never call the base class method. Implement this in derived classes'
+        raise Exception('never call the base class method. Implement this in derived classes.')
 
 
 class help(cmdbase):
@@ -210,7 +210,7 @@ class reinstall(globcmd):
 
 
 class run_cmd(selectcmd):
-    """run a command in each build directory"""
+    """[EXPERIMENTAL] run a command in each build"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('command', nargs='+',
@@ -222,13 +222,11 @@ class run_cmd(selectcmd):
         parser.add_argument('-tg', '--target', nargs="+", default=[],
                             help="""build these targets before running the command""")
     def _exec(self, proj, args):
-        if len(args.target) > 0:
-            proj.build()  # targets are set
-        proj.run_cmd(args.command, posix_mode=not args.not_posix, check=not args.no_check)
+        proj.run_cmd(args.command, posix_mode=not args.no_posix, check=not args.no_check)
 
 
 class run_target(selectcmd):
-    """run targets in each build directory"""
+    """[EXPERIMENTAL] run targets in each build"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('target', default=[], nargs='*',
@@ -236,21 +234,21 @@ class run_target(selectcmd):
         parser.add_argument('-nb', '--no-build', action="store_true",
                             help="""do not build the target even if it is out of date""")
         parser.add_argument('-ta', '--target-args', type=str, default="",
-                            help="""arguments to pass to the target invokation""")
+                            help="""arguments to pass to the target invokation. If multiple
+                            targets are given, arguments are passed to every target. The
+                            arguments need to be given as a single string.""")
         parser.add_argument('-np', '--no-posix', action="store_true",
                             help="""do not use posix mode when splitting the target arguments""")
         parser.add_argument('-wd', '--work-dir', type=str, default=None,
                             help="""the working directory. Defaults to each target file's directory""")
     def _exec(self, proj, args):
         import shlex
-        if not args.no_build:
-            proj.build()
         target_args = shlex.split(args.target_args, posix=not args.no_posix)
         proj.run_targets(args.target, target_args, args.work_dir)
 
 
 class run_test(selectcmd):
-    """run tests in each build directory"""
+    """[EXPERIMENTAL] run tests in each build directory"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('tests', default=[".*"], nargs='*',
@@ -268,8 +266,6 @@ class run_test(selectcmd):
                             directory. Defaults to ".", the build directory""")
     def _exec(self, proj, args):
         import shlex
-        if len(args.target) > 0:
-            proj.build()  # targets are set
         ctest_args = shlex.split(args.ctest_args, posix=not args.no_posix)
         proj.run_tests(args.tests, ctest_args, args.work_dir, check=not args.no_check)
 
