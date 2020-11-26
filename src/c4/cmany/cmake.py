@@ -341,7 +341,7 @@ class CMakeSysInfo:
         logdbg("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
         out = out.strip()
         if not out:
-            from err import InvalidGenerator
+            from .err import InvalidGenerator
             raise InvalidGenerator(gen, "for --system-information. cmd='{}'".format(cmd))
         with open(p, "w") as f:
             f.write(out)
