@@ -623,6 +623,13 @@ def get_output(cmd):
     return out
 
 
+def shlex_join(cmd):
+    if sys.version_info >= (3, 8):
+        return shlex.join(cmd)
+    else:
+        return ' '.join(shlex.quote(x) for x in cmd)
+
+
 def runcmd_nocheck(cmd, *cmd_args, **run_args):
     # TODO: https://stackoverflow.com/questions/17742789/running-multiple-bash-commands-with-subprocess
     logdbg(f"running command: {cmd} '{cmd_args}'")
@@ -642,7 +649,7 @@ def runcmd_nocheck(cmd, *cmd_args, **run_args):
         raise Exception("could not understand command")
     cmd += list(cmd_args)
     logdbg(f"               : cmd={cmd}")
-    scmd = shlex.join(cmd)
+    scmd = shlex_join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
     logcmd(f'$ cd {cwd} && {scmd}')
     sp = subprocess.run(cmd, **run_args)
