@@ -253,7 +253,7 @@ class Build(NamedItem):
     def run_targets(self, targets, target_args, workdir=None):
         if self.needs_configure():
             self.configure()
-        if not (self.kwargs.get('no_build') == True):
+        if not (self.kwargs.get('no_build') is True):
             self.build(targets)
         try:
             for tgt_name in targets:
@@ -276,6 +276,8 @@ class Build(NamedItem):
                 args = ctest_args + ["-R", t]
                 util.runcmd("ctest", *args, cwd=cwd, check=check)
         except subprocess.CalledProcessError as exc:
+            cmd = ["ctest"] + args
+            cmd = util.shlex_join(cmd)
             raise err.RunCmdFailed(self, cmd, exc)
 
     def run_custom_cmd(self, cmd, **subprocess_args):
