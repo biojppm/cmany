@@ -241,10 +241,14 @@ class run_target(selectcmd):
                             help="""do not use posix mode when splitting the target arguments""")
         parser.add_argument('-wd', '--work-dir', type=str, default=None,
                             help="""the working directory. Defaults to each target file's directory""")
+        parser.add_argument('-wp', '--wrap', type=str, default=None,
+                            help="""wrap the target invokation with the given command, eg
+                            valgrind or gdb. A string with spaces can be passed, in which
+                            case it will be split before the command is formed.""")
     def _exec(self, proj, args):
         import shlex
         target_args = shlex.split(args.target_args, posix=not args.no_posix)
-        proj.run_targets(args.target, target_args, args.work_dir)
+        proj.run_targets(args.target, target_args, args.wrap, args.work_dir)
 
 
 class run_test(selectcmd):

@@ -364,9 +364,9 @@ class Project:
             build.run_custom_cmd(cmd, **subprocess_args)
         self._execute(run_it, "Run cmd", silent=False)
 
-    def run_targets(self, targets, target_args, workdir):
+    def run_targets(self, targets, target_args, cmd_wrap, workdir):
         def run_it(build):
-            build.run_targets(targets, target_args, workdir)
+            build.run_targets(targets, target_args, cmd_wrap, workdir)
         self._execute(run_it, "Run targets", silent=False)
 
     def run_tests(self, tests, ctest_args, workdir, check):

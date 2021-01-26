@@ -6,6 +6,7 @@ import subprocess
 import glob
 from datetime import datetime
 from collections import OrderedDict as odict
+import shlex
 
 from .generator import Generator
 from . import util, cmake, vsinfo
@@ -250,15 +251,16 @@ class Build(NamedItem):
             copyfile(src, dst)
             util.loginfo("exported compile_commands.json:", dst)
 
-    def run_targets(self, targets, target_args, workdir=None):
+    def run_targets(self, targets, target_args, cmd_wrap=None, workdir=None):
         if self.needs_configure():
             self.configure()
         if not (self.kwargs.get('no_build') is True):
             self.build(targets)
         try:
+            cmd_wrap = [] if cmd_wrap is None else shlex.split(cmd_wrap)
             for tgt_name in targets:
                 t = self.get_target(tgt_name)
-                cmd = [t.output_file] + target_args
+                cmd = cmd_wrap + [t.output_file] + target_args
                 cwd = workdir if workdir is not None else t.subdir_abs
                 util.runcmd(cmd, cwd=cwd)
         except subprocess.CalledProcessError as exc:
