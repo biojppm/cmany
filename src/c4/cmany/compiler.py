@@ -61,7 +61,7 @@ class Compiler(BuildItem):
             path = os.path.abspath(p)
         name, version, version_full = self.get_version(path)
         self.shortname = name
-        self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'g++', 'clang++', 'icpc')
+        self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'g++', 'clang++', 'icpc', 'icpx')
         self.is_msvc = self.shortname.startswith('vs')
         if not self.is_msvc:
             name += version
@@ -93,6 +93,8 @@ class Compiler(BuildItem):
             cc = cxx_compiler
         elif shortname == "icc" or shortname == "icpc":
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
+        elif shortname == "icpx":
+            cc = re.sub(r'icpx', r'icpx', cxx_compiler)
         elif shortname == "gcc" or shortname == "g++":
             if re.search(r'g\+\+', cxx_compiler):
                 cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
@@ -126,7 +128,7 @@ class Compiler(BuildItem):
         # print("cmp: version:", name, "---", version_full, "---")
         vregex = r'(\d+\.\d+)\.\d+'
         base = os.path.basename(path)
-        # print("cmp base:", base)
+        # print(name, "cmp base:", base, name)
         if base.startswith("c++") or base.startswith("cc"):
             try:  # if this fails, just go on. It's not really needed.
                 with tempfile.NamedTemporaryFile(suffix=".cpp", prefix="cmany.", delete=False) as f:
@@ -165,6 +167,12 @@ class Compiler(BuildItem):
             else:
                 version = re.sub(r'icc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             # print("icc version:", version, "---")
+        elif version_full.startswith("Intel(R) oneAPI"):
+            name = "intel"
+            rx = r'Intel\(R\) oneAPI .*? Compiler ([0-9.]*?) \(([0-9.]*?)\).*'
+            version = re.sub(rx, r'\1', version_full)
+            version_full = re.sub(rx, r'\2', version_full)
+            #print("intel version:", version, "---", version_full)
         else:
             version = slntout([path, '-dumpversion'])
             version = re.sub(vregex, r'\1', version)
