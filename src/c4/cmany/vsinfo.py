@@ -230,6 +230,7 @@ def find_any():
 # -----------------------------------------------------------------------------
 # a reversible dictionary for the VS version numbers
 _versions = {
+    'vs2022':17, 17:'vs2022', 'vs2022_64':17, 'vs2022_32':17, 'vs2022_arm':17 , 'vs2022_arm32':17, 'vs2022_arm64':17, # nopep8
     'vs2019':16, 16:'vs2019', 'vs2019_64':16, 'vs2019_32':16, 'vs2019_arm':16 , 'vs2019_arm32':16, 'vs2019_arm64':16, # nopep8
     'vs2017':15, 15:'vs2017', 'vs2017_64':15, 'vs2017_32':15, 'vs2017_arm':15 ,  # nopep8
     'vs2015':14, 14:'vs2015', 'vs2015_64':14, 'vs2015_32':14, 'vs2015_arm':14 ,  # nopep8
@@ -255,6 +256,12 @@ else:
 
 # a reversible dictionary for the names
 _names = {
+    'vs2022'      : ['Visual Studio 17 2022', '-A', _arc   ], 'Visual Studio 17 2022' + _arc : 'vs2022'      ,  # nopep8
+    'vs2022_32'   : ['Visual Studio 17 2022', '-A', 'Win32'], 'Visual Studio 17 2022'        : 'vs2022_32'   ,  # nopep8
+    'vs2022_64'   : ['Visual Studio 17 2022', '-A', 'x64'  ], 'Visual Studio 17 2022 Win64'  : 'vs2022_64'   ,  # nopep8
+    'vs2022_arm'  : ['Visual Studio 17 2022', '-A', 'ARM'  ], 'Visual Studio 17 2022 ARM'    : 'vs2022_arm'  ,  # nopep8
+    'vs2022_arm32': ['Visual Studio 17 2022', '-A', 'ARM'  ], 'Visual Studio 17 2022 ARM32'  : 'vs2022_arm32',  # nopep8
+    'vs2022_arm64': ['Visual Studio 17 2022', '-A', 'ARM64'], 'Visual Studio 17 2022 ARM64'  : 'vs2022_arm64',  # nopep8
     'vs2019'      : ['Visual Studio 16 2019', '-A', _arc   ], 'Visual Studio 16 2019' + _arc : 'vs2019'      ,  # nopep8
     'vs2019_32'   : ['Visual Studio 16 2019', '-A', 'Win32'], 'Visual Studio 16 2019'        : 'vs2019_32'   ,  # nopep8
     'vs2019_64'   : ['Visual Studio 16 2019', '-A', 'x64'  ], 'Visual Studio 16 2019 Win64'  : 'vs2019_64'   ,  # nopep8
@@ -291,6 +298,22 @@ _names = {
 }
 
 _architectures = {
+    'Visual Studio 17 2022'         : 'x86'    ,
+    'Visual Studio 17 2022 Win32'   : 'x86'    ,
+    'Visual Studio 17 2022 Win64'   : 'x86_64' ,
+    'Visual Studio 17 2022 x86'     : 'x86'    ,
+    'Visual Studio 17 2022 x64'     : 'x86_64' ,
+    'Visual Studio 17 2022 ARM'     : 'arm'    ,
+    'Visual Studio 17 2022 ARM32'   : 'arm32'  ,
+    'Visual Studio 17 2022 ARM64'   : 'arm64'  ,
+    'Visual Studio 17 2022 -A '+_arc: _arc2    ,
+    'Visual Studio 17 2022 -A Win32': 'x86'    ,
+    'Visual Studio 17 2022 -A Win64': 'x86_64' ,
+    'Visual Studio 17 2022 -A x64'  : 'x86_64' ,
+    'Visual Studio 17 2022 -A x86'  : 'x86'    ,
+    'Visual Studio 17 2022 -A ARM'  : 'arm'    ,
+    'Visual Studio 17 2022 -A ARM32': 'arm'    ,
+    'Visual Studio 17 2022 -A ARM64': 'arm64'  ,
     'Visual Studio 16 2019'         : 'x86'    ,
     'Visual Studio 16 2019 Win32'   : 'x86'    ,
     'Visual Studio 16 2019 Win64'   : 'x86_64' ,
@@ -371,6 +394,8 @@ def to_gen(name_or_gen_or_ver):
 # -----------------------------------------------------------------------------
 
 _toolsets = (
+    # vs2022 compiler toolsets
+    'v143_clang_c2', 'v143_clang', 'v143_xp', 'v143',
     # vs2019 compiler toolsets
     'v142_clang_c2', 'v142_clang', 'v142_xp', 'v142',
     # vs2017 compiler toolsets
@@ -412,7 +437,9 @@ def sep_name_toolset(name, canonize=True):
     if toolset in ('clang_c2', 'clang', 'xp'):
         assert re.match('vs....', name)
         year = int(re.sub(r'^vs(....).*', r'\1', name))
-        if year == 2019:
+        if year == 2022:
+            vs_toolset = 'v143_' + toolset
+        elif year == 2019:
             vs_toolset = 'v142_' + toolset
         elif year == 2017:
             vs_toolset = 'v141_' + toolset
@@ -484,6 +511,8 @@ def vsdir(name_or_gen_or_ver):
         d = cacheattr(sys.modules[__name__], '_vs2017dir', lambda: fn_201x())
     elif ver == 16:
         d = cacheattr(sys.modules[__name__], '_vs2019dir', lambda: fn_201x())
+    elif ver == 17:
+        d = cacheattr(sys.modules[__name__], '_vs2022dir', lambda: fn_201x())
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
     return d
@@ -508,7 +537,7 @@ def vcvarsall(name_or_gen_or_ver):
     d = vsdir(ver)
     if ver < 15:
         s = os.path.join(d, 'VC', 'vcvarsall.bat')
-    elif ver == 15 or ver == 16:
+    elif ver == 15 or ver == 16 or ver == 17:
         s = os.path.join(d, 'VC', 'Auxiliary', 'Build', 'vcvarsall.bat')
     else:
         raise Exception('VS Version not implemented: ' + str(ver))
@@ -545,7 +574,7 @@ def msbuild(name_or_gen_or_ver):
         root = vsdir(ver)
         val = '{}\\MSBuild\\{}.0\\bin\\{}MSBuild.exe'
         msbuild = val.format(root, ver, 'amd64\\' if util.in_64bit() else '')
-    elif ver == 16:
+    elif ver == 16 or ver == 17:
         # https://developercommunity.visualstudio.com/content/problem/400763/incorrect-path-to-msbuild-160-vs-2019-preview-1.html
         root = vsdir(ver)
         val = '{}\\MSBuild\\Current\\bin\\{}MSBuild.exe'

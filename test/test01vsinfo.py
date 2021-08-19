@@ -47,148 +47,344 @@ class Test01VisualStudioInfo(ut.TestCase):
 
 
 class Test00VisualStudioAliases(ut.TestCase):
-    def test01_name_to_gen(self):
-        def c(a, s):
-            sc = vsinfo.to_gen(a)
-            if sc != s:
-                self.fail(f"{a} should be '{s}' but is '{sc}'")
+    @staticmethod
+    def _test_name_to_gen(a, s):
+        sc = vsinfo.to_gen(a)
+        if sc != s:
+            self.fail(f"{a} should be '{s}' but is '{sc}'")
+
+    def test01_name_to_gen_2022(self):
+        c = __class__._test_name_to_gen
+        c('vs2022'      , ['Visual Studio 17 2022', '-A', _arc])
+        c('vs2022_32'   , ['Visual Studio 17 2022', '-A', 'Win32'])
+        c('vs2022_64'   , ['Visual Studio 17 2022', '-A', 'x64'])
+        c('vs2022_arm'  , ['Visual Studio 17 2022', '-A', 'ARM'])
+        c('vs2022_arm32', ['Visual Studio 17 2022', '-A', 'ARM'])
+        c('vs2022_arm64', ['Visual Studio 17 2022', '-A', 'ARM64'])
+        c('Visual Studio 17 2022' + _sfx , 'Visual Studio 17 2022' + _sfx )
+        c('Visual Studio 17 2022'        , 'Visual Studio 17 2022'        )
+        c('Visual Studio 17 2022 Win64'  , 'Visual Studio 17 2022 Win64'  )
+        c('Visual Studio 17 2022 ARM'    , 'Visual Studio 17 2022 ARM'    )
+
+    def test01_name_to_gen_2019(self):
+        c = __class__._test_name_to_gen
         c('vs2019'      , ['Visual Studio 16 2019', '-A', _arc])
         c('vs2019_32'   , ['Visual Studio 16 2019', '-A', 'Win32'])
         c('vs2019_64'   , ['Visual Studio 16 2019', '-A', 'x64'])
         c('vs2019_arm'  , ['Visual Studio 16 2019', '-A', 'ARM'])
         c('vs2019_arm32', ['Visual Studio 16 2019', '-A', 'ARM'])
         c('vs2019_arm64', ['Visual Studio 16 2019', '-A', 'ARM64'])
-        c('vs2017'      , 'Visual Studio 15 2017' + _sfx )
-        c('vs2017_32'   , 'Visual Studio 15 2017'        )
-        c('vs2017_64'   , 'Visual Studio 15 2017 Win64'  )
-        c('vs2017_arm'  , 'Visual Studio 15 2017 ARM'    )
-        c('vs2015'      , 'Visual Studio 14 2015' + _sfx )
-        c('vs2015_32'   , 'Visual Studio 14 2015'        )
-        c('vs2015_64'   , 'Visual Studio 14 2015 Win64'  )
-        c('vs2015_arm'  , 'Visual Studio 14 2015 ARM'    )
-        c('vs2013'      , 'Visual Studio 12 2013' + _sfx )
-        c('vs2013_32'   , 'Visual Studio 12 2013'        )
-        c('vs2013_64'   , 'Visual Studio 12 2013 Win64'  )
-        c('vs2013_arm'  , 'Visual Studio 12 2013 ARM'    )
-        c('vs2012'      , 'Visual Studio 11 2012' + _sfx )
-        c('vs2012_32'   , 'Visual Studio 11 2012'        )
-        c('vs2012_64'   , 'Visual Studio 11 2012 Win64'  )
-        c('vs2012_arm'  , 'Visual Studio 11 2012 ARM'    )
-        c('vs2010'      , 'Visual Studio 10 2010' + _sfx )
-        c('vs2010_32'   , 'Visual Studio 10 2010'        )
-        c('vs2010_64'   , 'Visual Studio 10 2010 Win64'  )
-        c('vs2010_ia64' , 'Visual Studio 10 2010 IA64'   )
-        c('vs2008'      , 'Visual Studio 9 2008' + _sfx  )
-        c('vs2008_32'   , 'Visual Studio 9 2008'         )
-        c('vs2008_64'   , 'Visual Studio 9 2008 Win64'   )
-        c('vs2008_ia64' , 'Visual Studio 9 2008 IA64'    )
-        c('vs2005'      , 'Visual Studio 8 2005' + _sfx  )
-        c('vs2005_32'   , 'Visual Studio 8 2005'         )
-        c('vs2005_64'   , 'Visual Studio 8 2005 Win64'   )
         c('Visual Studio 16 2019' + _sfx , 'Visual Studio 16 2019' + _sfx )
         c('Visual Studio 16 2019'        , 'Visual Studio 16 2019'        )
         c('Visual Studio 16 2019 Win64'  , 'Visual Studio 16 2019 Win64'  )
         c('Visual Studio 16 2019 ARM'    , 'Visual Studio 16 2019 ARM'    )
+
+    def test01_name_to_gen_2017(self):
+        c = __class__._test_name_to_gen
+        c('vs2017'      , 'Visual Studio 15 2017' + _sfx )
+        c('vs2017_32'   , 'Visual Studio 15 2017'        )
+        c('vs2017_64'   , 'Visual Studio 15 2017 Win64'  )
+        c('vs2017_arm'  , 'Visual Studio 15 2017 ARM'    )
         c('Visual Studio 15 2017' + _sfx , 'Visual Studio 15 2017' + _sfx )
         c('Visual Studio 15 2017'        , 'Visual Studio 15 2017'        )
         c('Visual Studio 15 2017 Win64'  , 'Visual Studio 15 2017 Win64'  )
         c('Visual Studio 15 2017 ARM'    , 'Visual Studio 15 2017 ARM'    )
+
+    def test01_name_to_gen_2015(self):
+        c = __class__._test_name_to_gen
+        c('vs2015'      , 'Visual Studio 14 2015' + _sfx )
+        c('vs2015_32'   , 'Visual Studio 14 2015'        )
+        c('vs2015_64'   , 'Visual Studio 14 2015 Win64'  )
+        c('vs2015_arm'  , 'Visual Studio 14 2015 ARM'    )
         c('Visual Studio 14 2015' + _sfx , 'Visual Studio 14 2015' + _sfx )
         c('Visual Studio 14 2015'        , 'Visual Studio 14 2015'        )
         c('Visual Studio 14 2015 Win64'  , 'Visual Studio 14 2015 Win64'  )
         c('Visual Studio 14 2015 ARM'    , 'Visual Studio 14 2015 ARM'    )
+
+    def test01_name_to_gen_2013(self):
+        c = __class__._test_name_to_gen
+        c('vs2013'      , 'Visual Studio 12 2013' + _sfx )
+        c('vs2013_32'   , 'Visual Studio 12 2013'        )
+        c('vs2013_64'   , 'Visual Studio 12 2013 Win64'  )
+        c('vs2013_arm'  , 'Visual Studio 12 2013 ARM'    )
         c('Visual Studio 12 2013' + _sfx , 'Visual Studio 12 2013' + _sfx )
         c('Visual Studio 12 2013'        , 'Visual Studio 12 2013'        )
         c('Visual Studio 12 2013 Win64'  , 'Visual Studio 12 2013 Win64'  )
         c('Visual Studio 12 2013 ARM'    , 'Visual Studio 12 2013 ARM'    )
+
+    def test01_name_to_gen_2012(self):
+        c = __class__._test_name_to_gen
+        c('vs2012'      , 'Visual Studio 11 2012' + _sfx )
+        c('vs2012_32'   , 'Visual Studio 11 2012'        )
+        c('vs2012_64'   , 'Visual Studio 11 2012 Win64'  )
+        c('vs2012_arm'  , 'Visual Studio 11 2012 ARM'    )
         c('Visual Studio 11 2012' + _sfx , 'Visual Studio 11 2012' + _sfx )
         c('Visual Studio 11 2012'        , 'Visual Studio 11 2012'        )
         c('Visual Studio 11 2012 Win64'  , 'Visual Studio 11 2012 Win64'  )
         c('Visual Studio 11 2012 ARM'    , 'Visual Studio 11 2012 ARM'    )
+
+    def test01_name_to_gen_2010(self):
+        c = __class__._test_name_to_gen
+        c('vs2010'      , 'Visual Studio 10 2010' + _sfx )
+        c('vs2010_32'   , 'Visual Studio 10 2010'        )
+        c('vs2010_64'   , 'Visual Studio 10 2010 Win64'  )
+        c('vs2010_ia64' , 'Visual Studio 10 2010 IA64'   )
         c('Visual Studio 10 2010' + _sfx , 'Visual Studio 10 2010' + _sfx )
         c('Visual Studio 10 2010'        , 'Visual Studio 10 2010'        )
         c('Visual Studio 10 2010 Win64'  , 'Visual Studio 10 2010 Win64'  )
         c('Visual Studio 10 2010 IA64'   , 'Visual Studio 10 2010 IA64'   )
+
+    def test01_name_to_gen_2008(self):
+        c = __class__._test_name_to_gen
+        c('vs2008'      , 'Visual Studio 9 2008' + _sfx  )
+        c('vs2008_32'   , 'Visual Studio 9 2008'         )
+        c('vs2008_64'   , 'Visual Studio 9 2008 Win64'   )
+        c('vs2008_ia64' , 'Visual Studio 9 2008 IA64'    )
         c('Visual Studio 9 2008' + _sfx  , 'Visual Studio 9 2008' + _sfx  )
         c('Visual Studio 9 2008'         , 'Visual Studio 9 2008'         )
         c('Visual Studio 9 2008 Win64'   , 'Visual Studio 9 2008 Win64'   )
         c('Visual Studio 9 2008 IA64'    , 'Visual Studio 9 2008 IA64'    )
+
+    def test01_name_to_gen_2005(self):
+        c = __class__._test_name_to_gen
+        c('vs2005'      , 'Visual Studio 8 2005' + _sfx  )
+        c('vs2005_32'   , 'Visual Studio 8 2005'         )
+        c('vs2005_64'   , 'Visual Studio 8 2005 Win64'   )
         c('Visual Studio 8 2005' + _sfx  , 'Visual Studio 8 2005' + _sfx  )
         c('Visual Studio 8 2005'         , 'Visual Studio 8 2005'         )
         c('Visual Studio 8 2005 Win64'   , 'Visual Studio 8 2005 Win64'   )
 
-    def test02_gen_to_name(self):
-        def c(a, s):
-            sc = vsinfo.to_name(a)
-            if sc != s:
-                self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
+    @staticmethod
+    def _test_gen_to_name(a, s):
+        sc = vsinfo.to_name(a)
+        if sc != s:
+            self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
+
+    def test02_gen_to_name_2022(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 17 2022'        , 'vs2022_32'   )
+        c('Visual Studio 17 2022 Win64'  , 'vs2022_64'   )
+        c('Visual Studio 17 2022 ARM'    , 'vs2022_arm'  )
+        c('Visual Studio 17 2022 ARM32'  , 'vs2022_arm32')
+        c('Visual Studio 17 2022 ARM64'  , 'vs2022_arm64')
+        c('vs2022'      , 'vs2022'      )
+        c('vs2022_32'   , 'vs2022_32'   )
+        c('vs2022_64'   , 'vs2022_64'   )
+        c('vs2022_arm'  , 'vs2022_arm'  )
+        c('vs2022_arm32', 'vs2022_arm32')
+        c('vs2022_arm64', 'vs2022_arm64')
+
+    def test02_gen_to_name_2019(self):
+        c = __class__._test_gen_to_name
         c('Visual Studio 16 2019'        , 'vs2019_32'   )
         c('Visual Studio 16 2019 Win64'  , 'vs2019_64'   )
         c('Visual Studio 16 2019 ARM'    , 'vs2019_arm'  )
         c('Visual Studio 16 2019 ARM32'  , 'vs2019_arm32')
         c('Visual Studio 16 2019 ARM64'  , 'vs2019_arm64')
-        c('Visual Studio 15 2017'        , 'vs2017_32'   )
-        c('Visual Studio 15 2017 Win64'  , 'vs2017_64'   )
-        c('Visual Studio 15 2017 ARM'    , 'vs2017_arm'  )
-        c('Visual Studio 14 2015'        , 'vs2015_32'   )
-        c('Visual Studio 14 2015 Win64'  , 'vs2015_64'   )
-        c('Visual Studio 14 2015 ARM'    , 'vs2015_arm'  )
-        c('Visual Studio 12 2013'        , 'vs2013_32'   )
-        c('Visual Studio 12 2013 Win64'  , 'vs2013_64'   )
-        c('Visual Studio 12 2013 ARM'    , 'vs2013_arm'  )
-        c('Visual Studio 11 2012'        , 'vs2012_32'   )
-        c('Visual Studio 11 2012 Win64'  , 'vs2012_64'   )
-        c('Visual Studio 11 2012 ARM'    , 'vs2012_arm'  )
-        c('Visual Studio 10 2010'        , 'vs2010_32'   )
-        c('Visual Studio 10 2010 Win64'  , 'vs2010_64'   )
-        c('Visual Studio 10 2010 IA64'   , 'vs2010_ia64' )
-        c('Visual Studio 9 2008'         , 'vs2008_32'   )
-        c('Visual Studio 9 2008 Win64'   , 'vs2008_64'   )
-        c('Visual Studio 9 2008 IA64'    , 'vs2008_ia64' )
-        c('Visual Studio 8 2005'         , 'vs2005_32'   )
-        c('Visual Studio 8 2005 Win64'   , 'vs2005_64'   )
         c('vs2019'      , 'vs2019'      )
         c('vs2019_32'   , 'vs2019_32'   )
         c('vs2019_64'   , 'vs2019_64'   )
         c('vs2019_arm'  , 'vs2019_arm'  )
         c('vs2019_arm32', 'vs2019_arm32')
         c('vs2019_arm64', 'vs2019_arm64')
+
+    def test02_gen_to_name_2017(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 15 2017'        , 'vs2017_32'   )
+        c('Visual Studio 15 2017 Win64'  , 'vs2017_64'   )
+        c('Visual Studio 15 2017 ARM'    , 'vs2017_arm'  )
         c('vs2017'      , 'vs2017'      )
         c('vs2017_32'   , 'vs2017_32'   )
         c('vs2017_64'   , 'vs2017_64'   )
         c('vs2017_arm'  , 'vs2017_arm'  )
+
+    def test02_gen_to_name_2015(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 14 2015'        , 'vs2015_32'   )
+        c('Visual Studio 14 2015 Win64'  , 'vs2015_64'   )
+        c('Visual Studio 14 2015 ARM'    , 'vs2015_arm'  )
         c('vs2015'      , 'vs2015'      )
         c('vs2015_32'   , 'vs2015_32'   )
         c('vs2015_64'   , 'vs2015_64'   )
         c('vs2015_arm'  , 'vs2015_arm'  )
+
+    def test02_gen_to_name_2013(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 12 2013'        , 'vs2013_32'   )
+        c('Visual Studio 12 2013 Win64'  , 'vs2013_64'   )
+        c('Visual Studio 12 2013 ARM'    , 'vs2013_arm'  )
         c('vs2013'      , 'vs2013'      )
         c('vs2013_32'   , 'vs2013_32'   )
         c('vs2013_64'   , 'vs2013_64'   )
         c('vs2013_arm'  , 'vs2013_arm'  )
+
+    def test02_gen_to_name_2012(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 11 2012'        , 'vs2012_32'   )
+        c('Visual Studio 11 2012 Win64'  , 'vs2012_64'   )
+        c('Visual Studio 11 2012 ARM'    , 'vs2012_arm'  )
         c('vs2012'      , 'vs2012'      )
         c('vs2012_32'   , 'vs2012_32'   )
         c('vs2012_64'   , 'vs2012_64'   )
         c('vs2012_arm'  , 'vs2012_arm'  )
+
+    def test02_gen_to_name_2010(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 10 2010'        , 'vs2010_32'   )
+        c('Visual Studio 10 2010 Win64'  , 'vs2010_64'   )
+        c('Visual Studio 10 2010 IA64'   , 'vs2010_ia64' )
         c('vs2010'      , 'vs2010'      )
         c('vs2010_32'   , 'vs2010_32'   )
         c('vs2010_64'   , 'vs2010_64'   )
         c('vs2010_ia64' , 'vs2010_ia64' )
+
+    def test02_gen_to_name_2008(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 9 2008'         , 'vs2008_32'   )
+        c('Visual Studio 9 2008 Win64'   , 'vs2008_64'   )
+        c('Visual Studio 9 2008 IA64'    , 'vs2008_ia64' )
         c('vs2008'      , 'vs2008'      )
         c('vs2008_32'   , 'vs2008_32'   )
         c('vs2008_64'   , 'vs2008_64'   )
         c('vs2008_ia64' , 'vs2008_ia64' )
+
+    def test02_gen_to_name_2005(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 8 2005'         , 'vs2005_32'   )
+        c('Visual Studio 8 2005 Win64'   , 'vs2005_64'   )
         c('vs2005'      , 'vs2005'      )
         c('vs2005_32'   , 'vs2005_32'   )
         c('vs2005_64'   , 'vs2005_64'   )
 
-    def test03_parse_toolset(self):
-        def t(spec, name_vs, ts_vs):
-            cname_vs,cts_vs = vsinfo.sep_name_toolset(spec)
-            if cname_vs != name_vs:
-                self.fail("{} should be '{}' but is '{}'".format(spec, name_vs, cname_vs))
-            if cts_vs != ts_vs:
-                self.fail("{} should be '{}' but is '{}'".format(spec, ts_vs, cts_vs))
+    @staticmethod
+    def _test_parse_toolset(spec, name_vs, ts_vs):
+        cname_vs, cts_vs = vsinfo.sep_name_toolset(spec)
+        if cname_vs != name_vs:
+            self.fail("{} should be '{}' but is '{}'".format(spec, name_vs, cname_vs))
+        if cts_vs != ts_vs:
+            self.fail("{} should be '{}' but is '{}'".format(spec, ts_vs, cts_vs))
 
+    def test03_parse_toolset_2022(self):
+        t = __class__._test_parse_toolset
+        t('vs2022'                , 'vs2022'     , None           )
+        t('vs2022_clang'          , 'vs2022'     , 'v143_clang_c2')
+        t('vs2022_xp'             , 'vs2022'     , 'v143_xp'      )
+        t('vs2022_v143'           , 'vs2022'     , 'v143'         )
+        t('vs2022_v143_xp'        , 'vs2022'     , 'v143_xp'      )
+        t('vs2022_v143_clang'     , 'vs2022'     , 'v143_clang_c2')
+        t('vs2022_v142'           , 'vs2022'     , 'v142'         )
+        t('vs2022_v142_xp'        , 'vs2022'     , 'v142_xp'      )
+        t('vs2022_v142_clang'     , 'vs2022'     , 'v142_clang_c2')
+        t('vs2022_v141'           , 'vs2022'     , 'v141'         )
+        t('vs2022_v141_xp'        , 'vs2022'     , 'v141_xp'      )
+        t('vs2022_v141_clang'     , 'vs2022'     , 'v141_clang_c2')
+        t('vs2022_v140'           , 'vs2022'     , 'v140'         )
+        t('vs2022_v140_xp'        , 'vs2022'     , 'v140_xp'      )
+        t('vs2022_v140_clang'     , 'vs2022'     , 'v140_clang_c2')
+        t('vs2022_v120'           , 'vs2022'     , 'v120'         )
+        t('vs2022_v120_xp'        , 'vs2022'     , 'v120_xp'      )
+        t('vs2022_v110'           , 'vs2022'     , 'v110'         )
+        t('vs2022_v110_xp'        , 'vs2022'     , 'v110_xp'      )
+        t('vs2022_v100'           , 'vs2022'     , 'v100'         )
+        t('vs2022_v100_xp'        , 'vs2022'     , 'v100_xp'      )
+        t('vs2022_v90'            , 'vs2022'     , 'v90'          )
+        t('vs2022_v90_xp'         , 'vs2022'     , 'v90_xp'       )
+        t('vs2022_v80'            , 'vs2022'     , 'v80'          )
+
+        t('vs2022_32'             , 'vs2022_32'  , None           )
+        t('vs2022_32_clang'       , 'vs2022_32'  , 'v143_clang_c2')
+        t('vs2022_32_xp'          , 'vs2022_32'  , 'v143_xp'      )
+        t('vs2022_32_v143'        , 'vs2022_32'  , 'v143'         )
+        t('vs2022_32_v143_xp'     , 'vs2022_32'  , 'v143_xp'      )
+        t('vs2022_32_v143_clang'  , 'vs2022_32'  , 'v143_clang_c2')
+        t('vs2022_32_v142'        , 'vs2022_32'  , 'v142'         )
+        t('vs2022_32_v142_xp'     , 'vs2022_32'  , 'v142_xp'      )
+        t('vs2022_32_v142_clang'  , 'vs2022_32'  , 'v142_clang_c2')
+        t('vs2022_32_v141'        , 'vs2022_32'  , 'v141'         )
+        t('vs2022_32_v141_xp'     , 'vs2022_32'  , 'v141_xp'      )
+        t('vs2022_32_v141_clang'  , 'vs2022_32'  , 'v141_clang_c2')
+        t('vs2022_32_v140'        , 'vs2022_32'  , 'v140'         )
+        t('vs2022_32_v140_xp'     , 'vs2022_32'  , 'v140_xp'      )
+        t('vs2022_32_v140_clang'  , 'vs2022_32'  , 'v140_clang_c2')
+        t('vs2022_32_v120'        , 'vs2022_32'  , 'v120'         )
+        t('vs2022_32_v120_xp'     , 'vs2022_32'  , 'v120_xp'      )
+        t('vs2022_32_v110'        , 'vs2022_32'  , 'v110'         )
+        t('vs2022_32_v110_xp'     , 'vs2022_32'  , 'v110_xp'      )
+        t('vs2022_32_v100'        , 'vs2022_32'  , 'v100'         )
+        t('vs2022_32_v100_xp'     , 'vs2022_32'  , 'v100_xp'      )
+        t('vs2022_32_v90'         , 'vs2022_32'  , 'v90'          )
+        t('vs2022_32_v90_xp'      , 'vs2022_32'  , 'v90_xp'       )
+        t('vs2022_32_v80'         , 'vs2022_32'  , 'v80'          )
+
+        t('vs2022_64'             , 'vs2022_64'  , None           )
+        t('vs2022_64_clang'       , 'vs2022_64'  , 'v143_clang_c2')
+        t('vs2022_64_xp'          , 'vs2022_64'  , 'v143_xp'      )
+        t('vs2022_64_v143'        , 'vs2022_64'  , 'v143'         )
+        t('vs2022_64_v143_xp'     , 'vs2022_64'  , 'v143_xp'      )
+        t('vs2022_64_v143_clang'  , 'vs2022_64'  , 'v143_clang_c2')
+        t('vs2022_64_v142'        , 'vs2022_64'  , 'v142'         )
+        t('vs2022_64_v142_xp'     , 'vs2022_64'  , 'v142_xp'      )
+        t('vs2022_64_v142_clang'  , 'vs2022_64'  , 'v142_clang_c2')
+        t('vs2022_64_v141'        , 'vs2022_64'  , 'v141'         )
+        t('vs2022_64_v141_xp'     , 'vs2022_64'  , 'v141_xp'      )
+        t('vs2022_64_v141_clang'  , 'vs2022_64'  , 'v141_clang_c2')
+        t('vs2022_64_v140'        , 'vs2022_64'  , 'v140'         )
+        t('vs2022_64_v140_xp'     , 'vs2022_64'  , 'v140_xp'      )
+        t('vs2022_64_v140_clang'  , 'vs2022_64'  , 'v140_clang_c2')
+        t('vs2022_64_v120'        , 'vs2022_64'  , 'v120'         )
+        t('vs2022_64_v120_xp'     , 'vs2022_64'  , 'v120_xp'      )
+        t('vs2022_64_v110'        , 'vs2022_64'  , 'v110'         )
+        t('vs2022_64_v110_xp'     , 'vs2022_64'  , 'v110_xp'      )
+        t('vs2022_64_v100'        , 'vs2022_64'  , 'v100'         )
+        t('vs2022_64_v100_xp'     , 'vs2022_64'  , 'v100_xp'      )
+        t('vs2022_64_v90'         , 'vs2022_64'  , 'v90'          )
+        t('vs2022_64_v90_xp'      , 'vs2022_64'  , 'v90_xp'       )
+        t('vs2022_64_v80'         , 'vs2022_64'  , 'v80'          )
+
+        t('vs2022_arm'            , 'vs2022_arm' , None           )
+        t('vs2022_arm_clang'      , 'vs2022_arm' , 'v143_clang_c2')
+        t('vs2022_arm_v143'       , 'vs2022_arm' , 'v143'         )
+        t('vs2022_arm_v143_clang' , 'vs2022_arm' , 'v143_clang_c2')
+        t('vs2022_arm_v142'       , 'vs2022_arm' , 'v142'         )
+        t('vs2022_arm_v142_clang' , 'vs2022_arm' , 'v142_clang_c2')
+        t('vs2022_arm_v141'       , 'vs2022_arm' , 'v141'         )
+        t('vs2022_arm_v141_clang' , 'vs2022_arm' , 'v141_clang_c2')
+        t('vs2022_arm_v140'       , 'vs2022_arm' , 'v140'         )
+        t('vs2022_arm_v140_clang' , 'vs2022_arm' , 'v140_clang_c2')
+        t('vs2022_arm_v120'       , 'vs2022_arm' , 'v120'         )
+        t('vs2022_arm_v110'       , 'vs2022_arm' , 'v110'         )
+        t('vs2022_arm_v100'       , 'vs2022_arm' , 'v100'         )
+
+        t('vs2022_arm32'            , 'vs2022_arm32' , None           )
+        t('vs2022_arm32_clang'      , 'vs2022_arm32' , 'v143_clang_c2')
+        t('vs2022_arm32_v143'       , 'vs2022_arm32' , 'v143'         )
+        t('vs2022_arm32_v143_clang' , 'vs2022_arm32' , 'v143_clang_c2')
+        t('vs2022_arm32_v142'       , 'vs2022_arm32' , 'v142'         )
+        t('vs2022_arm32_v142_clang' , 'vs2022_arm32' , 'v142_clang_c2')
+        t('vs2022_arm32_v141'       , 'vs2022_arm32' , 'v141'         )
+        t('vs2022_arm32_v141_clang' , 'vs2022_arm32' , 'v141_clang_c2')
+        t('vs2022_arm32_v140'       , 'vs2022_arm32' , 'v140'         )
+        t('vs2022_arm32_v140_clang' , 'vs2022_arm32' , 'v140_clang_c2')
+        t('vs2022_arm32_v120'       , 'vs2022_arm32' , 'v120'         )
+        t('vs2022_arm32_v110'       , 'vs2022_arm32' , 'v110'         )
+        t('vs2022_arm32_v100'       , 'vs2022_arm32' , 'v100'         )
+
+        t('vs2022_arm64'            , 'vs2022_arm64' , None           )
+        t('vs2022_arm64_clang'      , 'vs2022_arm64' , 'v143_clang_c2')
+        t('vs2022_arm64_v143'       , 'vs2022_arm64' , 'v143'         )
+        t('vs2022_arm64_v143_clang' , 'vs2022_arm64' , 'v143_clang_c2')
+        t('vs2022_arm64_v142'       , 'vs2022_arm64' , 'v142'         )
+        t('vs2022_arm64_v142_clang' , 'vs2022_arm64' , 'v142_clang_c2')
+        t('vs2022_arm64_v141'       , 'vs2022_arm64' , 'v141'         )
+        t('vs2022_arm64_v141_clang' , 'vs2022_arm64' , 'v141_clang_c2')
+        t('vs2022_arm64_v140'       , 'vs2022_arm64' , 'v140'         )
+        t('vs2022_arm64_v140_clang' , 'vs2022_arm64' , 'v140_clang_c2')
+        t('vs2022_arm64_v120'       , 'vs2022_arm64' , 'v120'         )
+        t('vs2022_arm64_v110'       , 'vs2022_arm64' , 'v110'         )
+        t('vs2022_arm64_v100'       , 'vs2022_arm64' , 'v100'         )
+
+    def test03_parse_toolset_2019(self):
+        t = __class__._test_parse_toolset
         t('vs2019'                , 'vs2019'     , None           )
         t('vs2019_clang'          , 'vs2019'     , 'v142_clang_c2')
         t('vs2019_xp'             , 'vs2019'     , 'v142_xp'      )
@@ -291,6 +487,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2019_arm64_v110'       , 'vs2019_arm64' , 'v110'         )
         t('vs2019_arm64_v100'       , 'vs2019_arm64' , 'v100'         )
 
+    def test03_parse_toolset_2017(self):
+        t = __class__._test_parse_toolset
         t('vs2017'                , 'vs2017'     , None           )
         t('vs2017_clang'          , 'vs2017'     , 'v141_clang_c2')
         t('vs2017_xp'             , 'vs2017'     , 'v141_xp'      )
@@ -358,6 +556,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2017_arm_v110'       , 'vs2017_arm' , 'v110'         )
         t('vs2017_arm_v100'       , 'vs2017_arm' , 'v100'         )
 
+    def test03_parse_toolset_2015(self):
+        t = __class__._test_parse_toolset
         t('vs2015'                , 'vs2015'     , None           )
         t('vs2015_clang'          , 'vs2015'     , 'v140_clang_c2')
         t('vs2015_xp'             , 'vs2015'     , 'v140_xp'      )
@@ -402,6 +602,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2015_arm'            , 'vs2015_arm' , None           )
         t('vs2015_arm_clang'      , 'vs2015_arm' , 'v140_clang_c2')
 
+    def test03_parse_toolset_2013(self):
+        t = __class__._test_parse_toolset
         t('vs2013'                , 'vs2013'    , None           )
         t('vs2013_xp'             , 'vs2013'    , 'v120_xp'      )
         t('vs2013_v110'           , 'vs2013'    , 'v110'         )
@@ -432,6 +634,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2013_64_v90_xp'      , 'vs2013_64' , 'v90_xp'       )
         t('vs2013_64_v80'         , 'vs2013_64' , 'v80'          )
 
+    def test03_parse_toolset_2012(self):
+        t = __class__._test_parse_toolset
         t('vs2012'                , 'vs2012'    , None           )
         t('vs2012_xp'             , 'vs2012'    , 'v110_xp'      )
         t('vs2012_v110'           , 'vs2012'    , 'v110'         )
@@ -462,6 +666,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2012_64_v90_xp'      , 'vs2012_64' , 'v90_xp'       )
         t('vs2012_64_v80'         , 'vs2012_64' , 'v80'          )
 
+    def test03_parse_toolset_2010(self):
+        t = __class__._test_parse_toolset
         t('vs2010'                , 'vs2010'    , None           )
         t('vs2010_xp'             , 'vs2010'    , 'v100_xp'      )
         t('vs2010_v100'           , 'vs2010'    , 'v100'         )
@@ -494,6 +700,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2010_ia64_v90_xp'    , 'vs2010_ia64' , 'v90_xp'     )
         t('vs2010_ia64_v80'       , 'vs2010_ia64' , 'v80'        )
 
+    def test03_parse_toolset_2008(self):
+        t = __class__._test_parse_toolset
         t('vs2008'                , 'vs2008'    , None           )
         t('vs2008_xp'             , 'vs2008'    , 'v90_xp'       )
         t('vs2008_v90'            , 'vs2008'    , 'v90'          )
@@ -518,6 +726,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2008_ia64_v90_xp'    , 'vs2008_ia64' , 'v90_xp'     )
         t('vs2008_ia64_v80'       , 'vs2008_ia64' , 'v80'        )
 
+    def test03_parse_toolset_2005(self):
+        t = __class__._test_parse_toolset
         t('vs2005'                , 'vs2005'    , None           )
         t('vs2005_v80'            , 'vs2005'    , 'v80'          )
 
