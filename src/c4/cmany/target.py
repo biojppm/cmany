@@ -15,30 +15,35 @@ class TargetType(IntFlag):
 
 class Target:
 
+    def _dbg(self, msg):
+        util.logdbg(f"[{self.subdir}] {self.name}: {msg}")
+
     def __init__(self, name, build, subdir, projfile):
         assert os.path.exists(projfile)
-        util.logdbg(f"[{subdir}] {name}: creating target...")
         self.name = name
         self.build = build
         self.subdir = subdir
         self.subdir_abs = os.path.join(os.path.abspath(build.builddir), self.subdir)
         self.projfile = projfile  # Makefile or {name}.vcxproj
         self.cmake_private_dir = util.chkf(self.subdir_abs, "CMakeFiles")
+        self._dbg("creating target...")
         # find the target type
         self._type = TargetType.custom
         gen = self.build.generator
         if gen.is_msvc:
             tgt_dir = os.path.join(self.subdir_abs, f"{name}.dir")
             if os.path.exists(tgt_dir):
+                self._dbg(f"target is binary: found {tgt_dir}")
                 self._type |= TargetType.binary
         elif gen.is_makefile:
             tgt_dir = os.path.join(self.cmake_private_dir, f"{name}.dir")
             link_file = os.path.join(tgt_dir, "link.txt")
             if os.path.exists(link_file):
-                util.logdbg(f"{name}: found {link_file}")
+                self._dbg(f"target is binary: found {link_file}")
                 self._type |= TargetType.binary
         else:
             raise Exception(f"unknown generator: {gen}")
+
 
     @property
     def desc(self):
@@ -59,9 +64,26 @@ class Target:
         # then this logic will fail
         gen = self.build.generator
         if gen.is_msvc:
-            return f"{self.subdir_abs}/{self.build.build_type}/{self.name}.exe"
+            f = f"{self.subdir_abs}/{self.build.build_type}/{self.name}.exe"
+            return f
         elif gen.is_makefile:
-            return f"{self.subdir_abs}/{self.name}"
+            f = f"{self.subdir_abs}/{self.name}"
+            if os.path.exists(f):
+                self._dbg(f"found target executable: {f}")
+                return f
+            else:
+                self._dbg(f"could not find standard target executable: {f}")
+                fallbacks = (
+                    f"{self.build.builddir}/bin/{self.name}",
+                )
+                for f in fallbacks:
+                    self._dbg(f"trying {f}")
+                    if os.path.exists(f):
+                        self._dbg(f"found target executable: {f}")
+                        return f
+                    else:
+                        self._dbg(f"could not target executable: {f}")
+                raise Exception("could not find target executable")
         else:
             raise Exception(f"unknown generator: {gen}")
 
