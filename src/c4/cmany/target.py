@@ -63,29 +63,30 @@ class Target:
         # if the project's cmake scripts change the output path,
         # then this logic will fail
         gen = self.build.generator
+        da = self.subdir_abs
+        bt = self.build.build_type
         if gen.is_msvc:
-            f = f"{self.subdir_abs}/{self.build.build_type}/{self.name}.exe"
-            return f
+            return self._find_target_file_with_fallbacks(
+                f"{da}/{bt}/{self.name}.exe",
+                f"{self.build.builddir}/bin/{bt}/{self.name}.exe",
+            )
         elif gen.is_makefile:
-            f = f"{self.subdir_abs}/{self.name}"
-            if os.path.exists(f):
-                self._dbg(f"found target executable: {f}")
-                return f
-            else:
-                self._dbg(f"could not find standard target executable: {f}")
-                fallbacks = (
-                    f"{self.build.builddir}/bin/{self.name}",
-                )
-                for f in fallbacks:
-                    self._dbg(f"trying {f}")
-                    if os.path.exists(f):
-                        self._dbg(f"found target executable: {f}")
-                        return f
-                    else:
-                        self._dbg(f"could not target executable: {f}")
-                raise Exception("could not find target executable")
+            return self._find_target_file_with_fallbacks(
+                f"{da}/{self.name}",
+                f"{self.build.builddir}/bin/{self.name}"
+            )
         else:
             raise Exception(f"unknown generator: {gen}")
+
+    def _find_target_file_with_fallbacks(self, *paths):
+        for f in paths:
+            self._dbg(f"trying {f}")
+            if os.path.exists(f):
+                self._dbg(f"... found it!")
+                return f
+            else:
+                self._dbg(f"... not found!")
+        raise Exception(f"could not find target executable: {paths}")
 
     @property
     def vcxproj(self):
