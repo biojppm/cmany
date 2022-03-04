@@ -382,36 +382,37 @@ def _genid(gen):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-# def get_toolchain_cache(toolchain):
-#     d = os.path.join(USER_DIR, 'toolchains', re.sub(os.sep, '+', toolchain))
-#     logdbg("toolchain cache: USER_DIR=", USER_DIR)
-#     logdbg("toolchain cache: d=", d)
-#     bd = os.path.join(d, 'build')
-#     logdbg("toolchain cache: bd=", bd)
-#     if not os.path.exists(d):
-#         os.makedirs(d)
-#         with setcwd(d):
-#             with open('main.cpp', 'w') as f:
-#                 f.write("int main() {}")
-#             with open('CMakeLists.txt', 'w') as f:
-#                 f.write("""
-# cmake_minimum_required(VERSION 2.6)
-# project(toolchain_test)
-# add_executable(main main.cpp)
-# """)
-#         if not os.path.exists(bd):
-#             os.makedirs(bd)
-#         with setcwd(bd):
-#             cmd = ['cmake', '-DCMAKE_TOOLCHAIN_FILE='+toolchain, '..']
-#             runsyscmd(cmd, echo_output=True)
-#     return loadvars(bd)
+def get_toolchain_cache(toolchain):
+    d = os.path.join(USER_DIR, 'toolchains', re.sub(os.sep, '_', toolchain))
+    logdbg("toolchain cache: USER_DIR=", USER_DIR)
+    logdbg("toolchain cache: d=", d)
+    bd = os.path.join(d, 'build')
+    logdbg("toolchain cache: bd=", bd)
+    if not os.path.exists(d):
+        os.makedirs(d)
+        with setcwd(d):
+            with open('main.cpp', 'w') as f:
+                f.write("int main() {}")
+            with open('CMakeLists.txt', 'w') as f:
+                f.write("""
+cmake_minimum_required(VERSION 2.6)
+project(toolchain_test)
+add_executable(main main.cpp)
+""")
+        if not os.path.exists(bd):
+            os.makedirs(bd)
+        with setcwd(bd):
+            cmd = ['cmake', '-DCMAKE_TOOLCHAIN_FILE='+toolchain, '..']
+            runsyscmd(cmd, echo_output=True)
+    return loadvars(bd)
+
+
 def extract_toolchain_compilers(toolchain):
-    with open(toolchain) as f:
-        lines = f.readlines()
-        out = odict()
-        for l in lines:
-            res = re.search(r'(set|SET)\ ?\(\ ?(CMAKE_.*?_COMPILER) (.*?)\ ?\)', l)
-            if res:
-                res = res.groups()
-                out[res[1]] = res[2]
-        return out
+    cache = get_toolchain_cache(toolchain)
+    out = odict()
+    for k, v in cache.items():
+        logdbg(f"toolchain cache: {k}=={v}")
+        if k.startswith('CMAKE_') and k.endswith('_COMPILER'):
+            logdbg(f"toolchain cache: .................... {k}=={v}")
+            out[k] = v.val
+    return out
