@@ -649,6 +649,7 @@ def runcmd_nocheck(cmd, *cmd_args, **run_args):
         raise Exception("could not understand command")
     cmd += list(cmd_args)
     logdbg(f"               : cmd={cmd}")
+    logdbg(f"               : run_args={run_args}")
     scmd = shlex_join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
     logcmd(f'$ cd {cwd} && {scmd}')
