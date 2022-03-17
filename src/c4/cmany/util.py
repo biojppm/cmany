@@ -652,7 +652,7 @@ def runcmd_nocheck(cmd, *cmd_args, **run_args):
     scmd = shlex_join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
     logcmd(f'$ cd {cwd} && {scmd}')
-    sp = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **run_args)
+    sp = subprocess.run(cmd, stderr=subprocess.STDOUT, **run_args)
     logdbg("finished running command")
     return sp
 
