@@ -466,7 +466,7 @@ class Build(NamedItem):
             tc = os.path.join(os.getcwd(), tc)
             tc = os.path.abspath(tc)
         if not os.path.exists(tc):
-            raise err.ToolchainFileNotFound(tc)
+            raise err.ToolchainFileNotFound(tc, self)
         return tc
 
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
