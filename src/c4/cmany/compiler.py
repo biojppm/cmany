@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import shlex
 
 from .build_item import BuildItem
 from .system import System
@@ -55,10 +56,21 @@ class Compiler(BuildItem):
                 spl = [path]
             p = util.which(path)
             if p is None:
+                util.logdbg("not found:", path)
+                shspl = shlex.split(path)
+                util.logdbg("trying split:", shspl)
+                if len(shspl) > 0:
+                    p = util.which(shspl[0])
+                    util.logdbg("trying split:", p)
+            if p is None:
+                util.logdbg("no compiler found", path)
                 raise err.CompilerNotFound(path)
-            # if p != path:
-            #     print("compiler: selected {} for {}".format(p, path))
-            path = os.path.abspath(p)
+            if p != path:
+                util.logdbg("compiler: selected {} for {}".format(p, path))
+            if isinstance(path, str):
+                path = os.path.abspath(p)
+            else:
+                path[0] = os.path.abspath(p)
         name, version, version_full = self.get_version(path)
         self.shortname = name
         self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'g++', 'clang++', 'icpc', 'icpx')
@@ -120,8 +132,11 @@ class Compiler(BuildItem):
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name
         # other compilers
-        # print("cmp: found compiler:", path)
-        out = slntout([path, '--version'])
+        util.logdbg("cmp: found compiler:", path)
+        if isinstance(path, str):
+            out = slntout([path, '--version'])
+        else:
+            out = slntout(path + ['--version'])
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
@@ -144,14 +159,7 @@ class Compiler(BuildItem):
                 elif re.search("#define __GNUC__", m):
                     name = "g++" if re.search(r"\+\+", path) else "gcc"
                     break
-        if name.startswith("g++") or name.startswith("gcc"):
-            # print("g++: version:", name, name.find('++'))
-            name = "g++" if name.find('++') != -1 else 'gcc'
-            # print("g++: version:", name, name.find('++'))
-            version = slntout([path, '-dumpversion'])
-            version = re.sub(vregex, r'\1', version)
-            # print("gcc version:", version, "---")
-        elif name.startswith("clang"):
+        if name.startswith("clang++") or name.startswith("clang") or name.endswith("clang++") or name.endswith("clang"):
             name = "clang++" if path.find('clang++') != -1 else 'clang'
             if re.search('Apple LLVM', version_full):
                 name = "apple_llvm"
@@ -160,6 +168,13 @@ class Compiler(BuildItem):
             else:
                 version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
                 # print("clang version:", version, "---")
+        elif name.startswith("g++") or name.startswith("gcc") or name.endswith("g++") or name.endswith("gcc"):
+            # print("g++: version:", name, name.find('++'))
+            name = "g++" if name.find('++') != -1 else 'gcc'
+            # print("g++: version:", name, name.find('++'))
+            version = slntout([path, '-dumpversion'])
+            version = re.sub(vregex, r'\1', version)
+            # print("gcc version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
             name = "icc" if name.startswith("icc") else "icpc"
             if re.search(r'icpc \(ICC\) ' + vregex + '.*', version_full):

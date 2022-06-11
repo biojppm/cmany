@@ -65,7 +65,11 @@ class Build(NamedItem):
         self.toolchain_file = self._get_toolchain()
         if self.toolchain_file:
             comps = cmake.extract_toolchain_compilers(self.toolchain_file)
-            c = Compiler(comps['CMAKE_CXX_COMPILER'])
+            if comps.get('CMAKE_CXX_COMPILER'):
+                c = Compiler(comps['CMAKE_CXX_COMPILER'])
+            else:
+                c = Compiler(os.environ.get('CXX'))
+                dbg(f"CMAKE_CXX_COMPILER not found, trying environment var CXX:", c)
             self.adjust(compiler=c)
         #
         # WATCHOUT: this may trigger a readjustment of this build's parameters
