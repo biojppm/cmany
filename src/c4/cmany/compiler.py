@@ -9,6 +9,7 @@ from .cmake import CMakeSysInfo
 from . import util
 from . import vsinfo
 from . import err
+from .util import logdbg as dbg
 
 
 # -----------------------------------------------------------------------------
@@ -56,17 +57,17 @@ class Compiler(BuildItem):
                 spl = [path]
             p = util.which(path)
             if p is None:
-                util.logdbg("not found:", path)
+                dbg("not found:", path)
                 shspl = shlex.split(path)
-                util.logdbg("trying split:", shspl)
+                dbg("trying split:", shspl)
                 if len(shspl) > 0:
                     p = util.which(shspl[0])
-                    util.logdbg("trying split:", p)
+                    dbg("trying split:", p)
             if p is None:
-                util.logdbg("no compiler found", path)
+                dbg("no compiler found", path)
                 raise err.CompilerNotFound(path)
             if p != path:
-                util.logdbg("compiler: selected {} for {}".format(p, path))
+                dbg("compiler: selected {} for {}".format(p, path))
             if isinstance(path, str):
                 path = os.path.abspath(p)
             else:
@@ -132,7 +133,7 @@ class Compiler(BuildItem):
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name
         # other compilers
-        util.logdbg("cmp: found compiler:", path)
+        dbg("cmp: found compiler:", path)
         if isinstance(path, str):
             out = slntout([path, '--version'])
         else:
@@ -140,10 +141,10 @@ class Compiler(BuildItem):
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
-        # print("cmp: version:", name, "---", version_full, "---")
+        dbg("cmp: version:", name, "---", version_full, "---")
         vregex = r'(\d+\.\d+)\.\d+'
         base = os.path.basename(path)
-        # print(name, "cmp base:", base, name)
+        dbg(name, "cmp base:", base, name)
         if base.startswith("c++") or base.startswith("cc"):
             try:  # if this fails, just go on. It's not really needed.
                 with tempfile.NamedTemporaryFile(suffix=".cpp", prefix="cmany.", delete=False) as f:
@@ -164,30 +165,31 @@ class Compiler(BuildItem):
             if re.search('Apple LLVM', version_full):
                 name = "apple_llvm"
                 version = re.sub(r'Apple LLVM version ' + vregex + '.*', r'\1', version_full)
-                print("apple_llvm version:", version, "---")
+                dbg("apple_llvm version:", version, "---")
             else:
                 version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
-                # print("clang version:", version, "---")
+                dbg("clang version:", version, "---")
         elif name.startswith("g++") or name.startswith("gcc") or name.endswith("g++") or name.endswith("gcc"):
-            # print("g++: version:", name, name.find('++'))
-            name = "g++" if name.find('++') != -1 else 'gcc'
-            # print("g++: version:", name, name.find('++'))
+            dbg("g++: version:", name, name.find('++'))
+            #name = "g++" if name.find('++') != -1 else 'gcc'
+            #dbg("g++: version:", name, name.find('++'))
             version = slntout([path, '-dumpversion'])
+            dbg("g++: versiondump:", version)
             version = re.sub(vregex, r'\1', version)
-            # print("gcc version:", version, "---")
+            dbg("gcc version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
             name = "icc" if name.startswith("icc") else "icpc"
             if re.search(r'icpc \(ICC\) ' + vregex + '.*', version_full):
                 version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
             else:
                 version = re.sub(r'icc \(ICC\) ' + vregex + '.*', r'\1', version_full)
-            # print("icc version:", version, "---")
+            dbg("icc version:", version, "---")
         elif version_full.startswith("Intel(R) oneAPI"):
             name = "intel"
             rx = r'Intel\(R\) oneAPI .*? Compiler ([0-9.]*?) \(([0-9.]*?)\).*'
             version = re.sub(rx, r'\1', version_full)
             version_full = re.sub(rx, r'\2', version_full)
-            #print("intel version:", version, "---", version_full)
+            dbg("intel version:", version, "---", version_full)
         else:
             version = slntout([path, '-dumpversion'])
             version = re.sub(vregex, r'\1', version)

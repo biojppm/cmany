@@ -5,7 +5,8 @@ from glob import glob
 from collections import OrderedDict as odict
 
 from .conf import USER_DIR
-from .util import cacheattr, setcwd, runsyscmd, logdbg, chkf
+from .util import cacheattr, setcwd, runsyscmd, chkf
+from .util import logdbg as dbg
 from . import util
 from . import err
 
@@ -67,14 +68,14 @@ def loadvars(builddir):
     if os.path.exists(c):
         with open(c, 'r') as f:
             for line in f:
-                # logdbg("loadvars0", line.strip())
+                # dbg("loadvars0", line.strip())
                 if not re.match(_cache_entry, line):
                     continue
                 ls = line.strip()
                 name = re.sub(_cache_entry, r'\1', ls)
                 vartype = re.sub(_cache_entry, r'\2', ls)[1:]
                 value = re.sub(_cache_entry, r'\3', ls)
-                # logdbg("loadvars1", name, vartype, value)
+                # dbg("loadvars1", name, vartype, value)
                 v[name] = CMakeCacheVar(name, value, vartype)
     return v
 
@@ -86,7 +87,7 @@ def get_cxx_compiler(builddir):
     if len(files) != 1:
         raise Exception(f"could not find compiler settings: {expr}")
     cxxfile = files[0]
-    logdbg("")
+    dbg("")
     with open(cxxfile) as f:
         lines = f.readlines()
         lookup = "set(CMAKE_CXX_COMPILER "
@@ -281,15 +282,15 @@ class CMakeSysInfo:
     def _getstr(var_name, which_generator):
         regex = r'^{} "(.*)"'.format(var_name)
         for l in __class__.info(which_generator):
-            #logdbg(l.strip("\n"), l.startswith(var_name), var_name)
+            #dbg(l.strip("\n"), l.startswith(var_name), var_name)
             if l.startswith(var_name):
                 l = l.strip("\n").lstrip(" ").rstrip(" ")
-                #logdbg(var_name, "startswith :", l)
+                #dbg(var_name, "startswith :", l)
                 if re.match(regex, l):
                     s = re.sub(regex, r'\1', l)
-                    #logdbg(var_name, "result: '" + s + "'")
+                    #dbg(var_name, "result: '" + s + "'")
                     return s
-        #logdbg("--------------------------------------\n", __class__.info(which_generator))
+        #dbg("--------------------------------------\n", __class__.info(which_generator))
         msg = "could not find variable {} in the output of `cmake --system-information -G '{}'`"
         raise err.Error(msg, var_name, which_generator)
 
@@ -297,30 +298,30 @@ class CMakeSysInfo:
     def system_info(gen):
         """gen can be a string or a cmany.Generator object"""
         from .generator import Generator
-        logdbg("CMakeSystemInfo: asked info for", gen)
+        dbg("CMakeSystemInfo: asked info for", gen)
         p = _genid(gen)
         d = os.path.join(USER_DIR, 'cmake_info', p)
         p = os.path.join(d, 'info')
-        logdbg("CMakeSystemInfo: path=", p)
+        dbg("CMakeSystemInfo: path=", p)
         # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
         if os.path.exists(p) and util.time_since_modification(p).months < 1:
-            logdbg("CMakeSystemInfo: asked info for", gen, "... found", p)
+            dbg("CMakeSystemInfo: asked info for", gen, "... found", p)
             with open(p, "r") as f:
                 i = f.readlines()
                 if i:
                     return i
                 else:
-                    logdbg("CMakeSystemInfo: info for gen", gen, "is empty...")
+                    dbg("CMakeSystemInfo: info for gen", gen, "is empty...")
         #
         if isinstance(gen, Generator):
             cmd = ['cmake'] + gen.configure_args() + ['--system-information']
-            logdbg("CMakeSystemInfo: from generator! '{}' ---> cmd={}".format(gen, cmd))
+            dbg("CMakeSystemInfo: from generator! '{}' ---> cmd={}".format(gen, cmd))
         else:
             if gen == "default" or gen == "":
-                logdbg("CMakeSystemInfo: default! '{}'".format(gen))
+                dbg("CMakeSystemInfo: default! '{}'".format(gen))
                 cmd = ['cmake', '--system-information']
             else:
-                logdbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
+                dbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
                 from . import vsinfo
                 gen = vsinfo.to_gen(gen)
                 if isinstance(gen, list):
@@ -338,7 +339,7 @@ class CMakeSysInfo:
             os.makedirs(d)
         with setcwd(d):
             out = runsyscmd(cmd, echo_output=False, capture_output=True)
-        logdbg("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
+        dbg("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
         out = out.strip()
         if not out:
             from .err import InvalidGenerator
@@ -384,10 +385,10 @@ def _genid(gen):
 # -----------------------------------------------------------------------------
 def get_toolchain_cache(toolchain):
     d = os.path.join(USER_DIR, 'toolchains', re.sub(os.sep, '_', toolchain))
-    logdbg("toolchain cache: USER_DIR=", USER_DIR)
-    logdbg("toolchain cache: d=", d)
+    dbg("toolchain cache: USER_DIR=", USER_DIR)
+    dbg("toolchain cache: d=", d)
     bd = os.path.join(d, 'build')
-    logdbg("toolchain cache: bd=", bd)
+    dbg("toolchain cache: bd=", bd)
     if not os.path.exists(d):
         os.makedirs(d)
         with setcwd(d):
@@ -411,8 +412,8 @@ def extract_toolchain_compilers(toolchain):
     cache = get_toolchain_cache(toolchain)
     out = odict()
     for k, v in cache.items():
-        logdbg(f"toolchain cache: {k}=={v}")
+        dbg(f"toolchain cache: {k}=={v}")
         if k.startswith('CMAKE_') and k.endswith('_COMPILER'):
-            logdbg(f"toolchain cache: .................... {k}=={v}")
+            dbg(f"toolchain cache: .................... {k}=={v}")
             out[k] = v.val
     return out

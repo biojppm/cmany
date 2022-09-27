@@ -2,6 +2,7 @@ import re
 
 from .build_item import BuildItem
 from . import util
+from .cmake import CMakeSysInfo
 
 
 # -----------------------------------------------------------------------------
@@ -15,14 +16,10 @@ class Architecture(BuildItem):
 
     @staticmethod
     def default_str():
-        # s = CMakeSysInfo.architecture()
-        # if s == "amd64":
-        #     s = "x86_64"
-        # return s
-        if util.in_64bit():
-            return "x86_64"
-        elif util.in_32bit():
-            return "x86"
+        s = CMakeSysInfo.architecture()
+        if s == "amd64":
+            s = "x86_64"
+        return s
 
     @property
     def is64(self):
