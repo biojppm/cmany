@@ -254,47 +254,31 @@ def add_select(parser):
         given either as a comma-separated list or with repeated invokations
         of their arguments. Commas can be escaped by using a backslash,
         \\.""")
-    #
-    dft = [system.System.default_str()]
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of operating systems
-                   to combine. Defaults to the current system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    dft = [architecture.Architecture.default_str()]
+                   to combine. Defaults to the current system.""")
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of processor
                    architectures to combine. Defaults to CMake's default
-                   architecture on this system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    dft = [compiler.Compiler.default_str()]
+                   architecture on this system.""")
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of compilers to
                    combine. Compilers can be given as an absolute path, or as
                    a name, in which case that name will be searched for in
                    the current shell's PATH.  Defaults to CMake's default
-                   compiler on this system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    # dft = [build_type.BuildType.default_str()]  # avoid a circular dependency
-    dft = ["Release"]
+                   compiler on this system.""")
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of build types
-                   to combine. Defaults to """ + _item_printer(dft) + """.""")
-    #
-    # dft = [variant.Variant.default_str()]  # avoid a circular dependency
-    dft = ["none"]
+                   to combine.""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   default=["none"], action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of variants
                    to combine. The variant name 'none' is special and will be
-                   omitted from the name of the resulting build. Defaults to
-                   """ + _item_printer(dft) + """.""")
+                   omitted from the name of the resulting build. Defaults to none.""")
     #add_combination_flags(parser)
 
 

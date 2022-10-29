@@ -61,7 +61,7 @@ Xcode
 """
 
 # -----------------------------------------------------------------------------
-class Generator(BuildItem):
+class Generator(BuildItem):  # NamedItem
 
     """Visual Studio aliases example:
     vs2013: use the bitness of the current system
@@ -70,9 +70,9 @@ class Generator(BuildItem):
     """
 
     @staticmethod
-    def default_str():
+    def default_str(toolchain_file: str=None):
         """get the default generator from cmake"""
-        s = cmake.CMakeSysInfo.generator()
+        s = cmake.CMakeSysInfo.generator(toolchain_file)
         return s
 
     def __init__(self, name, build, num_jobs):

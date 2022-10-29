@@ -111,7 +111,7 @@ class CMakeCache(odict):
     def __eq__(self, other):
         """code quality checkers complain that this class adds attributes
         without overriding __eq__. So just fool them!"""
-        return super().__init__(other)
+        return super().__eq__(other)
 
     def getvars(self, names):
         out = odict()
@@ -247,41 +247,43 @@ class CMakeSysInfo:
     generator, etc."""
 
     @staticmethod
-    def generator():
+    def generator(toolchain=None):
         return cacheattr(__class__, '_generator_default',
-                         lambda: __class__._getstr('CMAKE_GENERATOR', 'default'))
+                         lambda: __class__._getstr('CMAKE_GENERATOR', 'default', toolchain))
 
     @staticmethod
-    def system_name(which_generator="default"):
-        return __class__.var('CMAKE_SYSTEM_NAME', which_generator, lambda v: v.lower())
+    def system_name(generator="default", toolchain=None):
+        return __class__.var('CMAKE_SYSTEM_NAME', generator, toolchain,
+                             lambda v: v.lower())
 
     @staticmethod
-    def architecture(which_generator="default"):
-        return __class__.var('CMAKE_SYSTEM_PROCESSOR', which_generator, lambda v: v.lower())
+    def architecture(generator="default", toolchain=None):
+        return __class__.var('CMAKE_SYSTEM_PROCESSOR', generator, toolchain,
+                             lambda v: v.lower())
 
     @staticmethod
-    def cxx_compiler(which_generator="default"):
-        return __class__.var('CMAKE_CXX_COMPILER', which_generator)
+    def cxx_compiler(generator="default", toolchain=None):
+        return __class__.var('CMAKE_CXX_COMPILER', generator, toolchain)
 
     @staticmethod
-    def c_compiler(which_generator="default"):
-        return __class__.var('CMAKE_C_COMPILER', which_generator)
+    def c_compiler(generator="default", toolchain=None):
+        return __class__.var('CMAKE_C_COMPILER', generator, toolchain)
 
     @staticmethod
-    def var(var_name, which_generator="default", transform_fn=lambda x: x):
-        gs = __class__._getstr
-        return cacheattr(__class__, '_{}_{}'.format(var_name, _genid(which_generator)),
-                         lambda: transform_fn(gs(var_name, which_generator)))
+    def var(var_name, generator="default", toolchain=None, transform_fn=lambda x: x):
+        attrname = '_{}_{}'.format(var_name, _gentc_id(generator, toolchain))
+        return cacheattr(__class__, attrname,
+                         lambda: transform_fn(__class__._getstr(var_name, generator, toolchain)))
 
     @staticmethod
-    def info(which_generator="default"):
-        return cacheattr(__class__, '_info_' + _genid(which_generator),
-                         lambda: __class__.system_info(which_generator))
+    def info(generator="default", toolchain=None):
+        return cacheattr(__class__, '_info_' + _gentc_id(generator, toolchain),
+                         lambda: __class__.system_info(generator, toolchain))
 
     @staticmethod
-    def _getstr(var_name, which_generator):
+    def _getstr(var_name, generator, toolchain):
         regex = r'^{} "(.*)"'.format(var_name)
-        for l in __class__.info(which_generator):
+        for l in __class__.info(generator, toolchain):
             #dbg(l.strip("\n"), l.startswith(var_name), var_name)
             if l.startswith(var_name):
                 l = l.strip("\n").lstrip(" ").rstrip(" ")
@@ -290,64 +292,78 @@ class CMakeSysInfo:
                     s = re.sub(regex, r'\1', l)
                     #dbg(var_name, "result: '" + s + "'")
                     return s
-        #dbg("--------------------------------------\n", __class__.info(which_generator))
-        msg = "could not find variable {} in the output of `cmake --system-information -G '{}'`"
-        raise err.Error(msg, var_name, which_generator)
+        #dbg("--------------------------------------\n", __class__.info(generator))
+        raise err.Error("could not find variable {} in the output of `cmake --system-information -G '{}'`",
+                        var_name, generator)
 
     @staticmethod
-    def system_info(gen):
+    def system_info(gen, toolchain_file=None):
         """gen can be a string or a cmany.Generator object"""
-        from .generator import Generator
-        dbg("CMakeSystemInfo: asked info for", gen)
-        p = _genid(gen)
-        d = os.path.join(USER_DIR, 'cmake_info', p)
-        p = os.path.join(d, 'info')
+        dbg("CMakeSystemInfo: asked info for", gen,
+            (("toolchain="+toolchain_file) if toolchain_file is not None else ""))
+        toolchain_args = []
+        if toolchain_file is not None:
+            if not os.path.exists(toolchain_file):
+                raise err.ToolchainFileNotFound(toolchain_file)
+            toolchain_args = ['--toolchain', toolchain_file]
+        d = _geninfodir(gen, toolchain_file)
+        p = os.path.join(d, 'cmake_system_information')
+        dbg("CMakeSystemInfo: dir=", d)
         dbg("CMakeSystemInfo: path=", p)
-        # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
-        if os.path.exists(p) and util.time_since_modification(p).months < 1:
-            dbg("CMakeSystemInfo: asked info for", gen, "... found", p)
-            with open(p, "r") as f:
-                i = f.readlines()
-                if i:
-                    return i
-                else:
-                    dbg("CMakeSystemInfo: info for gen", gen, "is empty...")
-        #
-        if isinstance(gen, Generator):
-            cmd = ['cmake'] + gen.configure_args() + ['--system-information']
-            dbg("CMakeSystemInfo: from generator! '{}' ---> cmd={}".format(gen, cmd))
-        else:
+        if os.path.exists(p):
+            dbg('CMakeSystemInfo: found at', p)
+            if util.time_since_modification(p).months >= 1:
+                dbg("CMakeSystemInfo: older than 1 month. Refreshing", p)
+            else:
+                dbg("CMakeSystemInfo: less than 1 month. Choosing", p)
+                return _getnfo(p)
+        gen_args = []
+        if isinstance(gen, str):
             if gen == "default" or gen == "":
                 dbg("CMakeSystemInfo: default! '{}'".format(gen))
-                cmd = ['cmake', '--system-information']
             else:
                 dbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
                 from . import vsinfo
                 gen = vsinfo.to_gen(gen)
                 if isinstance(gen, list):
-                    cmd = ['cmake', '-G'] + gen + ['--system-information']
+                    gen_args = ['-G'] + gen
                 else:
                     if not (gen.startswith('vs') or gen.startswith('Visual Studio')):
                         raise Exception("unknown generator: {}".format(gen))
-                    cmd = ['cmake', '-G', gen, '--system-information']
+                    gen_args = ['-G', gen]
+        else:
+            gen_args = gen.configure_args()
+            dbg("CMakeSystemInfo: from generator! '{}' ---> {}".format(gen, gen_args))
+        cmd = ['cmake'] + toolchain_args + gen_args + ['--system-information', os.path.basename(p)]
+        dbg("CMakeSystemInfo: cmd={}".format(cmd))
         # remove export build commands as cmake reacts badly to it,
         # generating an empty info string
         _remove_invalid_args_from_sysinfo_cmd(cmd)
+        dbg("CMakeSystemInfo: filtered cmd={}".format(cmd))
         print("\ncmany: CMake information for generator '{}' was not found. Creating and storing... cmd={}".format(gen, cmd))
         #
         if not os.path.exists(d):
             os.makedirs(d)
-        with setcwd(d):
-            out = runsyscmd(cmd, echo_output=False, capture_output=True)
-        dbg("cmany: finished generating information for generator '{}'\n".format(gen), out, cmd)
-        out = out.strip()
+        with util.setcwd(d):
+            runsyscmd(cmd)
+        out = _getnfo(p)
+        dbg("cmany: finished generating information for generator '{}', cmd={}. Info=\n{}".format(gen, cmd, '\n'.join(out)))
         if not out:
             from .err import InvalidGenerator
             raise InvalidGenerator(gen, "for --system-information. cmd='{}'".format(cmd))
-        with open(p, "w") as f:
-            f.write(out)
-        i = out.split("\n")
-        return i
+        return out
+
+
+def _getnfo(p):
+    dbg("CMakeSystemInfo: loading=", p)
+    if not os.path.exists(p):
+        raise FileNotFoundError(p)
+    with open(p, "r") as f:
+        lines = f.readlines()
+        if not lines:
+            dbg("CMakeSystemInfo: info for gen", gen, "is empty...", p)
+        lines = [l.strip() for l in lines]
+        return lines
 
 
 def _remove_invalid_args_from_sysinfo_cmd(cmd):
@@ -372,40 +388,62 @@ def _remove_invalid_args_from_sysinfo_cmd(cmd):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
+
+
+def _geninfodir(gen, toolchain_file: str):
+    dbg('cmakeinfo USER_DIR=', USER_DIR)
+    if toolchain_file is None:
+        base = USER_DIR
+    else:
+        id = _toolchainid(toolchain_file)
+        base = os.path.join(USER_DIR, 'toolchains', id)
+        dbg('cmakeinfo toolchain=', toolchain_file)
+        dbg('cmakeinfo toolchain_id=', id)
+        dbg('cmakeinfo toolchain_base=', base)
+    id = _genid(gen)
+    d = os.path.join(base, 'cmake_info', id)
+    dbg('cmakeinfo base=', base)
+    dbg('cmakeinfo gen_id=', id)
+    dbg('cmakeinfo infodir=', d)
+    return d
+
+
+def _toolchaindir(toolchain_file: str):
+    id = _toolchainid(toolchain_file)
+    base = os.path.join(USER_DIR, 'toolchains', id)
+    dbg('cmakeinfo USER_DIR=', USER_DIR)
+    return base
+
+
+def _gentc_id(gen, toolchain):
+    if toolchain is None:
+        return _genid(gen)
+    else:
+        return _toolchainid(toolchain) + '_' + _genid(gen)
+
+
 def _genid(gen):
-    from .generator import Generator
-    p = gen.sysinfo_name if isinstance(gen, Generator) else gen
-    if isinstance(gen, list): p = " ".join(p)
+    if isinstance(gen, str):
+        p = gen
+    elif isinstance(gen, list):
+        p = " ".join(p)
+    else:
+        from .generator import Generator
+        p = gen.sysinfo_name
     p = re.sub(r'[() ]', '_', p)
     return p
 
 
+def _toolchainid(toolchain: str):
+    id = re.sub(os.sep, '_', toolchain)
+    id = re.sub(r'[() +.]', '_', id)
+    return id
+
+
+
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-def get_toolchain_cache(toolchain):
-    d = os.path.join(USER_DIR, 'toolchains', re.sub(os.sep, '_', toolchain))
-    dbg("toolchain cache: USER_DIR=", USER_DIR)
-    dbg("toolchain cache: d=", d)
-    bd = os.path.join(d, 'build')
-    dbg("toolchain cache: bd=", bd)
-    if not os.path.exists(d):
-        os.makedirs(d)
-        with setcwd(d):
-            with open('main.cpp', 'w') as f:
-                f.write("int main() {}")
-            with open('CMakeLists.txt', 'w') as f:
-                f.write("""
-cmake_minimum_required(VERSION 2.6)
-project(toolchain_test)
-add_executable(main main.cpp)
-""")
-        if not os.path.exists(bd):
-            os.makedirs(bd)
-        with setcwd(bd):
-            cmd = ['cmake', '-DCMAKE_TOOLCHAIN_FILE='+toolchain, '..']
-            runsyscmd(cmd, echo_output=True)
-    return loadvars(bd)
 
 
 def extract_toolchain_compilers(toolchain):

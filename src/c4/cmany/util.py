@@ -497,6 +497,7 @@ class setcwd:
 def time_since_modification(path):
     """return the time elapsed since a path has been last modified, as a
     dateutil.relativedelta"""
+    # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
     mtime = os.path.getmtime(path)
     mtime = datetime.datetime.fromtimestamp(mtime)
     currt = datetime.datetime.now()

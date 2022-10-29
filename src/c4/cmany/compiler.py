@@ -17,16 +17,16 @@ class Compiler(BuildItem):
     """Represents a compiler choice"""
 
     @staticmethod
-    def default():
-        return Compiler(__class__.default_str())
+    def default(toolchain_file: str=None):
+        return Compiler(__class__.default_str(toolchain_file))
 
     @staticmethod
-    def default_str():
-        if str(System.default()) != "windows":
-            cpp = CMakeSysInfo.cxx_compiler()
+    def default_str(toolchain_file: str=None):
+        if str(System.default(toolchain_file)) != "windows":
+            cpp = CMakeSysInfo.cxx_compiler(toolchain=toolchain_file)
         else:
             vs = vsinfo.find_any()
-            cpp = vs.name if vs is not None else CMakeSysInfo.cxx_compiler()
+            cpp = vs.name if vs is not None else CMakeSysInfo.cxx_compiler(toolchain_file)
         return cpp
 
     def is_trivial(self):

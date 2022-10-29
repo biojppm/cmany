@@ -10,13 +10,13 @@ class Architecture(BuildItem):
     """Specifies a processor architecture"""
 
     @staticmethod
-    def default():
+    def default(toolchain_file: str=None):
         """return the architecture of the current machine"""
-        return Architecture(__class__.default_str())
+        return Architecture(__class__.default_str(toolchain_file))
 
     @staticmethod
-    def default_str():
-        s = CMakeSysInfo.architecture()
+    def default_str(toolchain_file: str=None):
+        s = CMakeSysInfo.architecture(toolchain=toolchain_file)
         if s == "amd64":
             s = "x86_64"
         return s

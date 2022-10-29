@@ -8,11 +8,11 @@ class Variant(BuildItem):
     """for variations in build flags"""
 
     @staticmethod
-    def default_str():
+    def default_str(toolchain_file: str=None):
         return 'none'
 
     @staticmethod
-    def default():
+    def default(toolchain_file: str=None):
         return Variant(__class__.default_str())
 
     @staticmethod

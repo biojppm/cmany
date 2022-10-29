@@ -54,7 +54,7 @@ def do_combination_t(test, input, expected_items, expected_combinations):
     ) for s, a, c, t, v in expected_combinations]
 
     # actual combinations
-    s, a, c, t, v = cmany.Project.get_build_items(**vars(args))
+    s, a, c, t, v = cmany.Project.create_build_items(**vars(args))
     cr = []
     if hasattr(args, 'combination_rules'):
         cr = args.combination_rules

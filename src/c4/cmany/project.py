@@ -153,7 +153,7 @@ class Project:
                 self.builds.append(build)
 
     def _init_with_build_items(self, **kwargs):
-        s, a, c, t, v = __class__.get_build_items(**kwargs)
+        s, a, c, t, v = __class__.create_build_items(**kwargs)
         #
         cr = CombinationRules(kwargs.get('combination_rules', []))
         combs = cr.valid_combinations(s, a, c, t, v)
@@ -187,16 +187,14 @@ class Project:
             _addnew(b, 'variant')
 
     @staticmethod
-    def get_build_items(**kwargs):
-        d = odict()
-        for c, cls in (
-                ('systems', System),
-                ('architectures', Architecture),
-                ('compilers', Compiler),
-                ('build_types', BuildType),
-                ('variants', Variant)):
-            d[c] = (cls, kwargs.get(c))
-        coll = BuildItem.create(d)
+    def create_build_items(**kwargs):
+        coll = BuildItem.create_build_items({
+            'systems': System,
+            'architectures': Architecture,
+            'compilers': Compiler,
+            'build_types': BuildType,
+            'variants': Variant,
+        }, **kwargs)
         s = coll['systems']
         a = coll['architectures']
         c = coll['compilers']

@@ -63,16 +63,7 @@ class Build(NamedItem):
         super().__init__(tag)
         #
         self.toolchain_file = self._get_toolchain()
-        if self.toolchain_file:
-            comps = cmake.extract_toolchain_compilers(self.toolchain_file)
-            if comps.get('CMAKE_CXX_COMPILER'):
-                c = Compiler(comps['CMAKE_CXX_COMPILER'])
-            else:
-                c = Compiler(os.environ.get('CXX'))
-                dbg(f"CMAKE_CXX_COMPILER not found, trying environment var CXX:", c)
-            self.adjust(compiler=c)
-        #
-        # WATCHOUT: this may trigger a readjustment of this build's parameters
+        # WATCHOUT: this may trigger a readjustment of the build's parameters
         self.generator = self.create_generator(num_jobs)
         #
         # This will load the vars from the builddir cache, if it exists.
@@ -117,7 +108,7 @@ class Build(NamedItem):
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
-        for prop in "projdir buildroot installroot buildtag installtag builddir installdir preload_file cachefile".split(" "):
+        for prop in "system architecture compiler build_type variant projdir buildroot installroot buildtag installtag builddir installdir preload_file cachefile".split(" "):
             dbg("    {}: {}={}".format(self.tag, prop, getattr(self, prop)))
         return self.tag
 
@@ -138,7 +129,7 @@ class Build(NamedItem):
             if self.system.name == "windows":
                 return Generator(fallback_generator, self, num_jobs)
             else:
-                return Generator(Generator.default_str(), self, num_jobs)
+                return Generator(Generator.default_str(self.toolchain_file), self, num_jobs)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
@@ -466,9 +457,11 @@ class Build(NamedItem):
             tc = BuildFlags.merge_toolchains(tc, fs.toolchain)
         if not tc:
             return None
+        dbg("toolchain:", tc)
         if not os.path.isabs(tc):
             tc = os.path.join(os.getcwd(), tc)
             tc = os.path.abspath(tc)
+        dbg("toolchain:", tc)
         if not os.path.exists(tc):
             raise err.ToolchainFileNotFound(tc, self)
         return tc
