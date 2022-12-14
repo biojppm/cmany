@@ -318,22 +318,22 @@ class CMakeSysInfo:
                 dbg("CMakeSystemInfo: less than 1 month. Choosing", p)
                 return _getnfo(p)
         gen_args = []
-        if isinstance(gen, str):
-            if gen == "default" or gen == "":
-                dbg("CMakeSystemInfo: default! '{}'".format(gen))
-            else:
-                dbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
-                from . import vsinfo
-                gen = vsinfo.to_gen(gen)
-                if isinstance(gen, list):
-                    gen_args = ['-G'] + gen
-                else:
-                    if not (gen.startswith('vs') or gen.startswith('Visual Studio')):
-                        raise Exception("unknown generator: {}".format(gen))
-                    gen_args = ['-G', gen]
-        else:
+        from . import generator
+        if isinstance(gen, str) and (gen == "default" or gen == ""):
+            dbg("CMakeSystemInfo: default! '{}'".format(gen))
+        elif isinstance(gen, generator.Generator):
             gen_args = gen.configure_args()
             dbg("CMakeSystemInfo: from generator! '{}' ---> {}".format(gen, gen_args))
+        else:
+            dbg("CMakeSystemInfo: assume vs! '{}'".format(gen))
+            from . import vsinfo
+            gen = vsinfo.to_gen(gen)
+            if isinstance(gen, list):
+                gen_args = ['-G'] + gen
+            else:
+                if not (gen.startswith('vs') or gen.startswith('Visual Studio')):
+                    raise Exception("unknown generator: {}".format(gen))
+                gen_args = ['-G', gen]
         cmd = ['cmake'] + toolchain_args + gen_args + ['--system-information', os.path.basename(p)]
         dbg("CMakeSystemInfo: cmd={}".format(cmd))
         # remove export build commands as cmake reacts badly to it,
@@ -426,7 +426,7 @@ def _genid(gen):
     if isinstance(gen, str):
         p = gen
     elif isinstance(gen, list):
-        p = " ".join(p)
+        p = " ".join(gen)
     else:
         from .generator import Generator
         p = gen.sysinfo_name
