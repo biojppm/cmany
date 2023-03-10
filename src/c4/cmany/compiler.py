@@ -10,6 +10,7 @@ from . import util
 from . import vsinfo
 from . import err
 from .util import logdbg
+from .util import logwarn
 
 
 def dbg(*args, **kwargs):
@@ -30,7 +31,12 @@ class Compiler(BuildItem):
             cpp = CMakeSysInfo.cxx_compiler(toolchain=toolchain_file)
         else:
             vs = vsinfo.find_any()
-            cpp = vs.name if vs is not None else CMakeSysInfo.cxx_compiler(toolchain_file)
+            if vs is not None:
+                dbg("found visual studio:", vs.name)
+                cpp = vs.name
+            else:
+                logwarn("visual studio not found, using compiler from cmake --system-information, toolchain=", toolchain_file)
+                cpp = CMakeSysInfo.cxx_compiler(toolchain=toolchain_file)
         return cpp
 
     def is_trivial(self):
@@ -59,6 +65,8 @@ class Compiler(BuildItem):
             if (util.in_windows() and len(path) == 1 and len(spl) > 1 and (spl[1][0] == '/' or spl[1][0] == '\\')):
                 path = spec
                 spl = [path]
+            if (util.in_windows() and path.endswith("cl.exe")):
+                raise err.VSNotFound(spec, msg="cannot use cl.exe directly")
             p = util.which(path)
             if p is None:
                 dbg("not found:", path)
