@@ -9,7 +9,11 @@ from .cmake import CMakeSysInfo
 from . import util
 from . import vsinfo
 from . import err
-from .util import logdbg as dbg
+from .util import logdbg
+
+
+def dbg(*args, **kwargs):
+    logdbg("compiler:", *args, **kwargs)
 
 
 # -----------------------------------------------------------------------------
@@ -67,7 +71,7 @@ class Compiler(BuildItem):
                 dbg("no compiler found", path)
                 raise err.CompilerNotFound(path)
             if p != path:
-                dbg("compiler: selected {} for {}".format(p, path))
+                dbg("selected {} for {}".format(p, path))
             if isinstance(path, str):
                 path = os.path.abspath(p)
             else:
@@ -108,12 +112,12 @@ class Compiler(BuildItem):
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
         elif shortname == "icpx":
             cc = re.sub(r'icpx', r'icpx', cxx_compiler)
-        elif shortname == "gcc" or shortname == "g++":
+        elif shortname == "gcc" or shortname == "g++" or shortname.startswith("g++"):
             if re.search(r'g\+\+', cxx_compiler):
                 cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
             else:
                 cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
-        elif shortname == "clang" or shortname == "clang++":
+        elif shortname == "clang" or shortname == "clang++" or shortname.startswith("clang++"):
             if re.search(r'clang\+\+', cxx_compiler):
                 cc = re.sub(r'clang\+\+', r'clang', cxx_compiler)
             else:
@@ -133,7 +137,7 @@ class Compiler(BuildItem):
         if hasattr(self, "vs"):
             return self.vs.name, str(self.vs.year), self.vs.name
         # other compilers
-        dbg("cmp: found compiler:", path)
+        dbg("found compiler:", path)
         if isinstance(path, str):
             out = slntout([path, '--version'])
         else:
@@ -141,10 +145,11 @@ class Compiler(BuildItem):
         version_full = out.split("\n")[0]
         splits = version_full.split(" ")
         name = splits[0].lower()
-        dbg("cmp: version:", name, "---", version_full, "---")
+        dbg("version:", name, "---", version_full, "---")
         vregex = r'(\d+\.\d+)\.\d+'
         base = os.path.basename(path)
-        dbg(name, "cmp base:", base, name)
+        dbg("base:", base)
+        dbg("name:", name)
         if base.startswith("c++") or base.startswith("cc"):
             try:  # if this fails, just go on. It's not really needed.
                 with tempfile.NamedTemporaryFile(suffix=".cpp", prefix="cmany.", delete=False) as f:
@@ -160,21 +165,33 @@ class Compiler(BuildItem):
                 elif re.search("#define __GNUC__", m):
                     name = "g++" if re.search(r"\+\+", path) else "gcc"
                     break
+        elif version_full.startswith("Ubuntu clang version"):
+            name = "clang++"
+        # not elif!
         if name.startswith("clang++") or name.startswith("clang") or name.endswith("clang++") or name.endswith("clang"):
             name = "clang++" if path.find('clang++') != -1 else 'clang'
             if re.search('Apple LLVM', version_full):
                 name = "apple_llvm"
                 version = re.sub(r'Apple LLVM version ' + vregex + '.*', r'\1', version_full)
                 dbg("apple_llvm version:", version, "---")
+            elif version_full.startswith("Ubuntu clang version"):
+                name = "clang++"
+                version = re.sub('Ubuntu clang version ' + vregex + '.*', r'\1', version_full)
             else:
                 version = re.sub(r'clang version ' + vregex + '.*', r'\1', version_full)
-                dbg("clang version:", version, "---")
+            dbg("clang version:", version, "---")
         elif name.startswith("g++") or name.startswith("gcc") or name.endswith("g++") or name.endswith("gcc"):
-            dbg("g++: version:", name, name.find('++'))
+            dbg("g++: name=", name)
+            if (name.startswith("g++") and name != "g++"):
+                name = "g++"
+            if (name.startswith("gcc") and name != "gcc"):
+                name = "gcc"
+            dbg("g++: name=", name)
             #name = "g++" if name.find('++') != -1 else 'gcc'
             #dbg("g++: version:", name, name.find('++'))
             version = slntout([path, '-dumpversion'])
             dbg("g++: versiondump:", version)
+            dbg("g++: versionfull:", version_full)
             version = re.sub(vregex, r'\1', version)
             dbg("gcc version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
