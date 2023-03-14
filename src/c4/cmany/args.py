@@ -372,6 +372,14 @@ def add_item_combination_flags(parser):
                    following variants.""")
 
 
+def dash_warning(flag):
+    return """To prevent flags/arguments starting with dash (-) or
+    double-dash (--) from being expanded by the shell and then
+    understood as a cmany flag, enclose them in quotes with leading
+    whitespace. Eg, instead of {} '--flag' use {} ' --flag', or
+    instead of {} '-f' use {} ' -f'.""".format(flag, flag, flag, flag)
+
+
 def add_cflags(parser):
     g = parser.add_argument_group(
         'Flags: CMake cache variables, compiler flags and defines',
@@ -405,7 +413,7 @@ def add_cflags(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   To escape commas, use a backslash \\.""")
+                   To escape commas, use a backslash \\. """ + dash_warning("-X"))
     g.add_argument("-C", "--cflags", default=[], action=FlagArgument,
                    help="""Add C compiler flags.
                    Accepts a comma-separated list of C compiler flags.
@@ -416,7 +424,7 @@ def add_cflags(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   To escape commas, use a backslash \\.""")
+                   To escape commas, use a backslash \\. """ + dash_warning("-C"))
     # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
     #                help="""add dirs to the include path of all builds
     #                Multiple invokations of -I are possible, in which case arguments will be appended and not overwritten.

@@ -236,7 +236,7 @@ class run_target(selectcmd):
         parser.add_argument('-ta', '--target-args', type=str, default="",
                             help="""arguments to pass to the target invokation. If multiple
                             targets are given, arguments are passed to every target. The
-                            arguments need to be given as a single string.""")
+                            arguments need to be given as a single string. """ + c4args.dash_warning("-ta"))
         parser.add_argument('-np', '--no-posix', action="store_true",
                             help="""do not use posix mode when splitting the target arguments""")
         parser.add_argument('-wd', '--work-dir', type=str, default=None,
@@ -244,7 +244,7 @@ class run_target(selectcmd):
         parser.add_argument('-wp', '--wrap', type=str, default=None,
                             help="""wrap the target invokation with the given command, eg
                             valgrind or gdb. A string with spaces can be passed, in which
-                            case it will be split before the command is formed.""")
+                            case it will be split to form the invokation command.""")
     def _exec(self, proj, args):
         import shlex
         target_args = shlex.split(args.target_args, posix=not args.no_posix)
