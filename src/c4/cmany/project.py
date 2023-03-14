@@ -97,8 +97,8 @@ class Project:
         cmakecache = None
         if _pexists(self.cmakelists):
             dbg("found CMakeLists.txt:", self.cmakelists)
-            self.build_dir = _getdir('build_dir', 'build', kwargs, cwd)
-            self.install_dir = _getdir('install_dir', 'install', kwargs, cwd)
+            self.build_dir = _getdir('build_root', 'build', kwargs, cwd)
+            self.install_dir = _getdir('install_root', 'install', kwargs, cwd)
             self.root_dir = pdir
         elif _pexists(pdir, "CMakeCache.txt"):
             cmakecache = os.path.join(pdir, "CMakeCache.txt")

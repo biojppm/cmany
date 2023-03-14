@@ -32,10 +32,19 @@ def do_combination_t(test, input, expected_items, expected_combinations):
     args = _parser.parse_args(input)
     # util.logcmd(input, "\n", args)
 
-    for i in ('systems', 'architectures', 'compilers', 'build_types', 'variants'):
+    for i,default_str in (
+            ('systems', ds),
+            ('architectures', da),
+            ('compilers', dc),
+            ('build_types', dt),
+            ('variants', dv)
+    ):
+        print("i=", i, "default_str=", ds)
         expected = expected_items[i]
         expected = [e.split(':')[0] for e in expected]
-        actual = getattr(args, i)
+        actual = getattr(args, i, None)
+        if actual is None:
+            actual = [default_str]
         actual = [a.split(':')[0] for a in actual]
         # print(i, "actual=", actual)
         # print(i, "expected=", expected)

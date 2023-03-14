@@ -21,7 +21,7 @@ testdirs = [osp.join(mydir, "hello")]
 
 
 def toolchain_compiler_exists(tc_file):
-    return osp.exists(cmake.cxx_compiler(toolchain=tc_file))
+    return cmake.CMakeSysInfo.cxx_compiler(toolchain=tc_file)
 
 
 def run_with_args(testdir, args_in):
@@ -49,7 +49,8 @@ def do_toolchain_builds(toolchain, test, args, expected_builds):
     if not toolchain_compiler_exists(toolchain):
         return
     args = [a.format(toolchain=toolchain) for a in args]
-    c = cmake.cxx_compiler(toolchain=toolchain)
+    c = cmake.CMakeSysInfo.cxx_compiler(toolchain=toolchain)
+    c = Compiler(c)
     expected_builds = [b.format(compiler=Build.sanitize_compiler_name(c.name))
                        for b in expected_builds]
     for t in testdirs:

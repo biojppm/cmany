@@ -155,11 +155,36 @@ class ConfFixtureBase(ut.TestCase):
 # -----------------------------------------------------------------------------
 # Test cases for build flags
 
-# using the _ prefix prevents unittest from instantiating tests for this class
-class _BFTCase(ConfFixtureBase):
-    """base for build flags test case"""
 
-    def _setUp(self, bf, yml):
+from parameterized import parameterized
+build_flags_parameters = [
+    [
+        "Empty",
+        BuildFlags("empty"),
+        ""
+    ],
+    [
+        "CMakeVars",
+        BuildFlags("cmake_vars",
+                   cmake_vars=["VARFOO=BAR", "CMAKE_VERBOSE_MAKEFILE=1"]),
+        """cmake_vars: VARFOO=BAR CMAKE_VERBOSE_MAKEFILE=1"""
+    ],
+    [
+        "CMakeVarsAndCxxflags",
+        BuildFlags("cmake_vars_and_cxxflags",
+                   cmake_vars=["VARFOO=BAR", "CMAKE_VERBOSE_MAKEFILE=1"],
+                   cxxflags=["-std=c++11", "-Wall", ]),
+        """\
+cmake_vars: VARFOO=BAR CMAKE_VERBOSE_MAKEFILE=1
+cxxflags: -std=c++11 -Wall
+"""
+    ],
+]
+
+class Test02BuildFlags(ConfFixtureBase):
+
+    def _prepare(self, name, bf, yml):
+        self.name = name
         self.bf = bf
         self.yml = yml
         self.name = self.__class__.__name__[7:].lower()
@@ -191,67 +216,30 @@ class _BFTCase(ConfFixtureBase):
                 if a not in self.non_empty:
                     self.assertTrue(not hasattr(cm, a))
 
-    def test01Save(self):
+    @parameterized.expand(build_flags_parameters)
+    def test01Save(self, name, bf, yml):
+        self._prepare(name, bf, yml)
         cm = self.do_save()
         self.check_cm(cm)
 
-    def test02Load(self):
+    @parameterized.expand(build_flags_parameters)
+    def test02Load(self, name, bf, yml):
+        self._prepare(name, bf, yml)
         bf = self.do_load()
         self.check_bf(bf)
 
-    def test03RoundtripSaveLoad(self):
+    @parameterized.expand(build_flags_parameters)
+    def test03RoundtripSaveLoad(self, name, bf, yml):
+        self._prepare(name, bf, yml)
         bf = self.do_roundtrip_save_load()
         self.check_bf(bf)
 
-    def test04RoundtripLoadSave(self):
+    @parameterized.expand(build_flags_parameters)
+    def test04RoundtripLoadSave(self, name, bf, yml):
+        self._prepare(name, bf, yml)
         cm = self.do_roundtrip_load_save()
         self.check_cm(cm)
 
-
-# -----------------------------------------------------------------------------
-class Test02BuildFlags01Empty(_BFTCase):
-    def setUp(self):
-        self._setUp(bf=BuildFlags("empty"), yml="")
-
-
-class Test02BuildFlags02CMakeVars(_BFTCase):
-    def setUp(self):
-        super()._setUp(
-            bf=BuildFlags("cmake_vars",
-                          cmake_vars=["VARFOO=BAR", "CMAKE_VERBOSE_MAKEFILE=1"]),
-            yml="""\
-cmake_vars: VARFOO=BAR CMAKE_VERBOSE_MAKEFILE=1
-""")
-
-
-class Test02BuildFlags03CMakeVarsAndCxxflags(_BFTCase):
-    def setUp(self):
-        self._setUp(
-            bf=BuildFlags("cmake_vars_and_cxxflags",
-                          cmake_vars=["VARFOO=BAR", "CMAKE_VERBOSE_MAKEFILE=1"],
-                          cxxflags=["-std=c++11", "-Wall", ]),
-            yml="""\
-cmake_vars: VARFOO=BAR CMAKE_VERBOSE_MAKEFILE=1
-cxxflags: -std=c++11 -Wall
-""")
-
-
-class Test02BuildFlags04Full(_BFTCase):
-    def setUp(self):
-        self._setUp(
-            bf=BuildFlags("cmake_vars_and_cxxflags",
-                          cmake_vars=["VARFOO=BAR", "CMAKE_VERBOSE_MAKEFILE=1"],
-                          defines=["FOO", "BAR", "VFOO=baaaaaaaaaa"],
-                          cflags=["-std=c++11", "-Wall", ],
-                          cxxflags=["-std=c++11", "-Wall", ],
-                          toolchain="somefile.cmake"),
-            yml="""\
-cmake_vars: VARFOO=BAR CMAKE_VERBOSE_MAKEFILE=1
-defines: FOO BAR VFOO=baaaaaaaaaa
-cflags: -std=c++11 -Wall
-cxxflags: -std=c++11 -Wall
-toolchain: somefile.cmake
-""")
 
 
 # -----------------------------------------------------------------------------

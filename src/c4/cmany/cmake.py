@@ -319,7 +319,9 @@ class CMakeSysInfo:
                 return _getnfo(p)
         gen_args = []
         from . import generator
-        if isinstance(gen, str) and (gen == "default" or gen == ""):
+        if gen is None:
+            dbg("CMakeSystemInfo: gen is None! picking default'")
+        elif isinstance(gen, str) and (gen == "default" or gen == ""):
             dbg("CMakeSystemInfo: default! '{}'".format(gen))
         elif isinstance(gen, generator.Generator):
             gen_args = gen.configure_args()
@@ -423,7 +425,9 @@ def _gentc_id(gen, toolchain):
 
 
 def _genid(gen):
-    if isinstance(gen, str):
+    if gen is None:
+        return "None"
+    elif isinstance(gen, str):
         p = gen
     elif isinstance(gen, list):
         p = " ".join(gen)
@@ -438,20 +442,3 @@ def _toolchainid(toolchain: str):
     id = re.sub(os.sep, '_', toolchain)
     id = re.sub(r'[() +.]', '_', id)
     return id
-
-
-
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
-
-
-def extract_toolchain_compilers(toolchain):
-    cache = get_toolchain_cache(toolchain)
-    out = odict()
-    for k, v in cache.items():
-        dbg(f"toolchain cache: {k}=={v}")
-        if k.startswith('CMAKE_') and k.endswith('_COMPILER'):
-            dbg(f"toolchain cache: .................... {k}=={v}")
-            out[k] = v.val
-    return out

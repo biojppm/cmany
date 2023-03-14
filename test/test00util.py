@@ -15,8 +15,8 @@ from collections import OrderedDict as odict
 class Test00splitesc(ut.TestCase):
     def test(self):
         self.assertEqual(
-            util.splitesc('hello\,world,yet\,another', ','),
-            ['hello\,world', 'yet\,another'])
+            util.splitesc(r'hello\,world,yet\,another', ','),
+            [r'hello\,world', r'yet\,another'])
 
 
 # -----------------------------------------------------------------------------
@@ -258,8 +258,12 @@ class Test09nested_merge(ut.TestCase):
 
     def test00reqs(self):
         import collections
-        self.assertTrue(isinstance(dict(), collections.Mapping))
-        self.assertTrue(isinstance(collections.OrderedDict(), collections.Mapping))
+        if sys.version_info.major == 3 and sys.version_info.minor >= 10:
+            from collections.abc import Mapping as CollectionsMapping
+        else:
+            from collections import Mapping as CollectionsMapping
+        self.assertTrue(isinstance(dict(), CollectionsMapping))
+        self.assertTrue(isinstance(collections.OrderedDict(), CollectionsMapping))
 
     def test01do_it(self):
         for fname in ('tc1', 'tc2', 'tc3'):

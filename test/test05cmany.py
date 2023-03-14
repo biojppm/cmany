@@ -115,7 +115,7 @@ class CMakeTestProj:
                 if not os.path.exists(root):
                     os.makedirs(root)
                 projdir = os.path.abspath('.')
-                args.append(projdir)
+                args += ["--proj-dir", projdir]
         args = maincmd + args
         with util.setcwd(root):
             tmpfile, tmpname = tempfile.mkstemp(prefix="_cmany_tmp.out.")
@@ -166,7 +166,7 @@ def run_projs(testobj, args, check_fn=None):
         with testobj.subTest(msg="default parameters", proj=p.proj):
             p.run(args + ['--build-root', bd, '--install-root', id])
             if check_fn:
-                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
@@ -179,7 +179,7 @@ def run_projs(testobj, args, check_fn=None):
         with testobj.subTest(msg="run in a non root dir", proj=p.proj):
             p.run(args, custom_root=rd)
             if check_fn:
-                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
@@ -204,7 +204,7 @@ def run_projs(testobj, args, check_fn=None):
                 for c in compiler_set:
                     for t in build_types:
                         for v in variant_set:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
@@ -228,7 +228,7 @@ def run_projs(testobj, args, check_fn=None):
                 for c in compiler_set:
                     for t in build_types:
                         for v in variant_set:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
@@ -249,7 +249,7 @@ def run_projs(testobj, args, check_fn=None):
                                       '-v', v.full_specs,
                         ])
                         if check_fn:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
@@ -271,7 +271,7 @@ def run_projs(testobj, args, check_fn=None):
                         p.run(args + ['--build-root', bd, '--install-root', id])
                         os.environ['CMANY_ARGS'] = ''
                         if check_fn:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
@@ -280,7 +280,7 @@ def run_projs(testobj, args, check_fn=None):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class TestBuild:
+class BuildVerifier:
 
     def __init__(self, proj, buildroot, installroot, compiler, build_type, variant, numbuilds):
         self.proj = proj
@@ -323,7 +323,9 @@ class TestBuild:
 
     def siblings(self, dir):
         res = os.path.join(self.proj.root, dir, '*')
+        print("wtf0", res)
         ch = glob.glob(res)
+        print("wtf1", ch)
         return ch
 
 
