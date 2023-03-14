@@ -10,5 +10,5 @@ class BuildType(BuildItem):
         return "Release"
 
     @staticmethod
-    def default(*kwargs):
+    def default(toolchain: str=None):
         return BuildType(__class__.default_str())
