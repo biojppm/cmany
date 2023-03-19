@@ -23,8 +23,6 @@ from .target import Target
 from .conan import Conan
 
 
-
-
 # -----------------------------------------------------------------------------
 class Build(NamedItem):
     """Holds a build's settings"""

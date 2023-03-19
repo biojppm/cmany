@@ -106,7 +106,7 @@ def loadvars(builddir):
                 vartype = re.sub(_cache_entry, r'\2', ls)[1:]
                 value = re.sub(_cache_entry, r'\3', ls)
                 # dbg("loadvars1", name, vartype, value)
-                v[name] = CMakeCacheVar(name, value, vartype, dirty=False, from_input=True)
+                v[name] = CMakeCacheVar(name, value, vartype, dirty=False, from_input=False)
     return v
 
 

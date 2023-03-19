@@ -296,7 +296,7 @@ class Test03loadvars(ut.TestCase):
             self.assertTrue(isinstance(v, c4cmake.CMakeCacheVar))
             self.assertEqual(k, v.name)
             self.assertFalse(v.dirty)
-            self.assertTrue(v.from_input)
+            self.assertFalse(v.from_input)
             self.assertIn(v.vartype, validtypes, v.name)
 
 
