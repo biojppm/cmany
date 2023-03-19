@@ -22,7 +22,7 @@ echo %PIPINSTALL%
 cd test
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 set PYTHONPATH=%root%\src
-%PYTHON% -m pytest --cov=..\src --cov-reset %*
+%PYTHON% -m pytest --cov=..\src --cov-reset -s %*
 if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
 
 exit /b %ERRORLEVEL%

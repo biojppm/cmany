@@ -303,11 +303,20 @@ class BuildVerifier:
                                      num_jobs=cpu_count(),
                                      kwargs={}
                                      )
+        assert self.build_obj.varcache["CMAKE_C_COMPILER"].vartype == "FILEPATH"
+        assert self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype == "FILEPATH"
 
     def checkc(self, tester):
         tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds, msg=self.buildroot + str(self.siblings(self.buildroot)))
-        build_type = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
-        tester.assertEqual(build_type, str(self.build_type))
+        cache = cmake.CMakeCache(self.build_obj.builddir)
+        tester.assertEqual(cache["CMAKE_BUILD_TYPE"].val, str(self.build_type))
+        tester.assertEqual(cache["CMAKE_BUILD_TYPE"].vartype, "STRING")
+        tester.assertEqual(self.build_obj.varcache["CMAKE_C_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(cache["CMAKE_C_COMPILER"].vartype, self.build_obj.varcache["CMAKE_C_COMPILER"].vartype)
+        tester.assertEqual(cache["CMAKE_CXX_COMPILER"].vartype, self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype)
+        tester.assertEqual(cache["CMAKE_C_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(cache["CMAKE_CXX_COMPILER"].vartype, "FILEPATH")
 
     def checkv(self, tester):
         pass
@@ -459,6 +468,8 @@ class Test00Help(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test01Configure(ut.TestCase):
 
+
+
     def test00_default(self):
         run_projs(self, ['c'], lambda tb: tb.checkc(self))
 
@@ -473,6 +484,7 @@ class Test02Build(ut.TestCase):
 
     def test00_default(self):
         run_projs(self, ['b'], lambda tb: tb.checkb(self))
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

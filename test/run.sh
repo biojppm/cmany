@@ -9,6 +9,6 @@ PY=${PYTHON:-python3}
 # run the cmany unit tests
 cd $root/test
 export PYTHONPATH=$root/src
-$PY -m pytest --cov=../src --cov-reset $*
+$PY -m pytest --cov=../src --cov-reset -v $*
 
 exit $?

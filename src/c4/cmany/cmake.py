@@ -10,7 +10,21 @@ from .util import logdbg as dbg
 from . import util
 from . import err
 
+
+def _can_change_cache_type(varname, prevtype, nexttype):
+    """when CMAKE_C_COMPILER et al are set in the preload file or from
+    the command line, cmake sets the vartype to STRING, so we work
+    around that by allowing a change to its proper type of FILEPATH,
+    which is the one that would prevail if nothing had been set."""
+    if varname.startswith("CMAKE_") and varname.endswith("_COMPILER"):
+        if prevtype == "STRING" and nexttype == "FILEPATH":
+            return True
+    return False
+
+
 _cache_entry = r'^(.*?)(:.*?)=(.*)$'
+def _named_cache_entry(name: str):
+    return r'^{}(:.*?)=(.*)$'.format(name)
 
 
 def hascache(builddir):
@@ -20,34 +34,48 @@ def hascache(builddir):
     return None
 
 
-def setcachevar(builddir, var, value):
-    setcachevars(builddir, odict([(var, value)]))
-
-
-def getcachevar(builddir, var):
-    v = getcachevars(builddir, [var])
-    return v[var]
-
-
 def setcachevars(builddir, varvalues):
-    with setcwd(builddir, silent=True):
-        with open('CMakeCache.txt', 'r') as f:
-            ilines = f.readlines()
-            olines = []
-        for l in ilines:
-            for k, v in varvalues.items():
-                if l.startswith(k + ':'):
+    assert os.path.isabs(builddir), builddir
+    cachefile = os.path.join(builddir, "CMakeCache.txt")
+    if not os.path.exists(cachefile):
+        raise err.CacheFileNotFound(cachefile, builddir, "setcachevars")
+    with open(cachefile, 'r') as f:
+        ilines = f.readlines()
+        olines = []
+    rx = {}  # save the splits and regular expressions
+    for k, v in varvalues.items():
+        spl = k.split(':')
+        name = spl[0]
+        vartype = spl[1] if (len(spl) > 1) else None
+        rx[name] = (vartype, v, re.compile(_named_cache_entry(name)))
+    for l in ilines:
+        for k, (vartype, v, rxname) in rx.items():
+            if rxname.match(l):
+                dbg("committing: before=", l.strip())
+                if vartype is not None:
+                    existing_type = re.sub(_cache_entry, r'\2', l)
+                    assert existing_type.startswith(':')
+                    existing_type = existing_type[1:]
+                    existing_type = existing_type.strip("\r\n")
+                    if vartype != existing_type:
+                        if not _can_change_cache_type(k, existing_type, vartype):
+                            raise err.CannotChangeCacheVarType(cachefile, k, existing_type, vartype)
+                    n = "{}:{}={}\n".format(k, vartype, v)
+                else:
                     n = re.sub(_cache_entry, r'\1\2=' + v, l)
-                    l = n
+                dbg("committing: after=", n.strip())
+                l = n
             olines.append(l)
-        with open('CMakeCache.txt', 'w') as f:
-            f.writelines(olines)
+    with open(cachefile, 'w') as f:
+        f.writelines(olines)
 
 
 def getcachevars(builddir, varlist):
     vlist = [v + ':' for v in varlist]
     values = odict()
     with setcwd(builddir, silent=True):
+        if not os.path.exists("CMakeCache.txt"):
+            raise err.CacheFileNotFound("CMakeCache.txt", builddir, "getcachevars")
         with open('CMakeCache.txt') as f:
             for line in f:
                 for v in vlist:
@@ -69,6 +97,8 @@ def loadvars(builddir):
         with open(c, 'r') as f:
             for line in f:
                 # dbg("loadvars0", line.strip())
+                if line.startswith('#'):
+                    continue
                 if not re.match(_cache_entry, line):
                     continue
                 ls = line.strip()
@@ -76,7 +106,7 @@ def loadvars(builddir):
                 vartype = re.sub(_cache_entry, r'\2', ls)[1:]
                 value = re.sub(_cache_entry, r'\3', ls)
                 # dbg("loadvars1", name, vartype, value)
-                v[name] = CMakeCacheVar(name, value, vartype)
+                v[name] = CMakeCacheVar(name, value, vartype, dirty=False, from_input=True)
     return v
 
 
@@ -145,12 +175,20 @@ class CMakeCache(odict):
         return self.setvar(name, val, "INTERNAL", **kwargs)
 
     def setvar(self, name, val, vartype=None, **kwargs):
+        q = lambda v: "'" + str(v) + "'"
+        dbg("setting cache var:", name+':'+str(vartype), "=", q(val), "cache=dirty" if self.dirty else "cache=clean")
         v = self.get(name)
         if v is not None:
-            changed = v.reset(val, vartype, **kwargs)
+            dbg("setting cache var:", name, "was found with", q(v.val))
+            if (vartype is not None) and (vartype != v.vartype):
+                if not _can_change_cache_type(name, v.vartype, vartype):
+                    raise err.CannotChangeCacheVarType(None, v.name, v.vartype, vartype)
+            changed = v.reset(val, **kwargs)
+            dbg("setting cache var:", name, "changed" if changed else "same value")
             self.dirty |= changed
             return changed
         else:
+            dbg("setting cache var:", name, "was not found")
             v = CMakeCacheVar(name, val, vartype, dirty=True, **kwargs)
             self[name] = v
             self.dirty = True
@@ -166,12 +204,90 @@ class CMakeCache(odict):
         for _, v in self.items():
             if not v.dirty:
                 continue
-            tmp[v.name] = v.val
+            dbg("committing to cache: {}:{}={}".format(v.name, v.vartype, v.val))
+            if v.vartype is not None:
+                name_and_type = "{}:{}".format(v.name, v.vartype)
+            else:
+                name_and_type = v.name
+            tmp[name_and_type] = v.val
         setcachevars(builddir, tmp)
         for _, v in self.items():
             v.dirty = False
         self.dirty = False
         return True
+
+
+def _guess_var_type(name, val):
+    """make an informed guess of the var type"""
+    # first look at the name
+    uppername = name.upper()
+    if (("-ADVANCED" in uppername) or
+        (uppername.startswith("CMAKE_") and (uppername in (
+            "CMAKE_CACHEFILE_DIR",
+            "CMAKE_CACHE_MAJOR_VERSION",
+            "CMAKE_CACHE_MINOR_VERSION",
+            "CMAKE_CACHE_PATCH_VERSION",
+            "CMAKE_CACHE_PATCH_VERSION",
+            "CMAKE_COMMAND",
+            "CMAKE_CPACK_COMMAND",
+            "CMAKE_CTEST_COMMAND",
+            "CMAKE_EDIT_COMMAND",
+            "CMAKE_EXECUTABLE_FORMAT",
+            "CMAKE_EXTRA_GENERATOR",
+            "CMAKE_GENERATOR",
+            "CMAKE_GENERATOR_INSTANCE",
+            "CMAKE_GENERATOR_PLATFORM",
+            "CMAKE_GENERATOR_TOOLSET",
+            "CMAKE_HOME_DIRECTORY",
+            "CMAKE_INSTALL_SO_NO_EXE",
+            "CMAKE_NUMBER_OF_MAKEFILES",
+            "CMAKE_PLATFORM_INFO_INITIALIZED",
+            "CMAKE_ROOT",
+            "CMAKE_UNAME",
+        ))) or
+        (uppername.startswith("_CMAKE"))):
+        return "INTERNAL"
+    elif uppername in (
+            "CMAKE_EXPORT_COMPILE_COMMANDS",
+            "CMAKE_SKIP_RPATH",
+            "CMAKE_SKIP_INSTALL_RPATH",
+    ):
+        return "BOOL"
+    elif (uppername in (
+            "CMAKE_FIND_PACKAGE_REDIRECTS_DIR",
+            "CMAKE_PROJECT_DESCRIPTION",
+            "CMAKE_PROJECT_HOMEPAGE_URL",
+            "CMAKE_PROJECT_NAME",
+    ) or (
+        uppername.endswith("_BINARY_DIR")
+        or uppername.endswith("_IS_TOP_LEVEL")
+        or uppername.endswith("_SOURCE_DIR")
+    )):
+        return "STATIC"
+    elif (
+          ("PATH" in uppername) or
+          uppername.endswith("COMPILER") or
+          uppername.endswith("COMPILER_AR") or
+          uppername.endswith("COMPILER_RANLIB") or
+          uppername.endswith("DLLTOOL") or
+          uppername.endswith("LINKER")
+    ):
+        return "FILEPATH"
+    #
+    # now look at the value
+    upperval = val.upper()
+    if upperval in (
+        "ON", "OFF", "NO", "YES", "1", "0",
+        "TRUE", "FALSE", "T", "F", "N", "Y",
+    ):
+        # https://cmake.org/pipermail/cmake/2007-December/018548.html
+        return "BOOL"
+    elif os.path.isfile(val):
+        return "FILEPATH"
+    elif os.path.isdir(val) or "DIR" in name.upper() or os.path.isabs(val):
+        return "PATH"
+    else:
+        return "STRING"
 
 
 # -------------------------------------------------------------------------
@@ -180,50 +296,42 @@ class CMakeCacheVar:
     def __init__(self, name, val, vartype=None, dirty=False, from_input=False):
         self.name = name
         self.val = val
-        self.vartype = self._guess_var_type(name, val, vartype)
+        self.vartype = vartype if vartype else _guess_var_type(name, val)
         self.dirty = dirty
         self.from_input = from_input
 
-    def _guess_var_type(self, name, val, vartype):
-        """make an informed guess of the var type
-        @todo: add a test for this"""
-        if vartype is not None:
-            return vartype
-        elif val.upper() in ("ON", "OFF", "NO", "YES", "1", "0", "TRUE", "FALSE", "T", "F", "N", "Y"):
-            # https://cmake.org/pipermail/cmake/2007-December/018548.html
-            return "BOOL"
-        elif os.path.isfile(val) or "PATH" in name.upper():
-            return "FILEPATH"
-        elif os.path.isdir(val) or "DIR" in name.upper() or os.path.isabs(val):
-            return "PATH"
-        else:
-            return "STRING"
-
-    def reset(self, val, vartype='', **kwargs):
+    def reset(self, val, **kwargs):
         """
         :param val:
-        :param vartype:
         :param kwargs:
             force_dirty, defaults to False
             from_input, defaults to None
         :return:
         """
+        dbg("setting cache var:", self.name, "'{}' to '{}'".format(self.val, val), "(dirty={})".format(self.dirty))
+        dbg("setting cache var:", self.name, "kwargs=", kwargs)
         force_dirty = kwargs.get('force_dirty', False)
         from_input = kwargs.get('from_input')
+        if kwargs.get("vartype") is not None:
+            if not _can_change_cache_type(self.name, self.vartype, kwargs.get("vartype")):
+                raise err.CannotChangeCacheVarType(None, self.name, self.vartype, kwargs.get("vartype"))
         if from_input is not None:
             self.from_input = from_input
-        if vartype == 'STRING' or (vartype is None and self.vartype == 'STRING'):
+        if self.vartype == 'STRING':
+            dbg("setting cache var:", self.name, "is string")
             candidates = (val, val.strip("'"), val.strip('"'))
             equal = False
             for c in candidates:
                 if c == self.val:
+                    dbg("setting cache var:", self.name, "is string equal to", c)
                     equal = True
                     break
         else:
             equal = (self.val == val)
-        if not equal or (vartype is not None and vartype != self.vartype):
+            dbg("setting cache var:", self.name, "is", "equal" if equal else "NOT equal")
+        if not equal:
+            dbg("setting cache var:", self.name, "CHANGE!")
             self.val = val
-            self.vartype = vartype if vartype is not None else self.vartype
             self.dirty = True
             return True
         if force_dirty:

@@ -72,6 +72,13 @@ class CacheFileNotFound(Error):
         super().__init__(msg, purpose, cfile, bdir, os.getcwd())
 
 
+class CannotChangeCacheVarType(Error):
+    def __init__(self, cachefile, var, oldtype, newtype):
+        msg = "{}cache variable '{}': cannot set type from '{}' to '{}')"
+        cachefile = "{}: ".format(cachefile) if cachefile else ""
+        super().__init__(msg, cachefile, var, oldtype, newtype)
+
+
 class BuildSerializationNotFound(Error):
     def __init__(self, sfile, bdir):
         msg = "build serialization does not exist: '{}' (build dir is '{}', curr dir is '{}')"
