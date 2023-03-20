@@ -177,18 +177,18 @@ class Test10Flags(ut.TestCase):
             _c('{} VAR2,VAR3', ['VAR2', 'VAR3'])
             _c('{} VAR4 {} VAR5', ['VAR4', 'VAR5'])
             _c('{} VAR6,VAR7 {} VAR8,VAR9', ['VAR6', 'VAR7', 'VAR8', 'VAR9'])
-            _c('{} VAR\,1', ['VAR,1'])
-            _c('{} VAR\,2,VAR\,3', ['VAR,2', 'VAR,3'])
-            _c('{} VAR\,4 {} VAR\,5', ['VAR,4', 'VAR,5'])
-            _c('{} VAR\,6,VAR\,7 {} VAR\,8,VAR\,9', ['VAR,6', 'VAR,7', 'VAR,8', 'VAR,9'])
+            _c(r'{} VAR\,1', ['VAR,1'])
+            _c(r'{} VAR\,2,VAR\,3', ['VAR,2', 'VAR,3'])
+            _c(r'{} VAR\,4 {} VAR\,5', ['VAR,4', 'VAR,5'])
+            _c(r'{} VAR\,6,VAR\,7 {} VAR\,8,VAR\,9', ['VAR,6', 'VAR,7', 'VAR,8', 'VAR,9'])
             _c('{} VAR1=1', ['VAR1=1'])
             _c('{} VAR2=2,VAR3=3', ['VAR2=2', 'VAR3=3'])
             _c('{} VAR4=4 {} VAR5=5', ['VAR4=4', 'VAR5=5'])
             _c('{} VAR6=6,VAR7=7 {} VAR8=8,VAR9=9', ['VAR6=6', 'VAR7=7', 'VAR8=8', 'VAR9=9'])
-            _c('{} VAR1=1\,a', ['VAR1=1,a'])
-            _c('{} VAR2=2\,a,VAR3=3\,a', ['VAR2=2,a', 'VAR3=3,a'])
-            _c('{} VAR4=4\,a {} VAR5=5\,a', ['VAR4=4,a', 'VAR5=5,a'])
-            _c('{} VAR6=6\,a,VAR7=7\,a {} VAR8=8\,a,VAR9=9\,a',
+            _c(r'{} VAR1=1\,a', ['VAR1=1,a'])
+            _c(r'{} VAR2=2\,a,VAR3=3\,a', ['VAR2=2,a', 'VAR3=3,a'])
+            _c(r'{} VAR4=4\,a {} VAR5=5\,a', ['VAR4=4,a', 'VAR5=5,a'])
+            _c(r'{} VAR6=6\,a,VAR7=7\,a {} VAR8=8\,a,VAR9=9\,a',
                ['VAR6=6,a', 'VAR7=7,a', 'VAR8=8,a', 'VAR9=9,a'])
             _c(['{}', 'VAR1="1 with spaces"'], ['VAR1="1 with spaces"'])
             _c(['{}', 'VAR2="2 with spaces",VAR3="3 with spaces"'],
@@ -199,13 +199,13 @@ class Test10Flags(ut.TestCase):
                 'VAR8="8 with spaces",VAR9="9 with spaces"'],
                ['VAR6="6 with spaces"', 'VAR7="7 with spaces"', 'VAR8="8 with spaces"',
                 'VAR9="9 with spaces"'])
-            _c(['{}', 'VAR1="1\,a with spaces"'], ['VAR1="1,a with spaces"'])
-            _c(['{}', 'VAR2="2\,a with spaces",VAR3="3\,a with spaces"'],
+            _c(['{}', r'VAR1="1\,a with spaces"'], ['VAR1="1,a with spaces"'])
+            _c(['{}', r'VAR2="2\,a with spaces",VAR3="3\,a with spaces"'],
                ['VAR2="2,a with spaces"', 'VAR3="3,a with spaces"'])
-            _c(['{}', 'VAR4="4\,a with spaces"', '{}', 'VAR5="5\,a with spaces"'],
+            _c(['{}', r'VAR4="4\,a with spaces"', '{}', r'VAR5="5\,a with spaces"'],
                ['VAR4="4,a with spaces"', 'VAR5="5,a with spaces"'])
-            _c(['{}', 'VAR6="6\,a with spaces",VAR7="7\,a with spaces"', '{}',
-                'VAR8="8\,a with spaces",VAR9="9\,a with spaces"'],
+            _c(['{}', r'VAR6="6\,a with spaces",VAR7="7\,a with spaces"', '{}',
+                r'VAR8="8\,a with spaces",VAR9="9\,a with spaces"'],
                ['VAR6="6,a with spaces"', 'VAR7="7,a with spaces"', 'VAR8="8,a with spaces"',
                 'VAR9="9,a with spaces"'])
             _c('{} "-fPIC,-Wall,-O3,-Os"', ['-fPIC', '-Wall', '-O3', '-Os'])
@@ -247,7 +247,7 @@ class Test10Flags(ut.TestCase):
                         defines=['VARIANT2'])
         self.check_many('-X nortti,c++14 -D VARIANT3', cmake_vars=[], cxxflags=['nortti', 'c++14'], cflags=[],
                         defines=['VARIANT3'])
-        self.check_many('-X "-fPIC,-Wl\,-rpath" -D VARIANT1', cmake_vars=[], cxxflags=['-fPIC', '-Wl,-rpath'],
+        self.check_many(r'-X "-fPIC,-Wl\,-rpath" -D VARIANT1', cmake_vars=[], cxxflags=['-fPIC', '-Wl,-rpath'],
                         cflags=[], defines=['VARIANT1'])
 
     def test11_mixed1(self):

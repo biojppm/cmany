@@ -32,6 +32,7 @@ def setup(subcommands, module):
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=help.epilog,
     )
+    add_verbose(p)
     # gather the list of visible subcommands
     # https://stackoverflow.com/questions/21692395/hiding-selected-subcommands-using-argparse
     visible_metavar = ",".join(["{},{}".format(cmd, ",".join(aliases))
@@ -154,21 +155,33 @@ def _handle_hidden_args__skip_rest(args):
 
 
 # -----------------------------------------------------------------------------
+def add_verbose(parser):
+    parser.add_argument("-vb", "--verbose", default=False, action="store_true",
+                        help="""use verbose commands in the build tools. does not apply to configure step;
+                        build_file is always verbose""")
+
+
+# -----------------------------------------------------------------------------
 def add_basic(parser):
-    parser.add_argument("proj_dir", nargs="?", default=".",
-                        help="""the directory where the project's CMakeLists.txt
-                        is located. An empty argument will default to the
-                        current directory ie, \".\". Passing a directory which
-                        does not contain a CMakeLists.txt will cause an error.""")
-    parser.add_argument("--build-dir", default="./build",
-                        help="set the build root (defaults to ./build)")
-    parser.add_argument("--install-dir", default="./install",
+    parser.add_argument("-P", "--proj-dir", default=None,
+                        help="""the directory where the project's
+                        CMakeLists.txt is located. An empty argument will
+                        default to the current directory ie, "." or, if
+                        the current directory is a build directory containing
+                        CMakeCache.txt, the source directory for that
+                        build directory. Passing a directory which
+                        does not contain a CMakeLists.txt or CMakeCache.txt
+                        will cause an error.""")
+    parser.add_argument("-B", "--build-root", default="./build",
+                        help="set the build root (defaults to ./build). ")
+    parser.add_argument("-I", "--install-root", default="./install",
                         help="set the install root (defaults to ./install)")
     parser.add_argument("-j", "--jobs", default=cpu_count(),
                         help="""use the given number of parallel jobs
                         (defaults to %(default)s on this machine).""")
     parser.add_argument("--continue", default=False, action="store_true",
                         help="attempt to continue when a build fails")
+    add_verbose(parser)
 
 
 # -----------------------------------------------------------------------------
@@ -176,7 +189,7 @@ def add_glob(parser):
     #
     add_basic(parser)
     #
-    parser.add_argument("glob", nargs="*", default="*",
+    parser.add_argument("--glob", nargs="*", default="*",
                         help="""glob pattern(s) matching build names (NOTE:
                         not paths to the build dirs)""")
 
@@ -194,31 +207,31 @@ def add_proj(parser):
     #
     g = parser.add_argument_group('Configuration files')
     g.add_argument("--config-file", default=[], action="append",
-                   help="""Specify a file containing configurations. Relative
+                   help="""[EXPERIMENTAL] Specify a file containing configurations. Relative
                    paths are taken from the project's CMakeLists.txt directory.
                    Run `cmany help flags` to get help about flag aliases.
                    Multiple invokations are possible, in which case flags
                    given in latter files will prevail over those of earlier
                    files.""")
     g.add_argument("--no-default-config", default=False, action="store_true",
-                   help="""Do not read the default config file. Run
+                   help="""[EXPERIMENTAL] Do not read the default config file. Run
                    `cmany help flags` to get help about this.""")
     #
     d = parser.add_argument_group('Dependencies')
     d.add_argument('--deps', default='', type=str,
                    metavar='path/to/extern/CMakeLists.txt',
-                   help="""Before configuring, process (ie, configure, build
+                   help="""[EXPERIMENTAL] Before configuring, process (ie, configure, build
                    and install) the given CMakeLists.txt project containing
                    needed external project dependencies. This will be done
                    separately for each build, using the same parameters. The
                    main project will be configured such that the built
                    dependencies are found by cmake.""")
     d.add_argument('--deps-prefix', default="", type=str,
-                   metavar='path/to/install/directory',
+                   metavar='[EXPERIMENTAL] path/to/install/directory',
                    help="""When using --deps set the install directory for
                    external dependencies to the given dir.""")
     d.add_argument('--with-conan', action='store_true', default=False,
-                   help="""(WIP)""")
+                   help=argparse.SUPPRESS)
 
 
 # -----------------------------------------------------------------------------
@@ -241,47 +254,31 @@ def add_select(parser):
         given either as a comma-separated list or with repeated invokations
         of their arguments. Commas can be escaped by using a backslash,
         \\.""")
-    #
-    dft = [system.System.default_str()]
     g.add_argument("-s", "--systems", metavar="os1,os2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of operating systems
-                   to combine. Defaults to the current system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    dft = [architecture.Architecture.default_str()]
+                   to combine. Defaults to the current system.""")
     g.add_argument("-a", "--architectures", metavar="arch1,arch2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of processor
                    architectures to combine. Defaults to CMake's default
-                   architecture on this system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    dft = [compiler.Compiler.default_str()]
+                   architecture on this system.""")
     g.add_argument("-c", "--compilers", metavar="compiler1,compiler2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of compilers to
                    combine. Compilers can be given as an absolute path, or as
                    a name, in which case that name will be searched for in
                    the current shell's PATH.  Defaults to CMake's default
-                   compiler on this system, """ +
-                   _item_printer(dft) + """.""")
-    #
-    # dft = [build_type.BuildType.default_str()]  # avoid a circular dependency
-    dft = ["Release"]
+                   compiler on this system.""")
     g.add_argument("-t", "--build-types", metavar="type1,type2,...",
-                   default=dft, action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of build types
-                   to combine. Defaults to """ + _item_printer(dft) + """.""")
-    #
-    # dft = [variant.Variant.default_str()]  # avoid a circular dependency
-    dft = ["none"]
+                   to combine.""")
     g.add_argument("-v", "--variants", metavar="variant1,variant2,...",
-                   default=["none"], action=BuildItemArgument,
+                   action=BuildItemArgument,
                    help="""Specify a comma-separated list of variants
                    to combine. The variant name 'none' is special and will be
-                   omitted from the name of the resulting build. Defaults to
-                   """ + _item_printer(dft) + """.""")
+                   omitted from the name of the resulting build. Defaults to none.""")
     #add_combination_flags(parser)
 
 
@@ -375,6 +372,14 @@ def add_item_combination_flags(parser):
                    following variants.""")
 
 
+def dash_warning(flag):
+    return """To prevent flags/arguments starting with dash (-) or
+    double-dash (--) from being expanded by the shell and then
+    understood as a cmany flag, enclose them in quotes with leading
+    whitespace. Eg, instead of {} '--flag' use {} ' --flag', or
+    instead of {} '-f' use {} ' -f'.""".format(flag, flag, flag, flag)
+
+
 def add_cflags(parser):
     g = parser.add_argument_group(
         'Flags: CMake cache variables, compiler flags and defines',
@@ -408,7 +413,7 @@ def add_cflags(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   To escape commas, use a backslash \\.""")
+                   To escape commas, use a backslash \\. """ + dash_warning("-X"))
     g.add_argument("-C", "--cflags", default=[], action=FlagArgument,
                    help="""Add C compiler flags.
                    Accepts a comma-separated list of C compiler flags.
@@ -419,7 +424,7 @@ def add_cflags(parser):
                    to get help about this.
                    Multiple invokations of -X are possible, in which case
                    arguments will be appended and not overwritten.
-                   To escape commas, use a backslash \\.""")
+                   To escape commas, use a backslash \\. """ + dash_warning("-C"))
     # g.add_argument("-I", "--include-dirs", default=[], action=FlagArgument,
     #                help="""add dirs to the include path of all builds
     #                Multiple invokations of -I are possible, in which case arguments will be appended and not overwritten.

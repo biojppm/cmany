@@ -16,10 +16,13 @@ cmds = odict([
     ('configure', ['c']),
     ('reconfigure', ['rc']),
     ('build', ['b']),
+    ('build_file', ['bf']),
     ('rebuild', ['rb']),
     ('install', ['i']),
     ('reinstall', ['ri']),
-    ('run', ['r']),
+    ('run_cmd', ['rcm']),
+    ('run_target', ['rtg']),
+    ('run_test', ['rte']),
     ('show_vars', ['sv']),
     ('show_builds', ['sb']),
     ('show_build_names', ['sn']),
@@ -69,7 +72,7 @@ class cmdbase:
         """create a project given the configuration."""
         return None
     def _exec(self, proj, args):
-        assert False, 'never call the base class method. Implement this in derived classes'
+        raise Exception('never call the base class method. Implement this in derived classes.')
 
 
 class help(cmdbase):
@@ -182,6 +185,18 @@ class rebuild(globcmd):
         proj.rebuild()
 
 
+class build_file(selectcmd):
+    """[EXPERIMENTAL] compile the given source files."""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', type=str,
+                            help="""the target to which the source files belong""")
+        parser.add_argument('files', default=[], nargs='*',
+                            help="""the files to compile, relative to the CMakeLists.txt root dir""")
+    def _exec(self, proj, args):
+        proj.build_files(args.files, args.target)
+
+
 class install(selectcmd):
     """install the selected builds, building before if necessary"""
     def _exec(self, proj, args):
@@ -194,22 +209,69 @@ class reinstall(globcmd):
         proj.reinstall()
 
 
-class run(selectcmd):
-    """run a command in each build directory"""
+class run_cmd(selectcmd):
+    """[EXPERIMENTAL] run a command in each build"""
     def add_args(self, parser):
         super().add_args(parser)
         parser.add_argument('command', nargs='+',
                             help="""command to be run in each build directory""")
-        parser.add_argument('-np', '--not-posix', action="store_true",
-                            help="""do not use posix mode if splitting the initial string""")
+        parser.add_argument('-np', '--no-posix', action="store_true",
+                            help="""do not use posix mode if splitting the initial command string""")
         parser.add_argument('-nc', '--no-check', action="store_true",
-                            help="""do not use check the error status of the command""")
-        parser.add_argument('-tg', '--target', nargs="+",
+                            help="""do not check the error status of the command""")
+        parser.add_argument('-tg', '--target', nargs="+", default=[],
                             help="""build these targets before running the command""")
     def _exec(self, proj, args):
-        if len(args.target) > 0:
-            proj.build()  # targets are set
-        proj.run_cmd(args.command, posix_mode=not args.not_posix, check=not args.no_check)
+        proj.run_cmd(args.command, posix_mode=not args.no_posix, check=not args.no_check)
+
+
+class run_target(selectcmd):
+    """[EXPERIMENTAL] run targets in each build"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('target', default=[], nargs='*',
+                            help="""specify a subset of targets to run""")
+        parser.add_argument('-nb', '--no-build', action="store_true",
+                            help="""do not build the target even if it is out of date""")
+        parser.add_argument('-ta', '--target-args', type=str, default="",
+                            help="""arguments to pass to the target invokation. If multiple
+                            targets are given, arguments are passed to every target. The
+                            arguments need to be given as a single string. """ + c4args.dash_warning("-ta"))
+        parser.add_argument('-np', '--no-posix', action="store_true",
+                            help="""do not use posix mode when splitting the target arguments""")
+        parser.add_argument('-wd', '--work-dir', type=str, default=None,
+                            help="""the working directory. Defaults to each target file's directory""")
+        parser.add_argument('-wp', '--wrap', type=str, default=None,
+                            help="""wrap the target invokation with the given command, eg
+                            valgrind or gdb. A string with spaces can be passed, in which
+                            case it will be split to form the invokation command.""")
+    def _exec(self, proj, args):
+        import shlex
+        target_args = shlex.split(args.target_args, posix=not args.no_posix)
+        proj.run_targets(args.target, target_args, args.wrap, args.work_dir)
+
+
+class run_test(selectcmd):
+    """[EXPERIMENTAL] run tests in each build directory"""
+    def add_args(self, parser):
+        super().add_args(parser)
+        parser.add_argument('tests', default=[".*"], nargs='*',
+                            help="""command to be run in each build directory""")
+        parser.add_argument('-ca', '--ctest-args', type=str, default=r"\-VV",
+                            help="""arguments to pass to ctest""")
+        parser.add_argument('-np', '--no-posix', action="store_true",
+                            help="""do not use posix mode if splitting the initial command string""")
+        parser.add_argument('-nc', '--no-check', action="store_true",
+                            help="""do not check the error status of the command""")
+        parser.add_argument('-tg', '--target', nargs="+", default=[],
+                            help="""build these targets before running the command""")
+        parser.add_argument('-wd', '--work-dir', type=str, default=".",
+                            help="""the working directory. A relative path starting inside the build
+                            directory. Defaults to ".", the build directory""")
+    def _exec(self, proj, args):
+        import shlex
+        ctest_args = shlex.split(args.ctest_args, posix=not args.no_posix)
+        proj.run_tests(args.tests, ctest_args, args.work_dir, check=not args.no_check)
 
 
 class show_vars(selectcmd):

@@ -3,8 +3,10 @@ import copy
 import re
 import dill
 import subprocess
+import glob
 from datetime import datetime
 from collections import OrderedDict as odict
+import shlex
 
 from .generator import Generator
 from . import util, cmake, vsinfo
@@ -14,7 +16,8 @@ from .build_flags import BuildFlags
 from .compiler import Compiler
 from .architecture import Architecture
 from . import err
-from .util import logdbg as dbg
+from .util import logdbg
+from .target import Target
 
 # experimental. I don't think it will stay unless conan starts accepting args
 from .conan import Conan
@@ -26,6 +29,9 @@ class Build(NamedItem):
 
     pfile = "cmany_preload.cmake"
     sfile = "cmany_build.dill"
+
+    def dbg(self, *args, **kwargs):
+        logdbg(self.name + ":", *args, **kwargs)
 
     def __init__(self, proj_root, build_root, install_root,
                  system, arch, build_type, compiler, variant, flags,
@@ -49,32 +55,29 @@ class Build(NamedItem):
         #
         if util.in_64bit and self.architecture.is32:
             if self.compiler.gcclike:
-                dbg("making 32 bit")
+                logdbg("build: making 32 bit")
                 self.compiler.make_32bit()
         elif util.in_32bit and self.architecture.is64:
             if self.compiler.gcclike:
-                dbg("making 64 bit")
+                logdbg("build: making 64 bit")
                 self.compiler.make_64bit()
         #
         tag = self._set_name_and_paths()
         super().__init__(tag)
         #
         self.toolchain_file = self._get_toolchain()
-        if self.toolchain_file:
-            comps = cmake.extract_toolchain_compilers(self.toolchain_file)
-            c = Compiler(comps['CMAKE_CXX_COMPILER'])
-            self.adjust(compiler=c)
-        #
-        # WATCHOUT: this may trigger a readjustment of this build's parameters
+        # WATCHOUT: this may trigger a readjustment of the build's parameters
         self.generator = self.create_generator(num_jobs)
         #
         # This will load the vars from the builddir cache, if it exists.
         # It should be done only after creating the generator.
         self.varcache = cmake.CMakeCache(self.builddir)
+        self.dbg("cache is", "dirty" if self.varcache.dirty else "clean", "on load")
         # ... and this will overwrite (in memory) the vars with the input
         # arguments. This will make the cache dirty and so we know when it
         # needs to be committed back to CMakeCache.txt
         self.gather_input_cache_vars()
+        self.dbg("cache is", "dirty" if self.varcache.dirty else "clean", "after cmd vars")
         #
         self.deps = kwargs.get('deps', '')
         if self.deps and not os.path.isabs(self.deps):
@@ -84,6 +87,21 @@ class Build(NamedItem):
             self.deps_prefix = os.path.abspath(self.deps_prefix)
         if not self.deps_prefix:
             self.deps_prefix = self.builddir
+
+    def reset_kwargs(self, kwargs):
+        "the serialization/deserialization approach creates cache coherency problems"
+        self.dbg(f"{self}: ressetting kwargs: {kwargs}")
+        self.kwargs = kwargs
+        #
+        # TODO complete this
+
+    @property
+    def targets(self):
+        return self.kwargs.get('target')
+
+    @property
+    def verbose(self):
+        return self.kwargs.get('verbose', False)
 
     def _set_name_and_paths(self):
         self.tag = __class__.get_tag(
@@ -95,8 +113,9 @@ class Build(NamedItem):
         self.installdir = os.path.join(self.installroot, self.installtag)
         self.preload_file = os.path.join(self.builddir, Build.pfile)
         self.cachefile = os.path.join(self.builddir, 'CMakeCache.txt')
-        for prop in "projdir buildroot installroot buildtag installtag builddir installdir preload_file cachefile".split(" "):
-            dbg("    {}: {}={}".format(self.tag, prop, getattr(self, prop)))
+        for prop in "system architecture compiler build_type variant projdir buildroot installroot buildtag installtag builddir installdir preload_file cachefile".split(" "):
+            # don't call self.dbg() yet
+            logdbg("build:    {}: {}={}".format(self.tag, prop, getattr(self, prop)))
         return self.tag
 
     def create_generator(self, num_jobs, fallback_generator="Unix Makefiles"):
@@ -106,6 +125,7 @@ class Build(NamedItem):
         #    print(toolchain_cache)
         #    self.adjust(compiler=toolchain_cache['CMAKE_CXX_COMPILER'])
         if self.compiler.is_msvc:
+            self.dbg("compiler is msvc -- selecting appropriate Visual Studio")
             vsi = vsinfo.VisualStudioInfo(self.compiler.name)
             g = Generator(vsi.gen, self, num_jobs)
             arch = Architecture(vsi.architecture)
@@ -116,7 +136,7 @@ class Build(NamedItem):
             if self.system.name == "windows":
                 return Generator(fallback_generator, self, num_jobs)
             else:
-                return Generator(Generator.default_str(), self, num_jobs)
+                return Generator(Generator.default_str(self.toolchain_file), self, num_jobs)
 
     def adjust(self, **kwargs):
         for k, _ in kwargs.items():
@@ -125,12 +145,12 @@ class Build(NamedItem):
                 raise err.NoSupport(f"build adjustment for {k}. Must be one of {supported}")
         a = kwargs.get('architecture')
         if a and a != self.architecture:
-            dbg(self, "adjusting architecture:", self.architecture, "---->", a)
+            self.dbg(self, "adjusting architecture:", self.architecture, "---->", a)
             self.adjusted = True
             self.architecture = a
         c = kwargs.get('compiler')
         if c and c != self.compiler:
-            dbg(self, "adjusting compiler:", self.compiler, "---->", a)
+            self.dbg(self, "adjusting compiler:", self.compiler, "---->", a)
             self.adjusted = True
             self.compiler = c
         self._set_name_and_paths()
@@ -196,7 +216,13 @@ class Build(NamedItem):
             cmd = self.configure_cmd()
             try:
                 util.runsyscmd(cmd)
-                self.mark_configure_done(cmd)
+                first_time = self.mark_configure_done(cmd)
+                # workaround a problem where CMAKE_C_COMPILER set from
+                # either preload or command line will have its vartype
+                # set to STRING instead of FILEPATH. So override
+                # cmake's problem.
+                if first_time:
+                    self.varcache.commit(self.builddir)
             except Exception as e:
                 raise err.ConfigureFailed(self, cmd, e)
         if self.export_compile:
@@ -219,7 +245,9 @@ class Build(NamedItem):
                 if not self.compiler.is_msvc:
                     util.runsyscmd(cmd)
                 else:
-                    self.vsinfo.runsyscmd(cmd)
+                    dev_cmd = " ".join(self.vs_dev_cmd("ALL_BUILD"))
+                    cmd = " ".join(cmd)
+                    util.runsyscmd(f"{dev_cmd} {cmd}")
             except Exception as e:
                 raise err.ConfigureFailed(self, cmd, e)
         src = os.path.join(trickdir, "compile_commands.json")
@@ -231,11 +259,62 @@ class Build(NamedItem):
             copyfile(src, dst)
             util.loginfo("exported compile_commands.json:", dst)
 
+    def run_targets(self, targets, target_args, cmd_wrap=None, workdir=None):
+        if self.needs_configure():
+            self.configure()
+        if not (self.kwargs.get('no_build') is True):
+            self.build(targets)
+        try:
+            cmd_wrap = [] if cmd_wrap is None else shlex.split(cmd_wrap)
+            for tgt_name in targets:
+                t = self.get_target(tgt_name)
+                cmd = cmd_wrap + [t.output_file] + target_args
+                cwd = workdir if workdir is not None else t.subdir_abs
+                util.runcmd(cmd, cwd=cwd)
+        except subprocess.CalledProcessError as exc:
+            raise err.RunCmdFailed(self, cmd, exc)
+
+    def run_tests(self, test_selection, ctest_args, workdir, check):
+        if self.needs_configure():
+            self.configure()
+        if self.targets:
+            self.build(self.targets)
+        try:
+            for t in test_selection:
+                cwd = workdir if workdir is not None else "."
+                cwd = os.path.abspath(os.path.join(self.builddir, cwd))
+                args = ctest_args + ["-R", t]
+                util.runcmd("ctest", *args, cwd=cwd, check=check)
+        except subprocess.CalledProcessError as exc:
+            cmd = ["ctest"] + args
+            cmd = util.shlex_join(cmd)
+            raise err.RunCmdFailed(self, cmd, exc)
+
     def run_custom_cmd(self, cmd, **subprocess_args):
+        if self.needs_configure():
+            self.configure()
+        if self.targets:
+            self.build(self.targets)
         try:
             util.runcmd(cmd, **subprocess_args, cwd=self.builddir)
         except subprocess.CalledProcessError as exc:
             raise err.RunCmdFailed(self, cmd, exc)
+
+    @property
+    def cxx_compiler(self):
+        return util.cacheattr(self, "_cxx_compiler",
+                              lambda: cmake.get_cxx_compiler(self.builddir))
+
+    def vs_dev_cmd(self, target):
+        cl_exe = self.vsinfo.cxx_compiler
+        cl_version = self.vsinfo.cl_version
+        self.dbg("cl.exe:", cl_exe)
+        self.dbg("cl.exe version:", cl_version)
+        return vsinfo.dev_env(
+            vcvarsall=f'"{self.vsinfo.vcvarsall}"',
+            arch=str(self.architecture.vs_dev_env_name),
+            winsdk=str(self.generator.vs_get_vcxproj(target).winsdk),
+            vc_version=cl_version)
 
     def reconfigure(self):
         """reconfigure a build directory, without touching any cache entry"""
@@ -259,23 +338,39 @@ class Build(NamedItem):
     def mark_configure_done(self, cmd):
         self._serialize()
         with util.setcwd(self.builddir):
-            with open("cmany_configure.done", "w") as f:
+            first_time = False
+            name = "cmany_configure.done"
+            if not os.path.exists(name):
+                first_time = True
+            with open(name, "w") as f:
                 f.write(" ".join(cmd) + "\n")
+        return first_time
 
     def needs_configure(self):
+        ret = False
         if not os.path.exists(self.builddir):
-            return True
-        with util.setcwd(self.builddir):
-            if not os.path.exists("cmany_configure.done"):
-                return True
-            if self.needs_cache_regeneration():
-                return True
-        return False
+            self.dbg("builddir does not exist:", self.builddir)
+            ret = True
+        else:
+            with util.setcwd(self.builddir):
+                donefile = "cmany_configure.done"
+                if not os.path.exists(donefile):
+                    self.dbg("not found:", os.path.join(self.builddir, donefile))
+                    ret = True
+                if self.needs_cache_regeneration():
+                    ret = True
+        self.dbg("needs configure" if ret else "does not need configure")
+        return ret
 
     def needs_cache_regeneration(self):
-        if os.path.exists(self.cachefile) and self.varcache.dirty:
-            return True
-        return False
+        ret = False
+        if os.path.exists(self.cachefile):
+            self.dbg("cache file found:", self.cachefile)
+            if self.varcache.dirty:
+                self.dbg("var cache is dirty")
+                ret = True
+        self.dbg("cache needs regeneration" if ret else "cache ok")
+        return ret
 
     def build(self, targets=[]):
         self.create_dir()
@@ -284,10 +379,7 @@ class Build(NamedItem):
                 self.configure()
             self.handle_deps()
             if len(targets) == 0:
-                if self.compiler.is_msvc:
-                    targets = ["ALL_BUILD"]
-                else:
-                    targets = ["all"]
+                targets = [self.generator.target_all]
             # cmake --build and visual studio won't handle
             # multiple targets at once, so loop over them.
             for t in targets:
@@ -299,6 +391,23 @@ class Build(NamedItem):
             # this was written before using the loop above.
             # it can come to fail in some corner cases.
             self.mark_build_done(cmd)
+
+    def build_files(self, files, target):
+        if self.needs_configure():
+            self.configure()
+            self.build([target])
+            return
+        with util.setcwd(self.builddir, silent=False):
+            self.handle_deps()
+            for f in files:
+                try:
+                    cmd = self.generator.cmd_source_file(f, target)
+                    self.dbg(f"building file {f}, target {target}. cmd={cmd}")
+                    util.runsyscmd_str(cmd, cwd=self.builddir)
+                    self.dbg(f"building file {f}, target {target}. success!")
+                except Exception as e:
+                    self.dbg(f"building file {f}, target {target}. exception: {e}!")
+                    raise err.CompileFailed(self, cmd, e)
 
     def rebuild(self, targets=[]):
         self._check_successful_configure('rebuild')
@@ -377,11 +486,13 @@ class Build(NamedItem):
             tc = BuildFlags.merge_toolchains(tc, fs.toolchain)
         if not tc:
             return None
+        self.dbg("toolchain:", tc)
         if not os.path.isabs(tc):
             tc = os.path.join(os.getcwd(), tc)
             tc = os.path.abspath(tc)
+        self.dbg("toolchain:", tc)
         if not os.path.exists(tc):
-            raise err.ToolchainFileNotFound(tc)
+            raise err.ToolchainFileNotFound(tc, self)
         return tc
 
     def _gather_flags(self, which, append_to_sysinfo_var=None, with_defines=False):
@@ -542,30 +653,47 @@ class Build(NamedItem):
             # ('variables', []),  # this is not needed since the vars are set in the preload file
         ])
 
+    def get_target(self, tgt_name):
+        tgts = util.cacheattr(self, "_targets", self.get_targets)
+        for t in tgts:
+            if t.name == tgt_name:
+                return t
+        raise Exception(f"target not found: {tgt_name}")
+
     def get_targets(self):
+        ret = []
         with util.setcwd(self.builddir):
+            for sd in sorted(util.rglob(self.builddir, "CMakeFiles")):
+                self.dbg(f"found {sd}...")
+                sd = os.path.dirname(sd)
+                self.dbg(f"descending into {sd}/ ...")
+                ret += self._dir_targets(sd)
+        return ret
+
+    def _dir_targets(self, subdirectory):
+        rel = os.path.relpath(subdirectory, self.builddir)
+        with util.setcwd(subdirectory):
+            targets = []
             if self.generator.is_msvc:
                 # each target in MSVC has a corresponding vcxproj file
-                files = list(util.find_files_with_ext(self.builddir, ".vcxproj"))
-                files = [os.path.basename(f) for f in files]
-                files = [os.path.splitext(f)[0] for f in files]
-                return files
+                vcxproj = list(glob.glob("*.vcxproj"))
+                for p in vcxproj:
+                    tg = os.path.splitext(os.path.basename(p))[0]
+                    targets.append(Target(tg, self, rel, p))
             elif self.generator.is_makefile:
-                output = util.runsyscmd(["make", "help"], echo_cmd=False,
-                                        echo_output=False, capture_output=True)
-                output = output.split("\n")
-                output = output[1:]  # The following are some of the valid targets....
-                output = [o[4:] for o in output]  # take off the initial "... "
-                output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
-                output = sorted(output)
-                result = []
-                for o in output:
-                    if o:
-                        result.append(o)
-                return result
+                #output = util.get_output(["make", "help"])
+                #output = output.split("\n")
+                #output = output[1:]  # The following are some of the valid targets....
+                #output = [o[4:] for o in output]  # take off the initial "... "
+                #output = [re.sub(r'(.*)\ \(the default if no target.*\)', r'\1', o) for o in output]
+                with util.setcwd("CMakeFiles"):
+                    output = [o[:-4] for o in list(glob.glob("*.dir"))]
+                mkf = os.path.join(subdirectory, "Makefile")
+                for tg in sorted(output):
+                    targets.append(Target(tg, self, rel, mkf))
             else:
-                util.logerr("sorry, feature not implemented for this generator: " +
-                            str(self.generator))
+                raise Exception(f"{self.generator}: sorry, target extraction not implemented for this generator")
+            return targets
 
     def show_properties(self):
         util.logcmd(self.name)
@@ -600,14 +728,6 @@ endif(NOT _cmany_set_def)
 message(STATUS "cmany:preload----------------------")
 {vars}
 message(STATUS "cmany:preload----------------------")
-
-# if(CMANY_INCLUDE_DIRECTORIES)
-#     include_directories(${{CMANY_INCLUDE_DIRECTORIES}})
-# endif()
-#
-# if(CMANY_LINK_DIRECTORIES)
-#     link_directories(${{CMANY_LINK_DIRECTORIES}})
-# endif()
 
 # Do not edit. Will be overwritten.
 # Generated by cmany on {date}

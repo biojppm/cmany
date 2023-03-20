@@ -5,9 +5,10 @@ import sys
 import subprocess
 import platform
 import copy
+import shlex
 import datetime
 from dateutil.relativedelta import relativedelta
-import shlex
+from pathlib import Path
 
 import colorama #from colorama import Fore, Back, Style, init
 colorama.init()
@@ -430,6 +431,11 @@ def find_files_with_ext(folder, ext):
                 yield os.path.join(root, file)
 
 
+def rglob(directory, glob_pattern):
+    # Path('src').rglob('*.c'):
+    return Path(directory).rglob(glob_pattern)
+
+
 # -----------------------------------------------------------------------------
 def nested_lookup(dictionary, *entry):
     """get a nested entry from a dictionary"""
@@ -491,6 +497,7 @@ class setcwd:
 def time_since_modification(path):
     """return the time elapsed since a path has been last modified, as a
     dateutil.relativedelta"""
+    # https://stackoverflow.com/questions/7015587/python-difference-of-2-datetimes-in-months
     mtime = os.path.getmtime(path)
     mtime = datetime.datetime.fromtimestamp(mtime)
     currt = datetime.datetime.now()
@@ -599,23 +606,55 @@ def runsyscmd(cmd, echo_cmd=True, echo_output=True, capture_output=False, as_byt
                 result.check_returncode()
 
 
+# batch commands using vcvarsall have to be passed as a full string
+def runsyscmd_str(cmd_str, echo_cmd=True, **run_args):
+    if echo_cmd:
+        cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
+        logcmd(f'$ cd {os.path.realpath(cwd)} && {cmd_str}')
+    sp = subprocess.Popen(cmd_str, **run_args)
+    sp.wait()
+    if sp.returncode != 0:
+        raise Exception("failed")
+
+
+def get_output(cmd):
+    # a function to silently run a system command
+    out = runsyscmd(cmd, echo_cmd=False, echo_output=False, capture_output=True)
+    out = out.strip("\n")
+    return out
+
+
+def shlex_join(cmd):
+    if sys.version_info >= (3, 8):
+        return shlex.join(cmd)
+    else:
+        return ' '.join(shlex.quote(x) for x in cmd)
+
+
 def runcmd_nocheck(cmd, *cmd_args, **run_args):
     # TODO: https://stackoverflow.com/questions/17742789/running-multiple-bash-commands-with-subprocess
     logdbg(f"running command: {cmd} '{cmd_args}'")
     logdbg(f"               : run_args={run_args}")
+    posix_mode = in_unix()
     if run_args.get('posix_mode'):
         posix_mode = run_args.get('posix_mode')
         del run_args['posix_mode']
     if isinstance(cmd, str):
-        cmd = shlex.split(cmd, posix_mode=posix_mode)
+        cmd = shlex.split(cmd, posix=posix_mode)
         logdbg(f"               : split cmd={cmd}")
     elif isinstance(cmd, tuple):
         cmd = list(cmd)
+    elif isinstance(cmd, list):
+        pass
+    else:
+        raise Exception("could not understand command")
     cmd += list(cmd_args)
-    scmd = shlex.join(cmd)
+    logdbg(f"               : cmd={cmd}")
+    logdbg(f"               : run_args={run_args}")
+    scmd = shlex_join(cmd)
     cwd = os.path.realpath(run_args.get('cwd', os.getcwd()))
     logcmd(f'$ cd {cwd} && {scmd}')
-    sp = subprocess.run(cmd, **run_args)
+    sp = subprocess.run(cmd, stderr=subprocess.STDOUT, **run_args)
     logdbg("finished running command")
     return sp
 

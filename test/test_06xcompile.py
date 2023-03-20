@@ -21,8 +21,7 @@ testdirs = [osp.join(mydir, "hello")]
 
 
 def toolchain_compiler_exists(tc_file):
-    comps = cmake.extract_toolchain_compilers(tc_file)
-    return osp.exists(comps['CMAKE_CXX_COMPILER'])
+    return cmake.CMakeSysInfo.cxx_compiler(toolchain=tc_file)
 
 
 def run_with_args(testdir, args_in):
@@ -37,7 +36,7 @@ def run_with_args(testdir, args_in):
             shutil.rmtree(idir)
         #
         args = ['--show-args', 'build']
-        args += ['--build-dir', bdir, '--install-dir', idir]
+        args += ['--build-root', bdir, '--install-root', idir]
         args += args_in
         cmany_main(args)
         #
@@ -50,8 +49,8 @@ def do_toolchain_builds(toolchain, test, args, expected_builds):
     if not toolchain_compiler_exists(toolchain):
         return
     args = [a.format(toolchain=toolchain) for a in args]
-    comps = cmake.extract_toolchain_compilers(toolchain)
-    c = Compiler(comps['CMAKE_CXX_COMPILER'])
+    c = cmake.CMakeSysInfo.cxx_compiler(toolchain=toolchain)
+    c = Compiler(c)
     expected_builds = [b.format(compiler=Build.sanitize_compiler_name(c.name))
                        for b in expected_builds]
     for t in testdirs:

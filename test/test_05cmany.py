@@ -115,7 +115,7 @@ class CMakeTestProj:
                 if not os.path.exists(root):
                     os.makedirs(root)
                 projdir = os.path.abspath('.')
-                args.append(projdir)
+                args += ["--proj-dir", projdir]
         args = maincmd + args
         with util.setcwd(root):
             tmpfile, tmpname = tempfile.mkstemp(prefix="_cmany_tmp.out.")
@@ -164,9 +164,9 @@ def run_projs(testobj, args, check_fn=None):
     id = '.test/0--default--install'
     for p in projs:
         with testobj.subTest(msg="default parameters", proj=p.proj):
-            p.run(args + ['--build-dir', bd, '--install-dir', id])
+            p.run(args + ['--build-root', bd, '--install-root', id])
             if check_fn:
-                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
@@ -179,7 +179,7 @@ def run_projs(testobj, args, check_fn=None):
         with testobj.subTest(msg="run in a non root dir", proj=p.proj):
             p.run(args, custom_root=rd)
             if check_fn:
-                tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                compiler=cmany.Compiler.default(),
                                build_type=cmany.BuildType.default(),
                                variant=cmany.Variant.default(),
@@ -194,8 +194,8 @@ def run_projs(testobj, args, check_fn=None):
     id = '.test/2.1--comps{}--types{}--variants{}--install'.format(len(compiler_set), len(build_types), len(variant_set))
     for p in projs:
         with testobj.subTest(msg="run all combinations at once", proj=p.proj):
-            p.run(args + ['--build-dir', bd,
-                          '--install-dir', id,
+            p.run(args + ['--build-root', bd,
+                          '--install-root', id,
                           '-c', ','.join([c.name if c.is_msvc else c.path for c in compiler_set]),
                           '-t', ','.join([str(b) for b in build_types]),
                           '-v', ','.join([v.full_specs for v in variant_set])
@@ -204,7 +204,7 @@ def run_projs(testobj, args, check_fn=None):
                 for c in compiler_set:
                     for t in build_types:
                         for v in variant_set:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
@@ -220,15 +220,15 @@ def run_projs(testobj, args, check_fn=None):
                 ','.join([v.full_specs for v in variant_set])
             )
             #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
-            p.run(args + ['--build-dir', bd,
-                          '--install-dir', id,
+            p.run(args + ['--build-root', bd,
+                          '--install-root', id,
             ])
             os.environ['CMANY_ARGS'] = ''
             if check_fn:
                 for c in compiler_set:
                     for t in build_types:
                         for v in variant_set:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=numbuilds)
                             check_fn(tb)
@@ -242,14 +242,14 @@ def run_projs(testobj, args, check_fn=None):
                                          proj=p.proj, compiler=c, build_type=t, variant=v):
                         bd = '.test/3.1--{}--{}--{}--build'.format(c, t, v.name)
                         id = '.test/3.1--{}--{}--{}--install'.format(c, t, v.name)
-                        p.run(args + ['--build-dir', bd,
-                                      '--install-dir', id,
+                        p.run(args + ['--build-root', bd,
+                                      '--install-root', id,
                                       '-c', c.name if c.is_msvc else c.path,
                                       '-t', str(t),
                                       '-v', v.full_specs,
                         ])
                         if check_fn:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
@@ -268,10 +268,10 @@ def run_projs(testobj, args, check_fn=None):
                             str(t),
                             v.full_specs)
                         #util.logwarn('export CMANY_ARGS={}'.format(os.environ['CMANY_ARGS']))
-                        p.run(args + ['--build-dir', bd, '--install-dir', id])
+                        p.run(args + ['--build-root', bd, '--install-root', id])
                         os.environ['CMANY_ARGS'] = ''
                         if check_fn:
-                            tb = TestBuild(proj=p, buildroot=bd, installroot=id,
+                            tb = BuildVerifier(proj=p, buildroot=bd, installroot=id,
                                            compiler=c, build_type=t, variant=v,
                                            numbuilds=1)
                             check_fn(tb)
@@ -280,7 +280,7 @@ def run_projs(testobj, args, check_fn=None):
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
-class TestBuild:
+class BuildVerifier:
 
     def __init__(self, proj, buildroot, installroot, compiler, build_type, variant, numbuilds):
         self.proj = proj
@@ -303,11 +303,20 @@ class TestBuild:
                                      num_jobs=cpu_count(),
                                      kwargs={}
                                      )
+        assert self.build_obj.varcache["CMAKE_C_COMPILER"].vartype == "FILEPATH"
+        assert self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype == "FILEPATH"
 
     def checkc(self, tester):
         tester.assertEqual(self.nsiblings(self.buildroot), self.numbuilds, msg=self.buildroot + str(self.siblings(self.buildroot)))
-        build_type = cmake.getcachevar(self.build_obj.builddir, 'CMAKE_BUILD_TYPE')
-        tester.assertEqual(build_type, str(self.build_type))
+        cache = cmake.CMakeCache(self.build_obj.builddir)
+        tester.assertEqual(cache["CMAKE_BUILD_TYPE"].val, str(self.build_type))
+        tester.assertEqual(cache["CMAKE_BUILD_TYPE"].vartype, "STRING")
+        tester.assertEqual(self.build_obj.varcache["CMAKE_C_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(cache["CMAKE_C_COMPILER"].vartype, self.build_obj.varcache["CMAKE_C_COMPILER"].vartype)
+        tester.assertEqual(cache["CMAKE_CXX_COMPILER"].vartype, self.build_obj.varcache["CMAKE_CXX_COMPILER"].vartype)
+        tester.assertEqual(cache["CMAKE_C_COMPILER"].vartype, "FILEPATH")
+        tester.assertEqual(cache["CMAKE_CXX_COMPILER"].vartype, "FILEPATH")
 
     def checkv(self, tester):
         pass
@@ -323,7 +332,9 @@ class TestBuild:
 
     def siblings(self, dir):
         res = os.path.join(self.proj.root, dir, '*')
+        print("wtf0", res)
         ch = glob.glob(res)
+        print("wtf1", ch)
         return ch
 
 
@@ -457,6 +468,8 @@ class Test00Help(ut.TestCase):
 # -----------------------------------------------------------------------------
 class Test01Configure(ut.TestCase):
 
+
+
     def test00_default(self):
         run_projs(self, ['c'], lambda tb: tb.checkc(self))
 
@@ -471,6 +484,7 @@ class Test02Build(ut.TestCase):
 
     def test00_default(self):
         run_projs(self, ['b'], lambda tb: tb.checkb(self))
+
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
