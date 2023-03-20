@@ -49,11 +49,13 @@ class Compiler(BuildItem):
         return True
 
     def __init__(self, spec):
+        dbg("initing from '{}'".format(spec))
         if util.is_quoted(spec):
             spec = util.unquote(spec)
         spl = spec.split(':')
         path = spl[0]
         if path.startswith("vs") or path.startswith("Visual Studio"):
+            dbg("vs-like")
             if not util.in_windows():
                 raise err.CompilerNotFound(spec, "visual studio is only available in windows platforms")
             vs = vsinfo.VisualStudioInfo(path)
@@ -86,7 +88,7 @@ class Compiler(BuildItem):
                 path[0] = os.path.abspath(p)
         name, version, version_full = self.get_version(path)
         self.shortname = name
-        self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'g++', 'clang++', 'icpc', 'icpx')
+        self.gcclike = self.shortname in ('gcc', 'clang', 'icc', 'icx', 'g++', 'clang++', 'icpc', 'icpx')
         self.is_msvc = self.shortname.startswith('vs')
         if not self.is_msvc:
             name += version
@@ -112,14 +114,17 @@ class Compiler(BuildItem):
 
     @staticmethod
     def get_c_compiler(shortname, cxx_compiler):
+        exename = os.path.basename(cxx_compiler)
+        dbg("getting c compiler. shortname:", shortname)
+        dbg("getting c compiler. cxx_compiler:", cxx_compiler)
         # if cxx_compiler.endswith("c++") or cxx_compiler.endswith('c++.exe'):
         #     cc = re.sub(r'c\+\+', r'cc', cxx_compiler)
         if shortname.startswith('vs') or re.search(r'sual Studio', cxx_compiler):
             cc = cxx_compiler
-        elif shortname == "icc" or shortname == "icpc":
+        elif exename == "icc" or exename == "icpc":
             cc = re.sub(r'icpc', r'icc', cxx_compiler)
-        elif shortname == "icpx":
-            cc = re.sub(r'icpx', r'icpx', cxx_compiler)
+        elif exename == "icpx":
+            cc = re.sub(r'icpx', r'icx', cxx_compiler)
         elif shortname == "gcc" or shortname == "g++" or shortname.startswith("g++"):
             if re.search(r'g\+\+', cxx_compiler):
                 cc = re.sub(r'g\+\+', r'gcc', cxx_compiler)
@@ -136,6 +141,7 @@ class Compiler(BuildItem):
             cc = re.sub(r"c\+\+", "cc", cxx_compiler)
         else:
             cc = "cc"
+        dbg("c compiler is:", cc)
         return cc
 
     def get_version(self, path):
@@ -158,6 +164,7 @@ class Compiler(BuildItem):
         base = os.path.basename(path)
         dbg("base:", base)
         dbg("name:", name)
+        dbg(name, "cmp base:", base, name)
         if base.startswith("c++") or base.startswith("cc"):
             try:  # if this fails, just go on. It's not really needed.
                 with tempfile.NamedTemporaryFile(suffix=".cpp", prefix="cmany.", delete=False) as f:
@@ -203,6 +210,7 @@ class Compiler(BuildItem):
             version = re.sub(vregex, r'\1', version)
             dbg("gcc version:", version, "---")
         elif name.startswith("icpc") or name.startswith("icc"):
+            dbg("intel:", name, name.find('++'))
             name = "icc" if name.startswith("icc") else "icpc"
             if re.search(r'icpc \(ICC\) ' + vregex + '.*', version_full):
                 version = re.sub(r'icpc \(ICC\) ' + vregex + '.*', r'\1', version_full)
