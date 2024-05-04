@@ -268,6 +268,14 @@ class Build(NamedItem):
             cmd_wrap = [] if cmd_wrap is None else shlex.split(cmd_wrap)
             for tgt_name in targets:
                 t = self.get_target(tgt_name)
+                if cmd_wrap:
+                    w = cmd_wrap[0]
+                    if w.startswith("gdb"):
+                        cmd_wrap += ["--args"]
+                    elif w.startswith("ddd"):
+                        cmd_wrap += ["--args"]
+                    elif w.startswith("kdbg"):
+                        target_args = ["-a", util.shlex_join(target_args)]
                 cmd = cmd_wrap + [t.output_file] + target_args
                 cwd = workdir if workdir is not None else t.subdir_abs
                 util.runcmd(cmd, cwd=cwd)
