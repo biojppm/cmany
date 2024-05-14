@@ -403,6 +403,8 @@ def add_cflags(parser):
                    Multiple invokations of -D are possible, in which case
                    arguments will be appended and not overwritten.
                    To escape commas, use a backslash \\.""")
+    g.add_argument("-K", "--kflags", default=[], action=FlagArgument,
+                   help="""Add C and C++ compiler flags. See -C and -X.""")
     g.add_argument("-X", "--cxxflags", default=[], action=FlagArgument,
                    help="""Add C++ compiler flags.
                    Accepts a comma-separated list of C++ compiler flags.

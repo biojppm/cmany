@@ -17,6 +17,10 @@ class BuildFlags(NamedItem):
         self.cflags = kwargs.get('cflags', [])
         self.cxxflags = kwargs.get('cxxflags', [])
         self.toolchain = kwargs.get('toolchain')
+        kflags = kwargs.get('kflags')
+        if kflags is not None:
+            self.cflags += kflags
+            self.cxxflags += kflags
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
 
