@@ -72,11 +72,18 @@ class Compiler(BuildItem):
             p = util.which(path)
             if p is None:
                 dbg("not found:", path)
-                shspl = shlex.split(path)
-                dbg("trying split:", shspl)
-                if len(shspl) > 0:
-                    p = util.which(shspl[0])
-                    dbg("trying split:", p)
+                if os.path.isabs(path):
+                    dbg("path is absolute:", path)
+                    p = path
+                else:
+                    shspl = shlex.split(path)
+                    dbg("trying split:", shspl)
+                    if len(shspl) > 0:
+                        p = util.which(shspl[0])
+                        dbg("trying split:", p)
+                        if p is None:
+                            p = os.path.basename(p)
+                            dbg("trying basename:", p)
             if p is None:
                 dbg("no compiler found", path)
                 raise err.CompilerNotFound(path)
