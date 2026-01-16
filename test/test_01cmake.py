@@ -216,7 +216,7 @@ class Test01guess_var_type(ut.TestCase):
         cachedict = c4cmake.loadvars(_setup_cache())
         self.assertGreater(len(cachedict), 0)
         for i, (k, v) in enumerate(cachedict.items()):
-            #print(i, k, v.vartype, v.val)
+            print(i, k, v.vartype, v.val)
             self.assertEqual(k, v.name)
             self.assertEqual(c4cmake._guess_var_type(v.name, v.val), v.vartype, v.name)
 

@@ -53,6 +53,19 @@ class Test00VisualStudioAliases(ut.TestCase):
         if sc != s:
             self.fail(f"{a} should be '{s}' but is '{sc}'")
 
+    def test01_name_to_gen_2026(self):
+        c = __class__._test_name_to_gen
+        c('vs2026'      , ['Visual Studio 18 2026', '-A', _arc])
+        c('vs2026_32'   , ['Visual Studio 18 2026', '-A', 'Win32'])
+        c('vs2026_64'   , ['Visual Studio 18 2026', '-A', 'x64'])
+        c('vs2026_arm'  , ['Visual Studio 18 2026', '-A', 'ARM'])
+        c('vs2026_arm32', ['Visual Studio 18 2026', '-A', 'ARM'])
+        c('vs2026_arm64', ['Visual Studio 18 2026', '-A', 'ARM64'])
+        c('Visual Studio 18 2026' + _sfx , 'Visual Studio 18 2026' + _sfx )
+        c('Visual Studio 18 2026'        , 'Visual Studio 18 2026'        )
+        c('Visual Studio 18 2026 Win64'  , 'Visual Studio 18 2026 Win64'  )
+        c('Visual Studio 18 2026 ARM'    , 'Visual Studio 18 2026 ARM'    )
+
     def test01_name_to_gen_2022(self):
         c = __class__._test_name_to_gen
         c('vs2022'      , ['Visual Studio 17 2022', '-A', _arc])
@@ -160,6 +173,20 @@ class Test00VisualStudioAliases(ut.TestCase):
         if sc != s:
             self.fail("{} should be '{}' but is '{}'".format(a, s, sc))
 
+    def test02_gen_to_name_2026(self):
+        c = __class__._test_gen_to_name
+        c('Visual Studio 18 2026'        , 'vs2026_32'   )
+        c('Visual Studio 18 2026 Win64'  , 'vs2026_64'   )
+        c('Visual Studio 18 2026 ARM'    , 'vs2026_arm'  )
+        c('Visual Studio 18 2026 ARM32'  , 'vs2026_arm32')
+        c('Visual Studio 18 2026 ARM64'  , 'vs2026_arm64')
+        c('vs2026'      , 'vs2026'      )
+        c('vs2026_32'   , 'vs2026_32'   )
+        c('vs2026_64'   , 'vs2026_64'   )
+        c('vs2026_arm'  , 'vs2026_arm'  )
+        c('vs2026_arm32', 'vs2026_arm32')
+        c('vs2026_arm64', 'vs2026_arm64')
+
     def test02_gen_to_name_2022(self):
         c = __class__._test_gen_to_name
         c('Visual Studio 17 2022'        , 'vs2022_32'   )
@@ -257,15 +284,151 @@ class Test00VisualStudioAliases(ut.TestCase):
         c('vs2005_64'   , 'vs2005_64'   )
 
     @staticmethod
-    def _test_parse_toolset(spec, name_vs, ts_vs):
+    def _test_parse_toolset(self, spec, name_vs, ts_vs):
         cname_vs, cts_vs = vsinfo.sep_name_toolset(spec)
         if cname_vs != name_vs:
             self.fail("{} should be '{}' but is '{}'".format(spec, name_vs, cname_vs))
         if cts_vs != ts_vs:
             self.fail("{} should be '{}' but is '{}'".format(spec, ts_vs, cts_vs))
 
+    def test03_parse_toolset_2026(self):
+        def t(*args):
+            self._test_parse_toolset(self, *args)
+        t('vs2026'                , 'vs2026'     , None           )
+        t('vs2026_clang'          , 'vs2026'     , 'v145_clang_c2')
+        t('vs2026_xp'             , 'vs2026'     , 'v145_xp'      )
+        t('vs2026_v145'           , 'vs2026'     , 'v145'         )
+        t('vs2026_v145_xp'        , 'vs2026'     , 'v145_xp'      )
+        t('vs2026_v145_clang'     , 'vs2026'     , 'v145_clang_c2')
+        t('vs2026_v143'           , 'vs2026'     , 'v143'         )
+        t('vs2026_v143_xp'        , 'vs2026'     , 'v143_xp'      )
+        t('vs2026_v143_clang'     , 'vs2026'     , 'v143_clang_c2')
+        t('vs2026_v142'           , 'vs2026'     , 'v142'         )
+        t('vs2026_v142_xp'        , 'vs2026'     , 'v142_xp'      )
+        t('vs2026_v142_clang'     , 'vs2026'     , 'v142_clang_c2')
+        t('vs2026_v141'           , 'vs2026'     , 'v141'         )
+        t('vs2026_v141_xp'        , 'vs2026'     , 'v141_xp'      )
+        t('vs2026_v141_clang'     , 'vs2026'     , 'v141_clang_c2')
+        t('vs2026_v140'           , 'vs2026'     , 'v140'         )
+        t('vs2026_v140_xp'        , 'vs2026'     , 'v140_xp'      )
+        t('vs2026_v140_clang'     , 'vs2026'     , 'v140_clang_c2')
+        t('vs2026_v120'           , 'vs2026'     , 'v120'         )
+        t('vs2026_v120_xp'        , 'vs2026'     , 'v120_xp'      )
+        t('vs2026_v110'           , 'vs2026'     , 'v110'         )
+        t('vs2026_v110_xp'        , 'vs2026'     , 'v110_xp'      )
+        t('vs2026_v100'           , 'vs2026'     , 'v100'         )
+        t('vs2026_v100_xp'        , 'vs2026'     , 'v100_xp'      )
+        t('vs2026_v90'            , 'vs2026'     , 'v90'          )
+        t('vs2026_v90_xp'         , 'vs2026'     , 'v90_xp'       )
+        t('vs2026_v80'            , 'vs2026'     , 'v80'          )
+
+        t('vs2026_32'             , 'vs2026_32'  , None           )
+        t('vs2026_32_clang'       , 'vs2026_32'  , 'v145_clang_c2')
+        t('vs2026_32_xp'          , 'vs2026_32'  , 'v145_xp'      )
+        t('vs2026_32_v145'        , 'vs2026_32'  , 'v145'         )
+        t('vs2026_32_v145_xp'     , 'vs2026_32'  , 'v145_xp'      )
+        t('vs2026_32_v145_clang'  , 'vs2026_32'  , 'v145_clang_c2')
+        t('vs2026_32_v143'        , 'vs2026_32'  , 'v143'         )
+        t('vs2026_32_v143_xp'     , 'vs2026_32'  , 'v143_xp'      )
+        t('vs2026_32_v143_clang'  , 'vs2026_32'  , 'v143_clang_c2')
+        t('vs2026_32_v142'        , 'vs2026_32'  , 'v142'         )
+        t('vs2026_32_v142_xp'     , 'vs2026_32'  , 'v142_xp'      )
+        t('vs2026_32_v142_clang'  , 'vs2026_32'  , 'v142_clang_c2')
+        t('vs2026_32_v141'        , 'vs2026_32'  , 'v141'         )
+        t('vs2026_32_v141_xp'     , 'vs2026_32'  , 'v141_xp'      )
+        t('vs2026_32_v141_clang'  , 'vs2026_32'  , 'v141_clang_c2')
+        t('vs2026_32_v140'        , 'vs2026_32'  , 'v140'         )
+        t('vs2026_32_v140_xp'     , 'vs2026_32'  , 'v140_xp'      )
+        t('vs2026_32_v140_clang'  , 'vs2026_32'  , 'v140_clang_c2')
+        t('vs2026_32_v120'        , 'vs2026_32'  , 'v120'         )
+        t('vs2026_32_v120_xp'     , 'vs2026_32'  , 'v120_xp'      )
+        t('vs2026_32_v110'        , 'vs2026_32'  , 'v110'         )
+        t('vs2026_32_v110_xp'     , 'vs2026_32'  , 'v110_xp'      )
+        t('vs2026_32_v100'        , 'vs2026_32'  , 'v100'         )
+        t('vs2026_32_v100_xp'     , 'vs2026_32'  , 'v100_xp'      )
+        t('vs2026_32_v90'         , 'vs2026_32'  , 'v90'          )
+        t('vs2026_32_v90_xp'      , 'vs2026_32'  , 'v90_xp'       )
+        t('vs2026_32_v80'         , 'vs2026_32'  , 'v80'          )
+
+        t('vs2026_64'             , 'vs2026_64'  , None           )
+        t('vs2026_64_clang'       , 'vs2026_64'  , 'v145_clang_c2')
+        t('vs2026_64_xp'          , 'vs2026_64'  , 'v145_xp'      )
+        t('vs2026_64_v145'        , 'vs2026_64'  , 'v145'         )
+        t('vs2026_64_v145_xp'     , 'vs2026_64'  , 'v145_xp'      )
+        t('vs2026_64_v145_clang'  , 'vs2026_64'  , 'v145_clang_c2')
+        t('vs2026_64_v143'        , 'vs2026_64'  , 'v143'         )
+        t('vs2026_64_v143_xp'     , 'vs2026_64'  , 'v143_xp'      )
+        t('vs2026_64_v143_clang'  , 'vs2026_64'  , 'v143_clang_c2')
+        t('vs2026_64_v142'        , 'vs2026_64'  , 'v142'         )
+        t('vs2026_64_v142_xp'     , 'vs2026_64'  , 'v142_xp'      )
+        t('vs2026_64_v142_clang'  , 'vs2026_64'  , 'v142_clang_c2')
+        t('vs2026_64_v141'        , 'vs2026_64'  , 'v141'         )
+        t('vs2026_64_v141_xp'     , 'vs2026_64'  , 'v141_xp'      )
+        t('vs2026_64_v141_clang'  , 'vs2026_64'  , 'v141_clang_c2')
+        t('vs2026_64_v140'        , 'vs2026_64'  , 'v140'         )
+        t('vs2026_64_v140_xp'     , 'vs2026_64'  , 'v140_xp'      )
+        t('vs2026_64_v140_clang'  , 'vs2026_64'  , 'v140_clang_c2')
+        t('vs2026_64_v120'        , 'vs2026_64'  , 'v120'         )
+        t('vs2026_64_v120_xp'     , 'vs2026_64'  , 'v120_xp'      )
+        t('vs2026_64_v110'        , 'vs2026_64'  , 'v110'         )
+        t('vs2026_64_v110_xp'     , 'vs2026_64'  , 'v110_xp'      )
+        t('vs2026_64_v100'        , 'vs2026_64'  , 'v100'         )
+        t('vs2026_64_v100_xp'     , 'vs2026_64'  , 'v100_xp'      )
+        t('vs2026_64_v90'         , 'vs2026_64'  , 'v90'          )
+        t('vs2026_64_v90_xp'      , 'vs2026_64'  , 'v90_xp'       )
+        t('vs2026_64_v80'         , 'vs2026_64'  , 'v80'          )
+
+        t('vs2026_arm'            , 'vs2026_arm' , None           )
+        t('vs2026_arm_clang'      , 'vs2026_arm' , 'v145_clang_c2')
+        t('vs2026_arm_v145'       , 'vs2026_arm' , 'v145'         )
+        t('vs2026_arm_v145_clang' , 'vs2026_arm' , 'v145_clang_c2')
+        t('vs2026_arm_v143'       , 'vs2026_arm' , 'v143'         )
+        t('vs2026_arm_v143_clang' , 'vs2026_arm' , 'v143_clang_c2')
+        t('vs2026_arm_v142'       , 'vs2026_arm' , 'v142'         )
+        t('vs2026_arm_v142_clang' , 'vs2026_arm' , 'v142_clang_c2')
+        t('vs2026_arm_v141'       , 'vs2026_arm' , 'v141'         )
+        t('vs2026_arm_v141_clang' , 'vs2026_arm' , 'v141_clang_c2')
+        t('vs2026_arm_v140'       , 'vs2026_arm' , 'v140'         )
+        t('vs2026_arm_v140_clang' , 'vs2026_arm' , 'v140_clang_c2')
+        t('vs2026_arm_v120'       , 'vs2026_arm' , 'v120'         )
+        t('vs2026_arm_v110'       , 'vs2026_arm' , 'v110'         )
+        t('vs2026_arm_v100'       , 'vs2026_arm' , 'v100'         )
+
+        t('vs2026_arm32'            , 'vs2026_arm32' , None           )
+        t('vs2026_arm32_clang'      , 'vs2026_arm32' , 'v145_clang_c2')
+        t('vs2026_arm32_v145'       , 'vs2026_arm32' , 'v145'         )
+        t('vs2026_arm32_v145_clang' , 'vs2026_arm32' , 'v145_clang_c2')
+        t('vs2026_arm32_v143'       , 'vs2026_arm32' , 'v143'         )
+        t('vs2026_arm32_v143_clang' , 'vs2026_arm32' , 'v143_clang_c2')
+        t('vs2026_arm32_v142'       , 'vs2026_arm32' , 'v142'         )
+        t('vs2026_arm32_v142_clang' , 'vs2026_arm32' , 'v142_clang_c2')
+        t('vs2026_arm32_v141'       , 'vs2026_arm32' , 'v141'         )
+        t('vs2026_arm32_v141_clang' , 'vs2026_arm32' , 'v141_clang_c2')
+        t('vs2026_arm32_v140'       , 'vs2026_arm32' , 'v140'         )
+        t('vs2026_arm32_v140_clang' , 'vs2026_arm32' , 'v140_clang_c2')
+        t('vs2026_arm32_v120'       , 'vs2026_arm32' , 'v120'         )
+        t('vs2026_arm32_v110'       , 'vs2026_arm32' , 'v110'         )
+        t('vs2026_arm32_v100'       , 'vs2026_arm32' , 'v100'         )
+
+        t('vs2026_arm64'            , 'vs2026_arm64' , None           )
+        t('vs2026_arm64_clang'      , 'vs2026_arm64' , 'v145_clang_c2')
+        t('vs2026_arm64_v145'       , 'vs2026_arm64' , 'v145'         )
+        t('vs2026_arm64_v145_clang' , 'vs2026_arm64' , 'v145_clang_c2')
+        t('vs2026_arm64_v143'       , 'vs2026_arm64' , 'v143'         )
+        t('vs2026_arm64_v143_clang' , 'vs2026_arm64' , 'v143_clang_c2')
+        t('vs2026_arm64_v142'       , 'vs2026_arm64' , 'v142'         )
+        t('vs2026_arm64_v142_clang' , 'vs2026_arm64' , 'v142_clang_c2')
+        t('vs2026_arm64_v141'       , 'vs2026_arm64' , 'v141'         )
+        t('vs2026_arm64_v141_clang' , 'vs2026_arm64' , 'v141_clang_c2')
+        t('vs2026_arm64_v140'       , 'vs2026_arm64' , 'v140'         )
+        t('vs2026_arm64_v140_clang' , 'vs2026_arm64' , 'v140_clang_c2')
+        t('vs2026_arm64_v120'       , 'vs2026_arm64' , 'v120'         )
+        t('vs2026_arm64_v110'       , 'vs2026_arm64' , 'v110'         )
+        t('vs2026_arm64_v100'       , 'vs2026_arm64' , 'v100'         )
+
     def test03_parse_toolset_2022(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2022'                , 'vs2022'     , None           )
         t('vs2022_clang'          , 'vs2022'     , 'v143_clang_c2')
         t('vs2022_xp'             , 'vs2022'     , 'v143_xp'      )
@@ -384,7 +547,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2022_arm64_v100'       , 'vs2022_arm64' , 'v100'         )
 
     def test03_parse_toolset_2019(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2019'                , 'vs2019'     , None           )
         t('vs2019_clang'          , 'vs2019'     , 'v142_clang_c2')
         t('vs2019_xp'             , 'vs2019'     , 'v142_xp'      )
@@ -488,7 +652,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2019_arm64_v100'       , 'vs2019_arm64' , 'v100'         )
 
     def test03_parse_toolset_2017(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2017'                , 'vs2017'     , None           )
         t('vs2017_clang'          , 'vs2017'     , 'v141_clang_c2')
         t('vs2017_xp'             , 'vs2017'     , 'v141_xp'      )
@@ -557,7 +722,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2017_arm_v100'       , 'vs2017_arm' , 'v100'         )
 
     def test03_parse_toolset_2015(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2015'                , 'vs2015'     , None           )
         t('vs2015_clang'          , 'vs2015'     , 'v140_clang_c2')
         t('vs2015_xp'             , 'vs2015'     , 'v140_xp'      )
@@ -603,7 +769,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2015_arm_clang'      , 'vs2015_arm' , 'v140_clang_c2')
 
     def test03_parse_toolset_2013(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2013'                , 'vs2013'    , None           )
         t('vs2013_xp'             , 'vs2013'    , 'v120_xp'      )
         t('vs2013_v110'           , 'vs2013'    , 'v110'         )
@@ -635,7 +802,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2013_64_v80'         , 'vs2013_64' , 'v80'          )
 
     def test03_parse_toolset_2012(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2012'                , 'vs2012'    , None           )
         t('vs2012_xp'             , 'vs2012'    , 'v110_xp'      )
         t('vs2012_v110'           , 'vs2012'    , 'v110'         )
@@ -667,7 +835,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2012_64_v80'         , 'vs2012_64' , 'v80'          )
 
     def test03_parse_toolset_2010(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2010'                , 'vs2010'    , None           )
         t('vs2010_xp'             , 'vs2010'    , 'v100_xp'      )
         t('vs2010_v100'           , 'vs2010'    , 'v100'         )
@@ -701,7 +870,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2010_ia64_v80'       , 'vs2010_ia64' , 'v80'        )
 
     def test03_parse_toolset_2008(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2008'                , 'vs2008'    , None           )
         t('vs2008_xp'             , 'vs2008'    , 'v90_xp'       )
         t('vs2008_v90'            , 'vs2008'    , 'v90'          )
@@ -727,7 +897,8 @@ class Test00VisualStudioAliases(ut.TestCase):
         t('vs2008_ia64_v80'       , 'vs2008_ia64' , 'v80'        )
 
     def test03_parse_toolset_2005(self):
-        t = __class__._test_parse_toolset
+        def t(*args):
+            self._test_parse_toolset(self, *args)
         t('vs2005'                , 'vs2005'    , None           )
         t('vs2005_v80'            , 'vs2005'    , 'v80'          )
 
