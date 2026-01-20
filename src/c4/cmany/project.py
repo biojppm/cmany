@@ -42,6 +42,25 @@ def _getdir(attr_name, default, kwargs, cwd):
     return d
 
 
+def _is_cmake_folder(folder):
+    if folder is None:
+        return False
+    dbg("exists?", folder)
+    if not _pexists(folder):
+        dbg("does not exist:", folder)
+        return None
+    dbg("exists:", folder)
+    if _pexists(folder, "CMakeLists.txt"):
+        dbg("found CMakeLists.txt in", folder)
+        return folder
+    dbg("CMakeLists.txt not found in", folder)
+    if _pexists(folder, "CMakeCache.txt"):
+        dbg("found CMakeCache.txt in", folder)
+        return folder
+    dbg("CMakeCache.txt not found in", folder)
+    return None
+
+
 # -----------------------------------------------------------------------------
 class Project:
 
@@ -56,10 +75,18 @@ class Project:
         pdir = kwargs.get('proj_dir')
         dbg("cwd:", cwd)
         dbg("proj_dir:", pdir)
-        if pdir is None:
-            raise err.ProjDirNotFound(None)
         if pdir == ".":
             pdir = cwd
+        elif pdir is None:
+            dbg("proj_dir not given")
+            if pdir is None and self.targets:
+                dbg("is the first target a cmake directory?", self.targets[0])
+                pdir = _is_cmake_folder(self.targets[0])
+                if pdir is not None:
+                    self.targets = self.targets[1:]
+            if pdir is None:
+                dbg("picking current directory", cwd)
+                pdir = cwd
         pdir = util.abspath(pdir)
         dbg("proj_dir, abs:", pdir)
         #
@@ -70,8 +97,8 @@ class Project:
         cmakecache = None
         if _pexists(self.cmakelists):
             dbg("found CMakeLists.txt:", self.cmakelists)
-            self.build_dir = _getdir('build_dir', 'build', kwargs, cwd)
-            self.install_dir = _getdir('install_dir', 'install', kwargs, cwd)
+            self.build_dir = _getdir('build_root', 'build', kwargs, cwd)
+            self.install_dir = _getdir('install_root', 'install', kwargs, cwd)
             self.root_dir = pdir
         elif _pexists(pdir, "CMakeCache.txt"):
             cmakecache = os.path.join(pdir, "CMakeCache.txt")
@@ -81,11 +108,16 @@ class Project:
             self.install_dir = os.path.dirname(ch['CMAKE_INSTALL_PREFIX'].val)
             self.root_dir = ch['CMAKE_HOME_DIRECTORY'].val
             self.cmakelists = os.path.join(self.root_dir, "CMakeLists.txt")
+        else:
+            self.build_dir = None
+            self.install_dir = None
+            self.root_dir = pdir
         #
-        self.root_dir = os.path.realpath(self.root_dir)
-        self.build_dir = os.path.realpath(self.build_dir)
-        self.install_dir = os.path.realpath(self.install_dir)
-        self.cmakelists = os.path.realpath(self.cmakelists)
+        _saferealpath = lambda p: p if p is None else os.path.realpath(p)
+        self.root_dir = _saferealpath(self.root_dir)
+        self.build_dir = _saferealpath(self.build_dir)
+        self.install_dir = _saferealpath(self.install_dir)
+        self.cmakelists = _saferealpath(self.cmakelists)
         #
         dbg("root_dir:", self.root_dir)
         dbg("build_dir:", self.build_dir)
@@ -107,6 +139,7 @@ class Project:
 
     def _init_with_build_dir(self, pdir, **kwargs):
         build = Build.deserialize(pdir)
+        build.reset_kwargs(kwargs)
         self.builds = [build]
 
     def _init_with_glob(self, **kwargs):
@@ -120,7 +153,7 @@ class Project:
                 self.builds.append(build)
 
     def _init_with_build_items(self, **kwargs):
-        s, a, c, t, v = __class__.get_build_items(**kwargs)
+        s, a, c, t, v = __class__.create_build_items(**kwargs)
         #
         cr = CombinationRules(kwargs.get('combination_rules', []))
         combs = cr.valid_combinations(s, a, c, t, v)
@@ -154,16 +187,14 @@ class Project:
             _addnew(b, 'variant')
 
     @staticmethod
-    def get_build_items(**kwargs):
-        d = odict()
-        for c, cls in (
-                ('systems', System),
-                ('architectures', Architecture),
-                ('compilers', Compiler),
-                ('build_types', BuildType),
-                ('variants', Variant)):
-            d[c] = (cls, kwargs.get(c))
-        coll = BuildItem.create(d)
+    def create_build_items(**kwargs):
+        coll = BuildItem.create_build_items({
+            'systems': System,
+            'architectures': Architecture,
+            'compilers': Compiler,
+            'build_types': BuildType,
+            'variants': Variant,
+        }, **kwargs)
         s = coll['systems']
         a = coll['architectures']
         c = coll['compilers']
@@ -307,6 +338,11 @@ class Project:
             build.build(self.targets)
         self._execute(do_build, "Build", silent=False, **restrict_to)
 
+    def build_files(self, files, target):
+        def do_build_files(build):
+            build.build_files(files, target)
+        self._execute(do_build_files, "BuildFiles", silent=False)
+
     def rebuild(self, **restrict_to):
         def do_rebuild(build):
             build.rebuild(self.targets)
@@ -325,6 +361,16 @@ class Project:
         def run_it(build):
             build.run_custom_cmd(cmd, **subprocess_args)
         self._execute(run_it, "Run cmd", silent=False)
+
+    def run_targets(self, targets, target_args, cmd_wrap, workdir):
+        def run_it(build):
+            build.run_targets(targets, target_args, cmd_wrap, workdir)
+        self._execute(run_it, "Run targets", silent=False)
+
+    def run_tests(self, tests, ctest_args, workdir, check):
+        def run_it(build):
+            build.run_tests(tests, ctest_args, workdir, check)
+        self._execute(run_it, "Run tests", silent=False)
 
     def export_vs(self):
         confs = []
@@ -371,7 +417,7 @@ class Project:
 
     def show_targets(self):
         for t in self.builds[0].get_targets():
-            print(t)
+            print(t.desc)
 
     def _execute(self, fn, msg, silent, **restrict_to):
         builds = self.select(**restrict_to)

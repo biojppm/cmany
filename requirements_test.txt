@@ -1,5 +1,7 @@
 wheel
-nose
+pytest
+pytest-cov
+parameterized
 twine
 coverage
 codecov

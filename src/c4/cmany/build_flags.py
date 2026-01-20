@@ -1,6 +1,7 @@
 from .named_item import NamedItem as NamedItem
 
 from . import util
+from .util import logdbg as dbg
 from . import err
 
 
@@ -16,6 +17,10 @@ class BuildFlags(NamedItem):
         self.cflags = kwargs.get('cflags', [])
         self.cxxflags = kwargs.get('cxxflags', [])
         self.toolchain = kwargs.get('toolchain')
+        kflags = kwargs.get('kflags')
+        if kflags is not None:
+            self.cflags += kflags
+            self.cxxflags += kflags
         # self.include_dirs = kwargs['include_dirs']
         # self.link_dirs = kwargs['link_dirs']
 
@@ -59,9 +64,11 @@ class BuildFlags(NamedItem):
 
     @staticmethod
     def merge_toolchains(tc1, tc2):
-        if ((tc1 != tc2) and (tc1 is not None and tc2 is not None)):
+        dbg("merge_toolchains:", tc1, tc2)
+        if ((tc1 != tc2) and ((tc1 is not None) and (tc2 is not None))):
             raise err.Error("conflicting toolchains: {} vs {}", tc1, tc2)
         if tc1 is None and tc2 is not None:
+            dbg("picking toolchain:", tc2)
             tc1 = tc2
         return tc1
 

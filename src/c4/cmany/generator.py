@@ -1,12 +1,67 @@
 from . import cmake
 from . import vsinfo
+from . import err
+from . import util
 
 from .build_item import BuildItem
 from .err import TooManyTargets
+from .util import logdbg
 
+import fnmatch
+import os
+import shlex
+
+
+"""
+generators: https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
+
+Unix Makefiles
+MSYS Makefiles
+MinGW Makefiles
+NMake Makefiles
+Ninja
+Watcom WMake
+CodeBlocks - Ninja
+CodeBlocks - Unix Makefiles
+CodeBlocks - MinGW Makefiles
+CodeBlocks - NMake Makefiles
+CodeLite - Ninja
+CodeLite - Unix Makefiles
+CodeLite - MinGW Makefiles
+CodeLite - NMake Makefiles
+Eclipse CDT4 - Ninja
+Eclipse CDT4 - Unix Makefiles
+Eclipse CDT4 - MinGW Makefiles
+Eclipse CDT4 - NMake Makefiles
+KDevelop3
+KDevelop3 - Unix Makefiles
+Kate - Ninja
+Kate - Unix Makefiles
+Kate - MinGW Makefiles
+Kate - NMake Makefiles
+Sublime Text 2 - Ninja
+Sublime Text 2 - Unix Makefiles
+Sublime Text 2 - MinGW Makefiles
+Sublime Text 2 - NMake Makefiles
+
+Visual Studio 6
+Visual Studio 7
+Visual Studio 7 .NET 2003
+Visual Studio 8 2005 [Win64|IA64]
+Visual Studio 9 2008 [Win64|IA64]
+Visual Studio 10 2010 [Win64|IA64]
+Visual Studio 11 2012 [Win64|ARM]
+Visual Studio 12 2013 [Win64|ARM]
+Visual Studio 14 2015 [Win64|ARM]
+Visual Studio 15 2017 [Win64|ARM]
+Visual Studio 16 2019 -A [Win32|x64|ARM|ARM64]
+
+Green Hills MULTI
+Xcode
+"""
 
 # -----------------------------------------------------------------------------
-class Generator(BuildItem):
+class Generator(BuildItem):  # NamedItem
 
     """Visual Studio aliases example:
     vs2013: use the bitness of the current system
@@ -15,9 +70,9 @@ class Generator(BuildItem):
     """
 
     @staticmethod
-    def default_str():
+    def default_str(toolchain_file: str=None):
         """get the default generator from cmake"""
-        s = cmake.CMakeSysInfo.generator()
+        s = cmake.CMakeSysInfo.generator(toolchain_file)
         return s
 
     def __init__(self, name, build, num_jobs):
@@ -44,6 +99,10 @@ class Generator(BuildItem):
         # these vars would not change cmake --system-information
         # self.full_name += " ".join(self.build.flags.cmake_vars)
 
+    @property
+    def verbose(self):
+        return self.build.verbose
+
     def configure_args(self, for_json=False, export_compile_commands=True):
         args = []
         if self.name != "":
@@ -67,22 +126,51 @@ class Generator(BuildItem):
             pass
         return args
 
-    def cmd(self, targets, override_build_type=None, override_num_jobs=None):
+    @property
+    def target_all(self):
+        "return the name of the ALL target"
+        return "ALL_BUILD" if self.is_msvc else "all"
+
+    def cmd(self, targets):
         if self.is_makefile:
-            return ['make', '-j', str(self.num_jobs)] + targets
+            if self.verbose:
+                return ['make', 'VERBOSE=1', '-j', str(self.num_jobs)] + targets
+            else:
+                return ['make', '-j', str(self.num_jobs)] + targets
         elif self.is_ninja:
-            return ['ninja', '-j', str(self.num_jobs)] + targets
+            if self.verbose:
+                return ['ninja', '--verbose', '-j', str(self.num_jobs)] + targets
+            else:
+                return ['ninja', '-j', str(self.num_jobs)] + targets
         else:
-            bt = str(self.build.build_type)
             if len(targets) > 1:
                 raise TooManyTargets(self)
+            target = targets[0]
+            bt = str(self.build.build_type)
+            # NOTE:
+            # the `--parallel` flag to `cmake --build` is broken in VS and XCode:
+            # https://discourse.cmake.org/t/parallel-does-not-really-enable-parallel-compiles-with-msbuild/964/10
+            # https://gitlab.kitware.com/cmake/cmake/-/issues/20564
             if not self.is_msvc:
-                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt]
+                cmd = ['cmake', '--build', '.', '--target', target, '--config', bt,
+                       '--parallel', str(self.num_jobs)]
+                if self.verbose:
+                    cmd.append('--verbose')
+                # TODO XCode is also broken; the flag is this:
+                # -IDEBuildOperationMaxNumberOfConcurrentCompileTasks=$NUM_JOBS_BUILD
+                # see:
+                # https://stackoverflow.com/questions/5417835/how-to-modify-the-number-of-parallel-compilation-with-xcode
+                # https://gist.github.com/nlutsenko/ee245fbd239087d22137
             else:
+                cmd = ['cmake', '--build', '.', '--target', target, '--config', bt]
+                if self.verbose:
+                    cmd.append('--verbose')
+                cmd += ['--', '/maxcpucount:' + str(self.num_jobs)]
+                # old code for building through msbuild:
                 # # if a target has a . in the name, it must be substituted for _
                 # targets_safe = [re.sub(r'\.', r'_', t) for t in targets]
                 # if len(targets_safe) != 1:
-                #     raise Exception("msbuild can only build one target at a time: was " + str(targets_safe))
+                #     raise TooManyTargets("msbuild can only build one target at a time: was " + str(targets_safe))
                 # t = targets_safe[0]
                 # pat = os.path.join(self.build.builddir, t + '*.vcxproj')
                 # projs = glob.glob(pat)
@@ -96,60 +184,75 @@ class Generator(BuildItem):
                 # cmd = [self.build.compiler.vs.msbuild, proj,
                 #        '/property:Configuration='+bt,
                 #        '/maxcpucount:' + str(self.num_jobs)]
-                cmd = ['cmake', '--build', '.', '--target', targets[0], '--config', bt,
-                       '--',
-                       #'/property:Configuration='+bt,
-                       '/maxcpucount:' + str(self.num_jobs)]
             return cmd
+
+    def cmd_source_file(self, source_file, target):
+        """get a command to build a source file"""
+        logdbg("building source file:", source_file, "from target", target)
+        relpath = os.path.relpath(source_file, os.path.abspath(self.build.builddir))
+        logdbg("building source file: relpath:", relpath)
+        basecmd = ['cmake', '--build', '.', '--target', target, '--verbose']  # always verbose
+        if self.is_makefile:
+            # https://stackoverflow.com/questions/38271387/compile-a-single-file-under-cmake-project
+            return basecmd + ['--', relpath]
+        elif self.is_ninja:
+            # https://ninja-build.org/manual.html#_running_ninja
+            #return ['ninja', f'{relpath}^']
+            return basecmd + ['--', f'{relpath}^']
+        elif not self.is_msvc:
+            raise err.NotImplemented("don't know how to build source files in this generator")
+        else:
+            # msvc:
+            # https://stackoverflow.com/questions/4172438/using-msbuild-to-compile-a-single-cpp-file
+            #return basecmd + ['--config', str(self.build.build_type), '--',
+            #                  '-t:ClCompile', f'-p:SelectedFiles={relpath}']
+            #
+            # the command does not result in compiling ONLY the requested file.
+            # It fails because -p:SelectedFiles is ignored, so the command
+            # builds the whole target.
+            #
+            # So we have to get really down and dirty...
+            logdbg("generator is vs -- need to discover the cl command line")
+            cl_cmd = self.vs_cl_cmd(source_file, target)
+            logdbg("cl_cmd=", cl_cmd)
+            return cl_cmd
 
     def install(self):
         bt = str(self.build.build_type)
         return ['cmake', '--build', '.', '--config', bt, '--target', 'install']
 
-    """
-    generators: https://cmake.org/cmake/help/v3.7/manual/cmake-generators.7.html
+    def vs_cl_cmd(self, source_file, target):
+        tlog = self.vs_find_cl_cmd_tlog(target)
+        abspath = os.path.join(self.build.projdir, source_file)
+        cl_cmd = tlog.get_cmd_line(abspath)
+        cxx_compiler = self.build.cxx_compiler
+        cl_cmd = " ".join(shlex.split(f'"{cxx_compiler}" {cl_cmd}', posix=False))
+        dev_cmd = " ".join(self.build.vs_dev_cmd(target))
+        return f"{dev_cmd} {cl_cmd}"
 
-    Unix Makefiles
-    MSYS Makefiles
-    MinGW Makefiles
-    NMake Makefiles
-    Ninja
-    Watcom WMake
-    CodeBlocks - Ninja
-    CodeBlocks - Unix Makefiles
-    CodeBlocks - MinGW Makefiles
-    CodeBlocks - NMake Makefiles
-    CodeLite - Ninja
-    CodeLite - Unix Makefiles
-    CodeLite - MinGW Makefiles
-    CodeLite - NMake Makefiles
-    Eclipse CDT4 - Ninja
-    Eclipse CDT4 - Unix Makefiles
-    Eclipse CDT4 - MinGW Makefiles
-    Eclipse CDT4 - NMake Makefiles
-    KDevelop3
-    KDevelop3 - Unix Makefiles
-    Kate - Ninja
-    Kate - Unix Makefiles
-    Kate - MinGW Makefiles
-    Kate - NMake Makefiles
-    Sublime Text 2 - Ninja
-    Sublime Text 2 - Unix Makefiles
-    Sublime Text 2 - MinGW Makefiles
-    Sublime Text 2 - NMake Makefiles
+    def vs_find_cl_cmd_tlog(self, target):
+        vcxproj = self.vs_get_vcxproj(target)
+        variant = vcxproj.get_variant(str(self.build.build_type), self.build.architecture)
+        tlog_dir = util.chkf(f"{variant.intdir}/{target}.tlog")
+        tlog = util.chkf(f"{tlog_dir}/CL.command.1.tlog")
+        return vsinfo.ClCommandTlog(tlog)
 
-    Visual Studio 6
-    Visual Studio 7
-    Visual Studio 7 .NET 2003
-    Visual Studio 8 2005 [Win64|IA64]
-    Visual Studio 9 2008 [Win64|IA64]
-    Visual Studio 10 2010 [Win64|IA64]
-    Visual Studio 11 2012 [Win64|ARM]
-    Visual Studio 12 2013 [Win64|ARM]
-    Visual Studio 14 2015 [Win64|ARM]
-    Visual Studio 15 2017 [Win64|ARM]
-    Visual Studio 16 2019 -A [Win32|x64|ARM|ARM64]
+    def vs_get_vcxproj(self, target):
+        class Foo: pass
+        store = util.cacheattr(self, 'vs_target_vcxproj', lambda: Foo())
+        vcxproj = util.cacheattr(store, target, lambda: vsinfo.VcxProj(self.vs_find_vcxproj(target)))
+        return vcxproj
 
-    Green Hills MULTI
-    Xcode
-    """
+    def vs_find_vcxproj(self, target):
+        logdbg("searching for vcxproj:", target)
+        matches = []
+        for root, dirnames, filenames in os.walk(self.build.builddir):
+            for filename in fnmatch.filter(filenames, f"{target}.vcxproj"):
+                matches.append(os.path.join(root, filename))
+        if len(matches) == 0:
+            raise err.NotImplemented(f"could not find vcxproj: {target}")
+        if len(matches) > 1:
+            raise err.NotImplemented("cannot deal with multiple targets with the same name")
+        vcxproj = os.path.realpath(matches[0])
+        logdbg("found vcxproj:", vcxproj)
+        return vcxproj

@@ -8,11 +8,16 @@ from .build_flags import BuildFlags
 from .combination_rules import CombinationRules
 
 
-# some of parsing functions below are difficult; this is a debugging scaffold
+# some of the parsing functions below are difficult; this is a
+# debugging scaffold
 _dbg_parse = False
 def _dbg(fmt, *args):
     if not _dbg_parse: return
     print(fmt.format(*args))
+
+
+def dbg(fmt, *args, **kwargs):
+    util.logdbg(fmt.format(*args, **kwargs))
 
 
 # -----------------------------------------------------------------------------
@@ -20,13 +25,23 @@ class BuildItem(NamedItem):
     """A base class for build items."""
 
     @staticmethod
-    def create(map_of_class_name_to_tuple_of_class_and_specs):
+    def create_build_items(names_and_classes, **kwargs):
         items = BuildItemCollection()
-        for cls_name, (cls, spec_list) in map_of_class_name_to_tuple_of_class_and_specs.items():
-            if isinstance(spec_list, str):
-                spec_list = util.splitesc_quoted(spec_list, ',')
-            for s in spec_list:
-                items.add_build_item(cls(s))
+        for name, cls in names_and_classes.items():
+            spec_list = kwargs.get(name)
+            if spec_list is None:
+                item = cls.default(kwargs.get('toolchain'))
+                dbg('{}: none given; picking default {}: {}', name, cls.__name__, item)
+                items.add_build_item(item)
+            else:
+                if isinstance(spec_list, str):
+                    splitted = util.splitesc_quoted(spec_list, ',')
+                    dbg('{}: str given; splitting: {} -> {}', name, spec_list, splitted)
+                    spec_list = splitted
+                for s in spec_list:
+                    dbg('{}: adding {}', name, s)
+                    item = cls(s)
+                    items.add_build_item(item)
         items.resolve_references()
         return items
 
@@ -177,7 +192,7 @@ class BuildItem(NamedItem):
                 if rest:
                     vli.append(rest)
                 _dbg("parse_args 3.2.3: rest={} vli={}", rest, vli)
-        if _dbg_parse: print("parse_args 4: vli=", vli)
+        _dbg("parse_args 4: vli=", vli)
         # unquote split elements
         vli = [util.unquote(v).strip(',') for v in vli]
         _dbg("parse_args 5: input=____{}____ output=__{}__", v_, vli)
@@ -240,7 +255,7 @@ class BuildItemCollection(odict):
     def __eq__(self, other):
         """code quality checkers complain that this class adds attributes
         without overriding __eq__. So just fool them!"""
-        return super().__init__(other)
+        return super().__eq__(other)
 
     def add_build_item(self, item):
         # convert the class name to snake case and append s for plural
